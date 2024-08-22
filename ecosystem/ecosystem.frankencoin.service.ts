@@ -8,6 +8,8 @@ import {
 	MintBurnAddressMapperQueryItem,
 	ApiEcosystemFrankencoinInfo,
 	ApiEcosystemMintBurnMapping,
+	ServiceEcosystemFrankencoinKeyValues,
+	ApiEcosystemFrankencoinKeyValues,
 } from './ecosystem.frankencoin.types';
 import { ADDRESS } from 'contracts/address';
 import { PricesService } from 'prices/prices.service';
@@ -16,10 +18,15 @@ import { Address } from 'viem';
 @Injectable()
 export class EcosystemFrankencoinService {
 	private readonly logger = new Logger(this.constructor.name);
+	private ecosystemFrankencoinKeyValues: ServiceEcosystemFrankencoinKeyValues;
 	private ecosystemFrankencoin: ServiceEcosystemFrankencoin;
 	private ecosystemMintBurnMapping: ServiceEcosystemMintBurnMapping = {};
 
 	constructor(private readonly pricesService: PricesService) {}
+
+	getEcosystemFrankencoinKeyValues(): ApiEcosystemFrankencoinKeyValues {
+		return this.ecosystemFrankencoinKeyValues;
+	}
 
 	getEcosystemFrankencoinInfo(): ApiEcosystemFrankencoinInfo {
 		return {
@@ -73,6 +80,15 @@ export class EcosystemFrankencoinService {
 		const e = ecosystem.data.ecosystems.items as EcosystemQueryItem[];
 		const getItem = (key: string) => e.find((i) => i.id === key);
 
+		// key values mapping
+		const mappingKeyValues: { [key: string]: EcosystemQueryItem } = {};
+		for (const i of e) {
+			mappingKeyValues[i.id] = i;
+		}
+
+		this.ecosystemFrankencoinKeyValues = { ...mappingKeyValues };
+
+		// mint burn mapping
 		const mint: number = parseInt(getItem('Frankencoin:Mint')?.amount.toString() ?? '0') / 10 ** 18;
 		const burn: number = parseInt(getItem('Frankencoin:Burn')?.amount.toString() ?? '0') / 10 ** 18;
 		const supply: number = mint - burn;
