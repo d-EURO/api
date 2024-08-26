@@ -140,6 +140,7 @@ export class AnalyticsService {
 				fpsTotalSupply: fps.values.totalSupply,
 				thetaAllPositions: positionsTheta,
 				thetaPerToken: positionsThetaPerToken,
+				earningsPerAnnual: positionsTheta * 365,
 				earningsPerToken: positionsThetaPerToken * 365,
 				earningsToPrice: fps.values.price / (positionsThetaPerToken * 365),
 				priceToBookValue: 3,

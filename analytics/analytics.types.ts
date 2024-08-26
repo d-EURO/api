@@ -64,6 +64,7 @@ export type ApiAnalyticsCollateralExposure = {
 		fpsTotalSupply: number;
 		thetaAllPositions: number;
 		thetaPerToken: number;
+		earningsPerAnnual: number;
 		earningsPerToken: number;
 		earningsToPrice: number;
 		priceToBookValue: number;
