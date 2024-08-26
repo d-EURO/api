@@ -18,33 +18,15 @@ export type AnalyticsExposureItem = {
 		clones: number;
 	};
 	mint: {
-		totalMintedRaw: string;
 		totalMinted: number;
-		totalLimitRaw: string;
+		totalContribution: number;
 		totalLimit: number;
-		totalMintedRatioPPM: number;
 		totalMintedRatio: number;
-		interestMultiplicationRaw: string;
-		interestAveragePPM: number;
 		interestAverage: number;
 		totalTheta: number;
 		thetaPerFpsToken: number;
 	};
-	reserveCurrent: {
-		balanceInReserveRaw: string;
-		mintersContributionRaw: string;
-		equityInReserveRaw: string;
-		positionsContributionRaw: string;
-		positionsRiskRaw: string;
-		fpsPrice: number;
-		riskRatio: number;
-	};
 	reserveRiskWiped: {
-		balanceInReserveRaw: string;
-		mintersContributionRaw: string;
-		equityInReserveRaw: string;
-		positionsContributionRaw: string;
-		positionsRiskRaw: string;
 		fpsPrice: number;
 		riskRatio: number;
 	};
@@ -54,20 +36,26 @@ export type AnalyticsExposureItem = {
 // Api
 export type ApiAnalyticsCollateralExposure = {
 	general: {
-		balanceInReserveRaw: string;
 		balanceInReserve: number;
-		mintersContributionRaw: string;
 		mintersContribution: number;
-		equityInReserveRaw: string;
 		equityInReserve: number;
 		fpsPrice: number;
 		fpsTotalSupply: number;
-		thetaAllPositions: number;
+		thetaFromPositions: number;
 		thetaPerToken: number;
-		earningsPerAnnual: number;
+		earningsPerAnnum: number;
 		earningsPerToken: number;
-		earningsToPrice: number;
+		priceToEarnings: number;
 		priceToBookValue: number;
 	};
 	exposures: AnalyticsExposureItem[];
+};
+
+export type ApiAnalyticsFpsEarnings = {
+	mintersFees: number;
+	investFees: number;
+	redeemFees: number;
+	positionProposalFees: number;
+	otherProfitClaims: number;
+	otherContributions: number;
 };

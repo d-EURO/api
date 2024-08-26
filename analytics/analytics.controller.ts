@@ -14,4 +14,12 @@ export class AnalyticsController {
 	getExposure() {
 		return this.analytics.getCollateralExposure();
 	}
+
+	@Get('fps/earnings')
+	@ApiResponse({
+		description: 'Returns earnings from the FPS token',
+	})
+	getEarnings() {
+		return this.analytics.getFpsEarnings();
+	}
 }

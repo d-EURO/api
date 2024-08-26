@@ -6,15 +6,20 @@ import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
 import { PositionsService } from 'positions/positions.service';
 import { uniqueValues } from 'utils/format-array';
 import { formatUnits } from 'viem';
-import { ApiAnalyticsCollateralExposure } from './analytics.types';
+import { AnalyticsExposureItem, ApiAnalyticsCollateralExposure, ApiAnalyticsFpsEarnings } from './analytics.types';
+import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
+import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
 
 @Injectable()
 export class AnalyticsService {
 	private readonly logger = new Logger(this.constructor.name);
+	private exposure: ApiAnalyticsCollateralExposure;
 
 	constructor(
 		private readonly positions: PositionsService,
-		private readonly fps: EcosystemFpsService
+		private readonly fps: EcosystemFpsService,
+		private readonly fc: EcosystemFrankencoinService,
+		private readonly minters: EcosystemMinterService
 	) {}
 
 	async getCollateralExposure(): Promise<ApiAnalyticsCollateralExposure> {
@@ -54,7 +59,7 @@ export class AnalyticsService {
 
 			const totalMintedRaw = pos.reduce<bigint>((a, b) => a + BigInt(b.minted), 0n);
 			const totalMinted = formatUnits(totalMintedRaw, 18);
-			const totalLimitRaw = originals.reduce<bigint>((a, b) => a + BigInt(b.limitForClones), 0n);
+			const totalLimitRaw = pos.reduce<bigint>((a, b) => a + BigInt(b.limitForClones), 0n);
 			const totalLimit = formatUnits(totalLimitRaw, 18);
 			const totalMintedRatioPPM = (totalMintedRaw * BigInt(1_000_000)) / totalLimitRaw;
 			const totalMintedRatio = parseInt(totalMintedRatioPPM.toString()) / 1_000_000;
@@ -80,7 +85,7 @@ export class AnalyticsService {
 			const fpsPriceWiped = (parseFloat(formatUnits(equityInReserveWipedRaw, 18)) * 3) / fps.values.totalSupply;
 			const riskRatioWiped = Math.round(1_000_000 * (1 - fpsPriceWiped / fps.values.price)) / 1_000_000;
 
-			const data = {
+			const data: AnalyticsExposureItem = {
 				collateral: {
 					address: c,
 					chainId: VIEM_CONFIG.chain.id,
@@ -93,34 +98,16 @@ export class AnalyticsService {
 					clones: clones.length,
 				},
 				mint: {
-					totalMintedRaw: totalMintedRaw.toString(),
 					totalMinted: parseFloat(totalMinted),
-					totalLimitRaw: totalLimitRaw.toString(),
+					totalContribution: parseFloat(formatUnits(totalContributionRaw, 18)),
 					totalLimit: parseFloat(totalLimit),
-					totalMintedRatioPPM: totalMintedRatioPPM.toString(),
 					totalMintedRatio: totalMintedRatio,
-					interestMultiplicationRaw: interestMulRaw.toString(),
-					interestAveragePPM: interestAvgPPM,
 					interestAverage: interestAvg,
 					totalTheta: totalTheta,
 					thetaPerFpsToken: thetaPerToken,
 				},
-				reserveCurrent: {
-					balanceInReserveRaw: balanceReserveRaw.toString(),
-					mintersContributionRaw: minterReserveRaw.toString(),
-					equityInReserveRaw: equityInReserveRaw.toString(),
-					positionsContributionRaw: totalContributionRaw.toString(),
-					positionsRiskRaw: totalMintedRaw.toString(),
-					fpsPrice: fps.values.price,
-					riskRatio: 0,
-				},
 				reserveRiskWiped: {
-					balanceInReserveRaw: (balanceReserveRaw - totalMintedRaw).toString(),
-					mintersContributionRaw: (minterReserveRaw - totalContributionRaw).toString(),
-					equityInReserveRaw: equityInReserveWipedRaw.toString(),
-					positionsContributionRaw: '0',
-					positionsRiskRaw: '0',
-					fpsPrice: fpsPriceWiped,
+					fpsPrice: fpsPriceWiped < 0 ? 0 : fpsPriceWiped,
 					riskRatio: riskRatioWiped,
 				},
 			};
@@ -128,24 +115,50 @@ export class AnalyticsService {
 			returnData.push(data);
 		}
 
-		return {
+		this.exposure = {
 			general: {
-				balanceInReserveRaw: balanceReserveRaw.toString(),
 				balanceInReserve: parseFloat(balanceReserve),
-				mintersContributionRaw: minterReserveRaw.toString(),
 				mintersContribution: parseFloat(minterReserve),
-				equityInReserveRaw: equityInReserveRaw.toString(),
 				equityInReserve: parseFloat(equityInReserve),
 				fpsPrice: fps.values.price,
 				fpsTotalSupply: fps.values.totalSupply,
-				thetaAllPositions: positionsTheta,
+				thetaFromPositions: positionsTheta,
 				thetaPerToken: positionsThetaPerToken,
-				earningsPerAnnual: positionsTheta * 365,
+				earningsPerAnnum: positionsTheta * 365,
 				earningsPerToken: positionsThetaPerToken * 365,
-				earningsToPrice: fps.values.price / (positionsThetaPerToken * 365),
+				priceToEarnings: fps.values.price / (positionsThetaPerToken * 365),
 				priceToBookValue: 3,
 			},
 			exposures: returnData,
+		};
+
+		return this.exposure;
+	}
+
+	async getFpsEarnings(): Promise<ApiAnalyticsFpsEarnings> {
+		const num: number = this.positions.getPositionsList().list.filter((p) => p.isOriginal).length;
+		const positionProposalFees: number = 1000 * num;
+		const investFeeRaw = this.fc.getEcosystemFrankencoinKeyValues()['Equity:InvestedFeePaidPPM'].amount || 0n;
+		const investFees = parseFloat(formatUnits(investFeeRaw, 18 + 6));
+		const redeemFeeRaw = this.fc.getEcosystemFrankencoinKeyValues()['Equity:RedeemedFeePaidPPM'].amount || 0n;
+		const redeemFees = parseFloat(formatUnits(redeemFeeRaw, 18 + 6));
+		const mintersFees = this.minters
+			.getMintersList()
+			.list.reduce<number>((a, b) => a + parseFloat(formatUnits(BigInt(b.applicationFee), 18)), 0);
+		const otherProfitClaims: number = this.fps.getEcosystemFpsInfo().earnings.profit - positionProposalFees - mintersFees;
+
+		const expo = await this.getCollateralExposure();
+		const equityAdjusted: number = expo.general.equityInReserve;
+		const otherContributions: number =
+			equityAdjusted - mintersFees - investFees - redeemFees - positionProposalFees - otherProfitClaims;
+
+		return {
+			mintersFees,
+			investFees,
+			redeemFees,
+			positionProposalFees,
+			otherProfitClaims,
+			otherContributions,
 		};
 	}
 }
