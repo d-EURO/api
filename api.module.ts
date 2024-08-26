@@ -23,6 +23,8 @@ import { PositionsController } from 'positions/positions.controller';
 import { PricesController } from 'prices/prices.controller';
 import { ChallengesController } from 'challenges/challenges.controller';
 import { Storj } from 'storj/storj.s3.service';
+import { AnalyticsController } from 'analytics/analytics.controller';
+import { AnalyticsService } from 'analytics/analytics.service';
 
 // APP MODULE
 @Module({
@@ -35,6 +37,7 @@ import { Storj } from 'storj/storj.s3.service';
 		PositionsController,
 		PricesController,
 		ChallengesController,
+		AnalyticsController,
 	],
 	providers: [
 		Storj,
@@ -47,6 +50,7 @@ import { Storj } from 'storj/storj.s3.service';
 		ChallengesService,
 		TelegramService,
 		ApiService,
+		AnalyticsService,
 	],
 })
 export class AppModule {}

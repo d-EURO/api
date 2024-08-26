@@ -81,7 +81,7 @@ export class PricesService {
 			return { usd: priceInChf * zchfPrice };
 		}
 
-		// all other mainnet addresses
+		// all mainnet addresses
 		if ((VIEM_CHAIN.id as number) === 1) {
 			const url = `/api/v3/simple/token_price/ethereum?contract_addresses=${erc.address}&vs_currencies=usd`;
 			const data = await (await COINGECKO_CLIENT(url)).json();
@@ -91,6 +91,7 @@ export class PricesService {
 			}
 			return Object.values(data)[0] as { usd: number };
 		} else {
+			// all other chain addresses (test deployments)
 			const calc = (value: number) => {
 				const ref: number = 1718033809979;
 				return value * randRef * (1 + ((Date.now() - ref) / (3600 * 24 * 365)) * 0.001 + Math.random() * 0.01);
