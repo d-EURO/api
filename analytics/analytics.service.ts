@@ -138,9 +138,9 @@ export class AnalyticsService {
 	async getFpsEarnings(): Promise<ApiAnalyticsFpsEarnings> {
 		const num: number = this.positions.getPositionsList().list.filter((p) => p.isOriginal).length;
 		const positionProposalFees: number = 1000 * num;
-		const investFeeRaw = this.fc.getEcosystemFrankencoinKeyValues()['Equity:InvestedFeePaidPPM'].amount || 0n;
+		const investFeeRaw = this.fc.getEcosystemFrankencoinKeyValues()['Equity:InvestedFeePaidPPM']?.amount || 0n;
 		const investFees = parseFloat(formatUnits(investFeeRaw, 18 + 6));
-		const redeemFeeRaw = this.fc.getEcosystemFrankencoinKeyValues()['Equity:RedeemedFeePaidPPM'].amount || 0n;
+		const redeemFeeRaw = this.fc.getEcosystemFrankencoinKeyValues()['Equity:RedeemedFeePaidPPM']?.amount || 0n;
 		const redeemFees = parseFloat(formatUnits(redeemFeeRaw, 18 + 6));
 		const mintersFees = this.minters
 			.getMintersList()
