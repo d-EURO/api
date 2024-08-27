@@ -60,13 +60,13 @@ export class EcosystemMinterService {
 			list[m.id.toLowerCase() as Address] = {
 				id: m.id,
 				minter: m.minter,
-				applicationPeriod: m.applicationPeriod,
+				applicationPeriod: parseInt(m.applicationPeriod as any),
 				applicationFee: m.applicationFee,
 				applyMessage: m.applyMessage,
-				applyDate: m.applyDate,
+				applyDate: parseInt(m.applyDate as any),
 				suggestor: m.suggestor,
 				denyMessage: m.denyMessage,
-				denyDate: m.denyDate,
+				denyDate: parseInt(m.denyDate as any),
 				vetor: m.vetor,
 			};
 		}
