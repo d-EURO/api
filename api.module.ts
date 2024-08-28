@@ -23,30 +23,34 @@ import { PositionsController } from 'positions/positions.controller';
 import { PricesController } from 'prices/prices.controller';
 import { ChallengesController } from 'challenges/challenges.controller';
 import { Storj } from 'storj/storj.s3.service';
+import { AnalyticsController } from 'analytics/analytics.controller';
+import { AnalyticsService } from 'analytics/analytics.service';
 
 // APP MODULE
 @Module({
 	imports: [ConfigModule.forRoot(), ScheduleModule.forRoot()],
 	controllers: [
+		PositionsController,
+		EcosystemFrankencoinController,
 		EcosystemCollateralController,
 		EcosystemFpsController,
-		EcosystemFrankencoinController,
 		EcosystemMinterController,
-		PositionsController,
 		PricesController,
 		ChallengesController,
+		AnalyticsController,
 	],
 	providers: [
 		Storj,
+		PositionsService,
 		EcosystemMinterService,
+		EcosystemFrankencoinService,
 		EcosystemCollateralService,
 		EcosystemFpsService,
-		EcosystemFrankencoinService,
-		PositionsService,
 		PricesService,
 		ChallengesService,
 		TelegramService,
 		ApiService,
+		AnalyticsService,
 	],
 })
 export class AppModule {}

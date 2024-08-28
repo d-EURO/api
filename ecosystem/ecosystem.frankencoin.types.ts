@@ -32,6 +32,10 @@ export type MintBurnAddressMapperQueryItem = {
 
 // --------------------------------------------------------------------------
 // Service
+export type ServiceEcosystemFrankencoinKeyValues = {
+	[key: string]: EcosystemQueryItem;
+};
+
 export type ServiceEcosystemFrankencoin = {
 	raw: {
 		mint: string;
@@ -54,6 +58,8 @@ export type ServiceEcosystemMintBurnMapping = {
 
 // --------------------------------------------------------------------------
 // Api
+export type ApiEcosystemFrankencoinKeyValues = ServiceEcosystemFrankencoinKeyValues;
+
 export type ApiEcosystemFrankencoinInfo = ServiceEcosystemFrankencoin & {
 	erc20: {
 		name: string;

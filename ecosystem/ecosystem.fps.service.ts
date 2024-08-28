@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { VIEM_CONFIG } from 'api.config';
+import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
 import { ApiEcosystemFpsInfo } from './ecosystem.fps.types';
 import { ABIS, ADDRESS } from 'contracts';
+import { gql } from '@apollo/client/core';
+import { formatUnits } from 'viem';
 
 @Injectable()
 export class EcosystemFpsService {
@@ -32,7 +34,34 @@ export class EcosystemFpsService {
 		const p = parseInt(fetchedPrice.toString()) / 1e18;
 		const s = parseInt(fetchedTotalSupply.toString()) / 1e18;
 
+		const profitLossPonder = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+				query {
+					fPSs(orderBy: "id", limit: 1000) {
+						items {
+							id
+							profits
+							loss
+						}
+					}
+				}
+			`,
+		});
+
+		if (!profitLossPonder.data || !profitLossPonder.data.fPSs.items) {
+			this.logger.warn('No profitLossPonder data found.');
+			return;
+		}
+
+		const d = profitLossPonder.data.fPSs.items.at(0);
+		const earningsData: ApiEcosystemFpsInfo['earnings'] = {
+			profit: parseFloat(formatUnits(d.profits, 18)),
+			loss: parseFloat(formatUnits(d.loss, 18)),
+		};
+
 		this.fpsInfo = {
+			earnings: earningsData,
 			values: {
 				price: p,
 				totalSupply: s,

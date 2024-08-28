@@ -3,7 +3,7 @@ import { formatCurrency } from 'utils/format';
 import { AppUrl } from 'utils/func-helper';
 
 export function MinterProposalMessage(minter: MinterQuery): string {
-	const d = new Date(minter.applyDate * 1000);
+	const d = new Date((minter.applyDate + minter.applicationPeriod) * 1000);
 
 	return `
 *New Minter Proposal*
