@@ -4,6 +4,7 @@ import { Address } from 'viem';
 // Ponder return types
 export type MinterQuery = {
 	id: Address;
+	txHash: string;
 	minter: Address;
 	applicationPeriod: number;
 	applicationFee: number;
