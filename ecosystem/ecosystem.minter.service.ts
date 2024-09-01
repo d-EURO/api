@@ -35,6 +35,7 @@ export class EcosystemMinterService {
 					minters(orderBy: "id", limit: 1000) {
 						items {
 							id
+							txHash
 							minter
 							applicationPeriod
 							applicationFee
@@ -59,6 +60,7 @@ export class EcosystemMinterService {
 		for (const m of data.minters.items as MinterQuery[]) {
 			list[m.id.toLowerCase() as Address] = {
 				id: m.id,
+				txHash: m.txHash,
 				minter: m.minter,
 				applicationPeriod: parseInt(m.applicationPeriod as any),
 				applicationFee: m.applicationFee,
