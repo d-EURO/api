@@ -20,6 +20,7 @@ export class TelegramService {
 	private readonly logger = new Logger(this.constructor.name);
 	private readonly bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 	private readonly storjPath: string = '/telegram.groups.json';
+	private telegramHandles: string[] = ['/MintingUpdates'];
 	private telegramState: TelegramState;
 	private telegramGroupState: TelegramGroupState;
 
@@ -63,7 +64,7 @@ export class TelegramService {
 		} else {
 			this.telegramGroupState = { ...defaultState, ...response.data };
 			this.logger.log(`Telegram group state restored...`);
-			this.sendMessageAll(StartUpMessage());
+			this.sendMessageAll(StartUpMessage(this.telegramHandles));
 		}
 
 		await this.applyListener();
@@ -184,7 +185,7 @@ export class TelegramService {
 		if (this.telegramGroupState.groups.includes(id.toString())) return false;
 		this.telegramGroupState.groups.push(id.toString());
 		this.logger.log(`Upserted Telegram Group: ${id}`);
-		this.sendMessage(id, WelcomeGroupMessage(id));
+		this.sendMessage(id, WelcomeGroupMessage(id, this.telegramHandles));
 		return true;
 	}
 
@@ -236,8 +237,7 @@ export class TelegramService {
 
 		this.bot.on('message', async (m) => {
 			if (this.upsertTelegramGroup(m.chat.id) == true) await this.writeBackupGroups();
-			const handles: string[] = ['/MintingUpdates'];
-			handles.forEach((h) => toggle(h, m));
+			this.telegramHandles.forEach((h) => toggle(h, m));
 		});
 	}
 }
