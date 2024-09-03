@@ -1,6 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
 import { PositionsService } from './positions.service';
-import { ApiPositionsListing, ApiPositionsMapping, ApiPositionsOwners } from './positions.types';
+import {
+	ApiMintingUpdateListing,
+	ApiMintingUpdateMapping,
+	ApiPositionsListing,
+	ApiPositionsMapping,
+	ApiPositionsOwners,
+} from './positions.types';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Positions Controller')
@@ -46,5 +52,21 @@ export class PositionsController {
 	})
 	getOwners(): ApiPositionsOwners {
 		return this.positionsService.getPositionsOwners();
+	}
+
+	@Get('mintingupdates/list')
+	@ApiResponse({
+		description: 'Returns a list of all mintingupdates',
+	})
+	getMintingList(): ApiMintingUpdateListing {
+		return this.positionsService.getMintingUpdatesList();
+	}
+
+	@Get('mintingupdates/mapping')
+	@ApiResponse({
+		description: 'Returns a mapping of all mintingupdates',
+	})
+	geMintingtMapping(): ApiMintingUpdateMapping {
+		return this.positionsService.getMintingUpdatesMapping();
 	}
 }
