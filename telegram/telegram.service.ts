@@ -212,7 +212,7 @@ export class TelegramService {
 	@Cron(CronExpression.EVERY_WEEK)
 	async clearIgnoreTelegramGroup(): Promise<boolean> {
 		this.telegramGroupState.ignore = [];
-		this.writeBackupGroups();
+		await this.writeBackupGroups();
 		this.logger.warn('Weekly job done, cleared ignore telegram group array');
 		return true;
 	}
@@ -220,7 +220,6 @@ export class TelegramService {
 	async applyListener() {
 		const toggle = (handle: string, msg: TelegramBot.Message) => {
 			if (handle !== msg.text) return;
-
 			const group = msg.chat.id.toString();
 			const subs = this.telegramGroupState.subscription[handle];
 			if (subs == undefined) this.telegramGroupState.subscription[handle] = new SubscriptionGroups();

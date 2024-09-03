@@ -79,7 +79,7 @@ export class PositionsService {
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					positions(orderBy: "availableForClones", orderDirection: "desc") {
+					positions(orderBy: "availableForClones", orderDirection: "desc", limit: 1000) {
 						items {
 							position
 							owner
@@ -233,7 +233,7 @@ export class PositionsService {
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					mintingUpdates(orderBy: "created", orderDirection: "desc") {
+					mintingUpdates(orderBy: "created", orderDirection: "desc", limit: 1000) {
 						items {
 							id
 							txHash
@@ -305,7 +305,7 @@ export class PositionsService {
 
 		const a = Object.values(list).flat(1).length;
 		const b = Object.values(this.fetchedMintingUpdates).flat(1).length;
-		const isDiff = a !== b;
+		const isDiff = a > b;
 
 		if (isDiff) this.logger.log(`MintingUpdates merging, from ${b} to ${a} entries`);
 		this.fetchedMintingUpdates = { ...this.fetchedMintingUpdates, ...list };
