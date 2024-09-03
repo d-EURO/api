@@ -227,10 +227,10 @@ export class TelegramService {
 			if (this.telegramGroupState.subscription[handle].groups.includes(group)) {
 				const newSubs = this.telegramGroupState.subscription[handle].groups.filter((g) => g != group);
 				this.telegramGroupState.subscription[handle].groups = newSubs;
-				this.sendMessage(group, `Removed from subscription: ${handle}`);
+				this.sendMessage(group, `Removed from subscription: \n${handle}`);
 			} else {
 				this.telegramGroupState.subscription[handle].groups.push(group);
-				this.sendMessage(group, `Added to subscription: ${handle}`);
+				this.sendMessage(group, `Added to subscription: \n${handle}`);
 			}
 			this.writeBackupGroups();
 		};
