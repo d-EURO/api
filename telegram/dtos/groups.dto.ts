@@ -1,6 +1,17 @@
 import { IsArray, IsString, IsNumber, IsOptional, IsObject, ValidateNested } from 'class-validator';
 
 export class Groups {
+	// @dev: react/nextjs/ts causes type error. (lint in yarn install, deployment)
+	// Type error: Property 'apiVersion' has no initializer and is not definitely assigned in the constructor.
+	constructor() {
+		this.apiVersion = '';
+		this.createdAt = 0;
+		this.updatedAt = 0;
+		this.groups = [];
+		this.ignore = [];
+		this.subscription = {};
+	}
+
 	@IsString()
 	apiVersion: string;
 

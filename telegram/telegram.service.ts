@@ -8,19 +8,19 @@ import { PositionProposalMessage } from './messages/PositionProposal.message';
 import { Storj } from 'storj/storj.s3.service';
 import { Groups, SubscriptionGroups } from './dtos/groups.dto';
 import { WelcomeGroupMessage } from './messages/WelcomeGroup.message';
-import { StartUpMessage } from './messages/StartUp.message';
 import { ChallengesService } from 'challenges/challenges.service';
 import { ChallengeStartedMessage } from './messages/ChallengeStarted.message';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PricesService } from 'prices/prices.service';
 import { MintingUpdateMessage } from './messages/MintingUpdate.message';
+import { HelpMessage } from './messages/Help.message';
 
 @Injectable()
 export class TelegramService {
 	private readonly logger = new Logger(this.constructor.name);
 	private readonly bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 	private readonly storjPath: string = '/telegram.groups.json';
-	private telegramHandles: string[] = ['/MintingUpdates'];
+	private telegramHandles: string[] = ['/MintingUpdates', '/help'];
 	private telegramState: TelegramState;
 	private telegramGroupState: TelegramGroupState;
 
@@ -40,15 +40,7 @@ export class TelegramService {
 			bids: time,
 		};
 
-		this.readBackupGroups();
-	}
-
-	async readBackupGroups() {
-		this.logger.log(`Reading backup groups from storj`);
-		const response = await this.storj.read(this.storjPath, Groups);
-
-		const time: number = Date.now();
-		const defaultState: TelegramGroupState = {
+		this.telegramGroupState = {
 			apiVersion: process.env.npm_package_version,
 			createdAt: time,
 			updatedAt: time,
@@ -57,14 +49,19 @@ export class TelegramService {
 			subscription: {},
 		};
 
+		this.readBackupGroups();
+	}
+
+	async readBackupGroups() {
+		this.logger.log(`Reading backup groups from storj`);
+		const response = await this.storj.read(this.storjPath, Groups);
+
 		if (response.messageError || response.validationError.length > 0) {
 			this.logger.error(response.messageError);
-			this.telegramGroupState = defaultState;
 			this.logger.log(`Telegram group state created...`);
 		} else {
-			this.telegramGroupState = { ...defaultState, ...response.data };
+			this.telegramGroupState = { ...this.telegramGroupState, ...response.data };
 			this.logger.log(`Telegram group state restored...`);
-			this.sendMessageAll(StartUpMessage(this.telegramHandles));
 		}
 
 		await this.applyListener();
@@ -101,22 +98,25 @@ export class TelegramService {
 
 	async sendMessage(group: string | number, message: string) {
 		try {
-			this.logger.debug(`Sending message to group id ${group}`);
+			this.logger.debug(`Sending message to group id: ${group}`);
 			await this.bot.sendMessage(group.toString(), message, { parse_mode: 'Markdown', disable_web_page_preview: true });
 		} catch (error) {
 			const msg = {
-				notFound: 'ETELEGRAM: 400 Bad Request: chat not found',
-				deleted: 'ETELEGRAM: 403 Forbidden: the group chat was deleted',
-				blocked: 'ETELEGRAM: 403 Forbidden: bot was blocked by the user',
+				notFound: 'chat not found',
+				deleted: 'the group chat was deleted',
+				blocked: 'bot was blocked by the user',
 			};
 
 			if (typeof error === 'object') {
 				if (error?.message.includes(msg.deleted)) {
-					this.logger.warn(msg.deleted + ` (${group})`);
-					this.ignoreTelegramGroup(group);
+					this.logger.warn(msg.deleted + `: ${group}`);
+					this.removeTelegramGroup(group);
 				} else if (error?.message.includes(msg.notFound)) {
-					this.logger.warn(msg.notFound + ` (${group})`);
-					this.ignoreTelegramGroup(group);
+					this.logger.warn(msg.notFound + `: ${group}`);
+					this.removeTelegramGroup(group);
+				} else if (error?.message.includes(msg.blocked)) {
+					this.logger.warn(msg.blocked + `: ${group}`);
+					this.removeTelegramGroup(group);
 				} else {
 					this.logger.warn(error?.message);
 				}
@@ -130,6 +130,7 @@ export class TelegramService {
 		this.logger.debug('Updating updateTelegram');
 
 		// break if no groups are known
+		if (this.telegramGroupState?.groups == undefined) return;
 		if (this.telegramGroupState.groups.length == 0) return;
 
 		// Minter Proposal
@@ -189,21 +190,30 @@ export class TelegramService {
 		return true;
 	}
 
-	async ignoreTelegramGroup(id: number | string): Promise<boolean> {
+	async removeTelegramGroup(id: number | string): Promise<boolean> {
 		if (!id) return;
 		const inGroup: boolean = this.telegramGroupState.groups.includes(id.toString());
-		const inIgnore: boolean = this.telegramGroupState.ignore.includes(id.toString());
-		const update: boolean = inGroup || !inIgnore;
-
-		if (!inIgnore) this.telegramGroupState.ignore.push(id.toString());
+		const inSubscription = Object.values(this.telegramGroupState.subscription)
+			.map((s) => s.groups)
+			.flat(1)
+			.includes(id.toString());
+		const update: boolean = inGroup || inSubscription;
 
 		if (inGroup) {
 			const newGroup: string[] = this.telegramGroupState.groups.filter((g) => g !== id.toString());
 			this.telegramGroupState.groups = newGroup;
 		}
 
+		if (inSubscription) {
+			const subs = this.telegramGroupState.subscription;
+			for (const h of Object.keys(subs)) {
+				subs[h].groups = subs[h].groups.filter((g) => g != id.toString());
+			}
+			this.telegramGroupState.subscription = subs;
+		}
+
 		if (update) {
-			this.logger.log(`Ignore Telegram Group: ${id}`);
+			this.logger.log(`Removed Telegram Group: ${id}`);
 			await this.writeBackupGroups();
 		}
 
@@ -237,7 +247,9 @@ export class TelegramService {
 
 		this.bot.on('message', async (m) => {
 			if (this.upsertTelegramGroup(m.chat.id) == true) await this.writeBackupGroups();
-			this.telegramHandles.forEach((h) => toggle(h, m));
+			if (m.text === '/help')
+				this.sendMessage(m.chat.id, HelpMessage(m.chat.id.toString(), this.telegramHandles, this.telegramGroupState.subscription));
+			else this.telegramHandles.forEach((h) => toggle(h, m));
 		});
 	}
 }
