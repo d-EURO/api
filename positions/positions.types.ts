@@ -39,6 +39,31 @@ export type PositionQuery = {
 	minted: string;
 };
 
+export type MintingUpdateQueryId = `${Address}-${number}`;
+export type MintingUpdateQuery = {
+	id: MintingUpdateQueryId;
+	txHash: string;
+	created: number;
+	position: Address;
+	owner: Address;
+	isClone: boolean;
+	collateral: Address;
+	collateralName: string;
+	collateralSymbol: string;
+	collateralDecimals: number;
+	size: string;
+	price: string;
+	minted: string;
+	sizeAdjusted: string;
+	priceAdjusted: string;
+	mintedAdjusted: string;
+	annualInterestPPM: number;
+	reserveContribution: number;
+	feeTimeframe: number;
+	feePPM: number;
+	feePaid: string;
+};
+
 // ----------------------------------------------------------------------------------
 // Service
 export type PositionsQueryObjectArray = {
@@ -47,6 +72,10 @@ export type PositionsQueryObjectArray = {
 
 export type OwnersPositionsObjectArray = {
 	[key: Address]: PositionQuery[];
+};
+
+export type MintingUpdateQueryObjectArray = {
+	[key: Address]: MintingUpdateQuery[];
 };
 
 // ----------------------------------------------------------------------------------
@@ -66,4 +95,15 @@ export type ApiPositionsOwners = {
 	num: number;
 	owners: Address[];
 	map: OwnersPositionsObjectArray;
+};
+
+export type ApiMintingUpdateListing = {
+	num: number;
+	list: MintingUpdateQuery[];
+};
+
+export type ApiMintingUpdateMapping = {
+	num: number;
+	positions: Address[];
+	map: MintingUpdateQueryObjectArray;
 };

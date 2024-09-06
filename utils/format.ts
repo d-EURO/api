@@ -12,5 +12,5 @@ export const formatCurrency = (value: string | number, minimumFractionDigits = 0
 		minimumFractionDigits,
 	});
 
-	return formatter.format(amount);
+	return formatter.format(amount).split(',').join(`'`);
 };

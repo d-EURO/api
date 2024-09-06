@@ -203,7 +203,7 @@ export class ChallengesService {
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					challenges(orderBy: "status", orderDirection: "asc") {
+					challenges(orderBy: "status", orderDirection: "asc", limit: 1000) {
 						items {
 							id
 							position
@@ -247,7 +247,7 @@ export class ChallengesService {
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					challengeBids(orderBy: "created", orderDirection: "desc") {
+					challengeBids(orderBy: "created", orderDirection: "desc", limit: 1000) {
 						items {
 							id
 							position

@@ -31,6 +31,7 @@ export class ApiService {
 		const promises = [
 			this.minter.updateMinters(),
 			this.positions.updatePositons(),
+			this.positions.updateMintingUpdates(),
 			this.prices.updatePrices(),
 			this.frankencoin.updateEcosystemKeyValues(),
 			this.frankencoin.updateEcosystemMintBurnMapping(),

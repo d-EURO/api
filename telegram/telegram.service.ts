@@ -6,17 +6,21 @@ import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
 import { MinterProposalMessage } from './messages/MinterProposal.message';
 import { PositionProposalMessage } from './messages/PositionProposal.message';
 import { Storj } from 'storj/storj.s3.service';
-import { Groups } from './dtos/groups.dto';
+import { Groups, SubscriptionGroups } from './dtos/groups.dto';
 import { WelcomeGroupMessage } from './messages/WelcomeGroup.message';
 import { StartUpMessage } from './messages/StartUp.message';
 import { ChallengesService } from 'challenges/challenges.service';
 import { ChallengeStartedMessage } from './messages/ChallengeStarted.message';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { PricesService } from 'prices/prices.service';
+import { MintingUpdateMessage } from './messages/MintingUpdate.message';
 
 @Injectable()
 export class TelegramService {
 	private readonly logger = new Logger(this.constructor.name);
-	private readonly bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN);
+	private readonly bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 	private readonly storjPath: string = '/telegram.groups.json';
+	private telegramHandles: string[] = ['/MintingUpdates'];
 	private telegramState: TelegramState;
 	private telegramGroupState: TelegramGroupState;
 
@@ -24,12 +28,14 @@ export class TelegramService {
 		private readonly storj: Storj,
 		private readonly minter: EcosystemMinterService,
 		private readonly position: PositionsService,
+		private readonly prices: PricesService,
 		private readonly challenge: ChallengesService
 	) {
 		const time: number = Date.now();
 		this.telegramState = {
 			minterApplied: time,
 			positions: time,
+			mintingUpdates: time,
 			challenges: time,
 			bids: time,
 		};
@@ -48,6 +54,7 @@ export class TelegramService {
 			updatedAt: time,
 			groups: [],
 			ignore: [],
+			subscription: {},
 		};
 
 		if (response.messageError || response.validationError.length > 0) {
@@ -57,8 +64,10 @@ export class TelegramService {
 		} else {
 			this.telegramGroupState = { ...defaultState, ...response.data };
 			this.logger.log(`Telegram group state restored...`);
-			this.sendMessageAll(StartUpMessage());
+			this.sendMessageAll(StartUpMessage(this.telegramHandles));
 		}
+
+		await this.applyListener();
 	}
 
 	async writeBackupGroups() {
@@ -79,6 +88,13 @@ export class TelegramService {
 	async sendMessageAll(message: string) {
 		if (this.telegramGroupState.groups.length == 0) return;
 		for (const group of this.telegramGroupState.groups) {
+			await this.sendMessage(group, message);
+		}
+	}
+
+	async sendMessageGroup(groups: string[], message: string) {
+		if (groups.length == 0) return;
+		for (const group of groups) {
 			await this.sendMessage(group, message);
 		}
 	}
@@ -112,16 +128,6 @@ export class TelegramService {
 
 	async updateTelegram() {
 		this.logger.debug('Updating updateTelegram');
-
-		// Fetch telegram updates
-		const telegramUpdates = await this.bot.getUpdates();
-		const updatedState: boolean[] = [];
-		if (telegramUpdates.length > 0) {
-			for (const up of telegramUpdates) {
-				if (this.upsertTelegramGroup(up?.message?.chat?.id) == true) updatedState.push(true);
-			}
-			if (updatedState.length > 0) await this.writeBackupGroups();
-		}
 
 		// break if no groups are known
 		if (this.telegramGroupState.groups.length == 0) return;
@@ -158,6 +164,19 @@ export class TelegramService {
 			}
 			this.telegramState.challenges = Date.now();
 		}
+
+		// update mintingUpdates
+		const requestedMintingUpdates = this.position
+			.getMintingUpdatesList()
+			.list.filter((m) => m.created * 1000 > this.telegramState.mintingUpdates && BigInt(m.mintedAdjusted) > 0n);
+		if (requestedMintingUpdates.length > 0) {
+			for (const m of requestedMintingUpdates) {
+				const groups = this.telegramGroupState.subscription['/MintingUpdates']?.groups || [];
+				const prices = this.prices.getPricesMapping();
+				this.sendMessageGroup(groups, MintingUpdateMessage(m, prices));
+			}
+			this.telegramState.mintingUpdates = Date.now();
+		}
 	}
 
 	upsertTelegramGroup(id: number | string): boolean {
@@ -166,7 +185,7 @@ export class TelegramService {
 		if (this.telegramGroupState.groups.includes(id.toString())) return false;
 		this.telegramGroupState.groups.push(id.toString());
 		this.logger.log(`Upserted Telegram Group: ${id}`);
-		this.sendMessage(id, WelcomeGroupMessage(id));
+		this.sendMessage(id, WelcomeGroupMessage(id, this.telegramHandles));
 		return true;
 	}
 
@@ -189,5 +208,36 @@ export class TelegramService {
 		}
 
 		return update;
+	}
+
+	@Cron(CronExpression.EVERY_WEEK)
+	async clearIgnoreTelegramGroup(): Promise<boolean> {
+		this.telegramGroupState.ignore = [];
+		await this.writeBackupGroups();
+		this.logger.warn('Weekly job done, cleared ignore telegram group array');
+		return true;
+	}
+
+	async applyListener() {
+		const toggle = (handle: string, msg: TelegramBot.Message) => {
+			if (handle !== msg.text) return;
+			const group = msg.chat.id.toString();
+			const subs = this.telegramGroupState.subscription[handle];
+			if (subs == undefined) this.telegramGroupState.subscription[handle] = new SubscriptionGroups();
+			if (this.telegramGroupState.subscription[handle].groups.includes(group)) {
+				const newSubs = this.telegramGroupState.subscription[handle].groups.filter((g) => g != group);
+				this.telegramGroupState.subscription[handle].groups = newSubs;
+				this.sendMessage(group, `Removed from subscription: \n${handle}`);
+			} else {
+				this.telegramGroupState.subscription[handle].groups.push(group);
+				this.sendMessage(group, `Added to subscription: \n${handle}`);
+			}
+			this.writeBackupGroups();
+		};
+
+		this.bot.on('message', async (m) => {
+			if (this.upsertTelegramGroup(m.chat.id) == true) await this.writeBackupGroups();
+			this.telegramHandles.forEach((h) => toggle(h, m));
+		});
 	}
 }
