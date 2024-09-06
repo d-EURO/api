@@ -19,7 +19,7 @@ I am listening to changes within the Frankencoin ecosystem.
 ${handles.join('\n')}
 
 *Subscripted to:*
-${subTo.length > 0 ? subTo.join('\n') : 'Not subscripted'}
+${subTo.length > 0 ? subTo.join('\n') : 'Not subscripted to any handles.'}
 
 *Environment*
 Api Version: ${process.env.npm_package_version}
