@@ -44,6 +44,7 @@ export class EcosystemMinterService {
 							suggestor
 							denyMessage
 							denyDate
+							denyTxHash
 							vetor
 						}
 					}
@@ -69,6 +70,7 @@ export class EcosystemMinterService {
 				suggestor: m.suggestor,
 				denyMessage: m.denyMessage,
 				denyDate: parseInt(m.denyDate as any),
+				denyTxHash: m.denyTxHash,
 				vetor: m.vetor,
 			};
 		}
