@@ -13,6 +13,7 @@ export type MinterQuery = {
 	suggestor: Address;
 	denyMessage: string | null;
 	denyDate: number | null;
+	denyTxHash: string | null;
 	vetor: Address | null;
 };
 

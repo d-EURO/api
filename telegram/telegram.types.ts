@@ -2,6 +2,7 @@ import { SubscriptionGroups } from './dtos/groups.dto';
 
 export type TelegramState = {
 	minterApplied: number;
+	minterVetoed: number;
 	positions: number;
 	mintingUpdates: number;
 	challenges: number;

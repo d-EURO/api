@@ -14,6 +14,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PricesService } from 'prices/prices.service';
 import { MintingUpdateMessage } from './messages/MintingUpdate.message';
 import { HelpMessage } from './messages/Help.message';
+import { MinterProposalVetoedMessage } from './messages/MinterProposalVetoed.message';
 
 @Injectable()
 export class TelegramService {
@@ -34,6 +35,7 @@ export class TelegramService {
 		const time: number = Date.now();
 		this.telegramState = {
 			minterApplied: time,
+			minterVetoed: time,
 			positions: time,
 			mintingUpdates: time,
 			challenges: time,
@@ -140,6 +142,17 @@ export class TelegramService {
 				this.sendMessageAll(MinterProposalMessage(minter));
 			}
 			this.telegramState.minterApplied = Date.now();
+		}
+
+		// Minter Proposal Vetoed
+		const mintersVetoed = this.minter
+			.getMintersList()
+			.list.filter((m) => m.denyDate > 0 && m.denyDate * 1000 > this.telegramState.minterVetoed);
+		if (mintersVetoed.length > 0) {
+			for (const minter of mintersVetoed) {
+				this.sendMessageAll(MinterProposalVetoedMessage(minter));
+			}
+			this.telegramState.minterVetoed = Date.now();
 		}
 
 		// update positions
