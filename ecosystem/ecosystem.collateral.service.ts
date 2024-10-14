@@ -10,7 +10,7 @@ import {
 	ApiEcosystemCollateralStatsItem,
 } from './ecosystem.collateral.types';
 import { PositionQuery } from 'positions/positions.types';
-import { Address } from 'viem';
+import { Address, formatUnits } from 'viem';
 import { FIVEDAYS_MS } from 'utils/const-helper';
 import { ERC20Info, PriceQueryCurrencies } from 'prices/prices.types';
 
@@ -81,18 +81,18 @@ export class EcosystemCollateralService {
 
 	getCollateralStats(): ApiEcosystemCollateralStats {
 		const collateralPositionsDetails = this.getCollateralPositionsDetails();
-		const prices = this.pricesService.getPrices();
+		const prices = this.pricesService.getPricesMapping();
 
 		const zchfAddress = this.pricesService.getMint()?.address;
 		if (!zchfAddress) return null;
-		const zchfPrice = prices[zchfAddress.toLowerCase()]?.price?.usd;
+		const zchfPrice = prices[zchfAddress.toLowerCase()]?.price?.usd as number;
 		if (!zchfPrice) return null;
 
 		const ecosystemTotalValueLocked: PriceQueryCurrencies = {};
 		const map: { [key: Address]: ApiEcosystemCollateralStatsItem } = {};
 
 		for (const c of Object.values(collateralPositionsDetails)) {
-			const price = prices[c.address.toLowerCase()]?.price?.usd;
+			const price = prices[c.address.toLowerCase()]?.price?.usd as number;
 			if (!price) continue;
 
 			const total = c.positions.length;
@@ -102,10 +102,11 @@ export class EcosystemCollateralService {
 			const denied = c.positions.filter((p: PositionQuery) => p.denied).length;
 			const originals = c.positions.filter((p: PositionQuery) => p.isOriginal).length;
 			const clones = c.positions.filter((p: PositionQuery) => p.isClone).length;
-			const totalBalance = c.positions.reduce((a: number, b: PositionQuery) => a + parseInt(b.collateralBalance), 0);
+			const totalBalance = c.positions.reduce((a: bigint, b: PositionQuery) => a + BigInt(b.collateralBalance), 0n);
+			const totalBalanceNumUsd = parseInt(formatUnits(totalBalance, c.decimals)) * price;
 			const totalValueLocked: PriceQueryCurrencies = {
-				usd: (totalBalance / 10 ** c.decimals) * price,
-				chf: ((totalBalance / 10 ** c.decimals) * price) / zchfPrice,
+				usd: totalBalanceNumUsd,
+				chf: totalBalanceNumUsd / zchfPrice,
 			};
 
 			// upsert ecosystemTotalValueLocked usd
@@ -123,7 +124,7 @@ export class EcosystemCollateralService {
 			}
 
 			// upsert map
-			map[c.address.toLowerCase()] = {
+			map[c.address.toLowerCase() as Address] = {
 				address: c.address,
 				name: c.name,
 				symbol: c.symbol,
@@ -137,10 +138,7 @@ export class EcosystemCollateralService {
 					originals,
 					clones,
 				},
-				totalBalance: {
-					raw: totalBalance,
-					amount: totalBalance / 10 ** c.decimals,
-				},
+				totalBalanceRaw: totalBalance.toString(),
 				totalValueLocked,
 				price: {
 					usd: price,
