@@ -1,3 +1,4 @@
+import { PriceQueryCurrencies } from 'prices/prices.types';
 import { Address } from 'viem';
 
 // --------------------------------------------------------------------------
@@ -74,6 +75,12 @@ export type ApiEcosystemFrankencoinInfo = ServiceEcosystemFrankencoin & {
 	price: {
 		usd: number;
 	};
+	fps: {
+		price: number;
+		totalSupply: number;
+		fpsMarketCapInChf: number;
+	};
+	tvl: PriceQueryCurrencies;
 };
 
 export type ApiEcosystemMintBurnMapping = {

@@ -14,6 +14,8 @@ import {
 import { ADDRESS } from 'contracts/address';
 import { PricesService } from 'prices/prices.service';
 import { Address } from 'viem';
+import { EcosystemFpsService } from './ecosystem.fps.service';
+import { EcosystemCollateralService } from './ecosystem.collateral.service';
 
 @Injectable()
 export class EcosystemFrankencoinService {
@@ -22,7 +24,11 @@ export class EcosystemFrankencoinService {
 	private ecosystemFrankencoin: ServiceEcosystemFrankencoin;
 	private ecosystemMintBurnMapping: ServiceEcosystemMintBurnMapping = {};
 
-	constructor(private readonly pricesService: PricesService) {}
+	constructor(
+		private readonly fpsService: EcosystemFpsService,
+		private readonly collService: EcosystemCollateralService,
+		private readonly pricesService: PricesService
+	) {}
 
 	getEcosystemFrankencoinKeyValues(): ApiEcosystemFrankencoinKeyValues {
 		return this.ecosystemFrankencoinKeyValues;
@@ -43,6 +49,8 @@ export class EcosystemFrankencoinService {
 			price: {
 				usd: Object.values(this.pricesService.getPrices()).find((p) => p.symbol === 'ZCHF')?.price.usd,
 			},
+			fps: this.fpsService.getEcosystemFpsInfo().values,
+			tvl: this.collService.getCollateralStats().totalValueLocked,
 			...this.ecosystemFrankencoin,
 		};
 	}
