@@ -175,7 +175,7 @@ export class ChallengesService {
 	// --------------------------------------------------------------------------
 	// --------------------------------------------------------------------------
 	async updateChallengesPrices() {
-		this.logger.debug('Updating challengesPrices');
+		this.logger.debug('Updating ChallengesPrices');
 		const active = this.getChallenges().list.filter((c: ChallengesQueryItem) => c.status === ChallengesQueryStatus.Active);
 
 		// mapping active challenge -> prices
@@ -198,12 +198,12 @@ export class ChallengesService {
 
 	// --------------------------------------------------------------------------
 	async updateChallenges() {
-		this.logger.debug('Updating challenges');
+		this.logger.debug('Updating Challenges');
 		const challenges = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					challenges(orderBy: "status", orderDirection: "asc", limit: 1000) {
+					challengeV1s(orderBy: "status", orderDirection: "asc", limit: 1000) {
 						items {
 							id
 							position
@@ -225,7 +225,7 @@ export class ChallengesService {
 		});
 
 		if (!challenges.data || !challenges.data.challenges) {
-			this.logger.warn('No challenge found.');
+			this.logger.warn('No Challenge V1 found.');
 			return;
 		}
 
@@ -242,12 +242,12 @@ export class ChallengesService {
 
 	// --------------------------------------------------------------------------
 	async updateBids() {
-		this.logger.debug('Updating bids');
+		this.logger.debug('Updating Bids');
 		const bids = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					challengeBids(orderBy: "created", orderDirection: "desc", limit: 1000) {
+					challengeBidV1s(orderBy: "created", orderDirection: "desc", limit: 1000) {
 						items {
 							id
 							position
@@ -268,7 +268,7 @@ export class ChallengesService {
 		});
 
 		if (!bids.data || !bids.data.challengeBids) {
-			this.logger.warn('No bids found.');
+			this.logger.warn('No Bids V1 found.');
 			return;
 		}
 

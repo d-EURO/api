@@ -70,12 +70,9 @@ export class TelegramService {
 	}
 
 	async writeBackupGroups() {
-		const stateToPush: TelegramGroupState = {
-			...this.telegramGroupState,
-			apiVersion: process.env.npm_package_version,
-			updatedAt: Date.now(),
-		};
-		const response = await this.storj.write(this.storjPath, stateToPush);
+		this.telegramGroupState.apiVersion = process.env.npm_package_version;
+		this.telegramGroupState.updatedAt = Date.now();
+		const response = await this.storj.write(this.storjPath, this.telegramGroupState);
 		const httpStatusCode = response['$metadata'].httpStatusCode;
 		if (httpStatusCode == 200) {
 			this.logger.log(`Telegram group backup stored`);

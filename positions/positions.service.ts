@@ -74,12 +74,12 @@ export class PositionsService {
 	}
 
 	async updatePositons() {
-		this.logger.debug('Updating positions');
+		this.logger.debug('Updating Positions');
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					positions(orderBy: "availableForClones", orderDirection: "desc", limit: 1000) {
+					positionV1s(orderBy: "availableForClones", orderDirection: "desc", limit: 1000) {
 						items {
 							position
 							owner
@@ -123,7 +123,7 @@ export class PositionsService {
 		});
 
 		if (!data || !data.positions) {
-			this.logger.warn('No positions found.');
+			this.logger.warn('No Positions V1 found.');
 			return;
 		}
 
@@ -228,12 +228,12 @@ export class PositionsService {
 	}
 
 	async updateMintingUpdates() {
-		this.logger.debug('Updating positions mintingUpdates');
+		this.logger.debug('Updating Positions MintingUpdates');
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					mintingUpdates(orderBy: "created", orderDirection: "desc", limit: 1000) {
+					mintingUpdateV1s(orderBy: "created", orderDirection: "desc", limit: 1000) {
 						items {
 							id
 							txHash
@@ -263,7 +263,7 @@ export class PositionsService {
 		});
 
 		if (!data || !data.mintingUpdates) {
-			this.logger.warn('No mintingUpdates found.');
+			this.logger.warn('No MintingUpdates V1 found.');
 			return;
 		}
 
@@ -307,7 +307,7 @@ export class PositionsService {
 		const b = Object.values(this.fetchedMintingUpdates).flat(1).length;
 		const isDiff = a > b;
 
-		if (isDiff) this.logger.log(`MintingUpdates merging, from ${b} to ${a} entries`);
+		if (isDiff) this.logger.log(`MintingUpdates V1 merging, from ${b} to ${a} entries`);
 		this.fetchedMintingUpdates = { ...this.fetchedMintingUpdates, ...list };
 
 		return list;

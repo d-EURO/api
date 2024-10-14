@@ -25,6 +25,8 @@ import { ChallengesController } from 'challenges/challenges.controller';
 import { Storj } from 'storj/storj.s3.service';
 import { AnalyticsController } from 'analytics/analytics.controller';
 import { AnalyticsService } from 'analytics/analytics.service';
+import { SavingsLeadrateController } from 'savings/savings.leadrate.controller';
+import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 
 // APP MODULE
 @Module({
@@ -35,6 +37,7 @@ import { AnalyticsService } from 'analytics/analytics.service';
 		EcosystemCollateralController,
 		EcosystemFpsController,
 		EcosystemMinterController,
+		SavingsLeadrateController,
 		PricesController,
 		ChallengesController,
 		AnalyticsController,
@@ -46,6 +49,7 @@ import { AnalyticsService } from 'analytics/analytics.service';
 		EcosystemFrankencoinService,
 		EcosystemCollateralService,
 		EcosystemFpsService,
+		SavingsLeadrateService,
 		PricesService,
 		ChallengesService,
 		TelegramService,
