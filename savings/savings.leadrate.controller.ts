@@ -3,7 +3,7 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SavingsLeadrateService } from './savings.leadrate.service';
 import { ApiLeadrateInfo, ApiLeadrateProposed, ApiLeadrateRate } from './savings.leadrate.types';
 
-@ApiTags('SavingsLeadrate Controller')
+@ApiTags('Savings Controller')
 @Controller('savings/leadrate')
 export class SavingsLeadrateController {
 	constructor(private readonly leadrate: SavingsLeadrateService) {}
