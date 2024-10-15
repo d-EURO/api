@@ -5,6 +5,7 @@ export type LeadrateRateQuery = {
 	id: string;
 	created: number;
 	blockheight: number;
+	txHash: string;
 	approvedRate: number;
 };
 

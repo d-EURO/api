@@ -1,7 +1,9 @@
 import { Address } from 'viem';
 // ----------------------------------------------------------------------------------
 // Ponder
-export type PositionQuery = {
+export type PositionQueryV1 = {
+	version: 1;
+
 	position: Address;
 	owner: Address;
 	zchf: Address;
@@ -38,6 +40,48 @@ export type PositionQuery = {
 	availableForClones: string;
 	minted: string;
 };
+
+export type PositionQueryV2 = {
+	version: 2;
+
+	position: Address;
+	owner: Address;
+	zchf: Address;
+	collateral: Address;
+	price: string;
+
+	created: number;
+	isOriginal: boolean;
+	isClone: boolean;
+	denied: boolean;
+	closed: boolean;
+	original: Address;
+
+	minimumCollateral: string;
+	annualInterestPPM: number; // @dev: in V2, sum of leadrate and riskPremium
+	riskPremiumPPM: number;
+	reserveContribution: number;
+	start: number;
+	cooldown: number;
+	expiration: number;
+	challengePeriod: number;
+
+	zchfName: string;
+	zchfSymbol: string;
+	zchfDecimals: number;
+
+	collateralName: string;
+	collateralSymbol: string;
+	collateralDecimals: number;
+	collateralBalance: string;
+
+	limitForClones: string;
+	availableForClones: string;
+	availableForMinting: string;
+	minted: string;
+};
+
+export type PositionQuery = PositionQueryV1 | PositionQueryV2;
 
 export type MintingUpdateQueryId = `${Address}-${number}`;
 export type MintingUpdateQuery = {

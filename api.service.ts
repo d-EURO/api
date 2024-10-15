@@ -12,10 +12,10 @@ import { TelegramService } from 'telegram/telegram.service';
 import { Chain } from 'viem';
 import { mainnet, polygon } from 'viem/chains';
 
-export const INDEXING_TIMEOUT_COUNT: number = 5;
-export const POLLING_DEPLAY: { [key: Chain['id']]: number } = {
+export const INDEXING_TIMEOUT_COUNT: number = 10;
+export const POLLING_DELAY: { [key: Chain['id']]: number } = {
 	[mainnet.id]: 6_000, // blocktime: 12s
-	[polygon.id]: 10_000, // blocktime: 2s, skip: 5blks
+	[polygon.id]: 10_000, // blocktime: 2s, skip: 5 blks
 };
 
 @Injectable()
@@ -42,7 +42,8 @@ export class ApiService {
 		this.logger.log(`Fetched blockheight: ${this.fetchedBlockheight}`);
 		const promises = [
 			this.minter.updateMinters(),
-			this.positions.updatePositons(),
+			this.positions.updatePositonV1s(),
+			this.positions.updatePositonV2s(),
 			this.positions.updateMintingUpdates(),
 			this.prices.updatePrices(),
 			this.frankencoin.updateEcosystemKeyValues(),
@@ -59,7 +60,7 @@ export class ApiService {
 		return Promise.all(promises);
 	}
 
-	@Interval(POLLING_DEPLAY[CONFIG[CONFIG_PROFILE].chain.id])
+	@Interval(POLLING_DELAY[CONFIG[CONFIG_PROFILE].chain.id])
 	async updateBlockheight() {
 		const tmp: number = parseInt((await VIEM_CONFIG.getBlockNumber()).toString());
 		this.indexingTimeoutCount += 1;

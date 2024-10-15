@@ -21,10 +21,11 @@ export class SavingsLeadrateService {
 	getRates(): ApiLeadrateRate {
 		const l = Object.values(this.fetchedRates);
 		const h = l.sort((a, b) => b.blockheight - a.blockheight);
+		const n = h.length === 0;
 		return {
-			created: h[0].created,
-			blockheight: h[0].blockheight,
-			rate: h[0].approvedRate,
+			created: n ? 0 : h[0].created,
+			blockheight: n ? 0 : h[0].blockheight,
+			rate: n ? 0 : h[0].approvedRate,
 			num: l.length,
 			list: l,
 		};
@@ -33,11 +34,12 @@ export class SavingsLeadrateService {
 	getProposals(): ApiLeadrateProposed {
 		const l = Object.values(this.fetchedProposals);
 		const h = l.sort((a, b) => b.blockheight - a.blockheight);
+		const n = h.length === 0;
 		return {
-			created: h[0]?.created || 0,
-			blockheight: h[0]?.blockheight || 0,
-			nextRate: h[0]?.nextRate,
-			nextchange: h[0]?.nextChange,
+			created: n ? 0 : h[0]?.created || 0,
+			blockheight: n ? 0 : h[0]?.blockheight || 0,
+			nextRate: n ? 0 : h[0]?.nextRate,
+			nextchange: n ? 0 : h[0]?.nextChange,
 			num: l.length,
 			list: l,
 		};
@@ -47,12 +49,13 @@ export class SavingsLeadrateService {
 		const r = this.getRates();
 		const p = this.getProposals();
 		const isDiff = r.rate != p.nextRate;
-		const isPending = p.nextchange >= Date.now();
+		const isPending = p.nextchange * 1000 >= Date.now();
+		const isProposal = isDiff && isPending;
 		return {
 			rate: r.rate,
-			nextRate: p.nextRate,
-			nextchange: p.nextchange,
-			isProposal: isDiff && isPending,
+			nextRate: isProposal ? p.nextRate : undefined,
+			nextchange: isProposal ? p.nextchange : undefined,
+			isProposal,
 		};
 	}
 
@@ -67,6 +70,7 @@ export class SavingsLeadrateService {
 							id
 							created
 							blockheight
+							txHash
 							approvedRate
 						}
 					}
@@ -74,7 +78,7 @@ export class SavingsLeadrateService {
 			`,
 		});
 
-		if (!data || !data.savingsRateChangeds) {
+		if (!data || !data?.savingsRateChangeds?.items) {
 			this.logger.warn('No leadrates rates found.');
 			return;
 		}
@@ -82,11 +86,12 @@ export class SavingsLeadrateService {
 		const list: LeadrateRateObjectArray = {};
 		for (const r of data.savingsRateChangeds.items as LeadrateRateQuery[]) {
 			list[r.id] = {
-				id: parseInt(r.id as any),
+				id: r.id,
 				created: parseInt(r.created as any),
 				blockheight: parseInt(r.blockheight as any),
+				txHash: r.txHash,
 				approvedRate: r.approvedRate,
-			};
+			} as LeadrateRateQuery;
 		}
 
 		const a = Object.keys(list).length;
@@ -118,7 +123,7 @@ export class SavingsLeadrateService {
 			`,
 		});
 
-		if (!data || !data.savingsRateProposeds) {
+		if (!data || !data?.savingsRateProposeds?.items) {
 			this.logger.warn('No leadrates proposals found.');
 			return;
 		}
@@ -133,7 +138,7 @@ export class SavingsLeadrateService {
 				proposer: r.proposer as Address,
 				nextRate: r.nextRate,
 				nextChange: r.nextChange,
-			};
+			} as LeadrateProposed;
 		}
 
 		const a = Object.keys(list).length;
