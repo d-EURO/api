@@ -7,8 +7,8 @@ import { formatUnits } from 'viem';
 import { AnalyticsExposureItem, ApiAnalyticsCollateralExposure, ApiAnalyticsFpsEarnings } from './analytics.types';
 import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
-import { ADDRESS } from '@frankencoin/zchf/exports/address.config';
-import { FrankencoinABI } from '@frankencoin/zchf/exports/abis/Frankencoin';
+import { ADDRESS } from '@frankencoin/zchf';
+import { FrankencoinABI } from '@frankencoin/zchf';
 
 @Injectable()
 export class AnalyticsService {

@@ -17,10 +17,10 @@ import {
 } from './positions.types';
 import { Address, erc20Abi, getAddress } from 'viem';
 import { FIVEDAYS_MS } from 'utils/const-helper';
-import { PositionV1ABI } from '@frankencoin/zchf/exports/abis/PositionV1';
-import { ADDRESS } from '@frankencoin/zchf/exports/address.config';
-import { SavingsABI } from '@frankencoin/zchf/exports/abis/Savings';
-import { PositionV2ABI } from '@frankencoin/zchf/exports/abis/PositionV2';
+import { PositionV1ABI } from '@frankencoin/zchf';
+import { ADDRESS } from '@frankencoin/zchf';
+import { SavingsABI } from '@frankencoin/zchf';
+import { PositionV2ABI } from '@frankencoin/zchf';
 
 @Injectable()
 export class PositionsService {
