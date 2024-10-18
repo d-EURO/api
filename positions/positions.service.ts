@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CONFIG, CONFIG_PROFILE, PONDER_CLIENT, VIEM_CONFIG } from '../api.config';
+import { CONFIG, PONDER_CLIENT, VIEM_CONFIG } from '../api.config';
 import { gql } from '@apollo/client/core';
 import {
 	ApiMintingUpdateListing,
@@ -282,7 +282,7 @@ export class PositionsService {
 		const mintedDataPromises: Promise<bigint>[] = [];
 
 		const leadrate: number = await VIEM_CONFIG.readContract({
-			address: ADDRESS[CONFIG[CONFIG_PROFILE].chain.id].savings,
+			address: ADDRESS[CONFIG.chain.id].savings,
 			abi: SavingsABI,
 			functionName: 'currentRatePPM',
 		});

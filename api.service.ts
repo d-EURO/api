@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import { CONFIG, CONFIG_PROFILE, VIEM_CONFIG } from 'api.config';
+import { CONFIG, VIEM_CONFIG } from 'api.config';
 import { ChallengesService } from 'challenges/challenges.service';
 import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
 import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
@@ -15,7 +15,7 @@ import { mainnet, polygon } from 'viem/chains';
 export const INDEXING_TIMEOUT_COUNT: number = 10;
 export const POLLING_DELAY: { [key: Chain['id']]: number } = {
 	[mainnet.id]: 6_000, // blocktime: 12s
-	[polygon.id]: 10_000, // blocktime: 2s, skip: 5 blks
+	[polygon.id]: 12_000, // blocktime: 2s, skip: 6 blks
 };
 
 @Injectable()
@@ -60,7 +60,7 @@ export class ApiService {
 		return Promise.all(promises);
 	}
 
-	@Interval(POLLING_DELAY[CONFIG[CONFIG_PROFILE].chain.id])
+	@Interval(POLLING_DELAY[CONFIG.chain.id])
 	async updateBlockheight() {
 		const tmp: number = parseInt((await VIEM_CONFIG.getBlockNumber()).toString());
 		this.indexingTimeoutCount += 1;
