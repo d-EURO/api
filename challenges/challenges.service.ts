@@ -27,8 +27,8 @@ import {
 	ChallengesQueryStatus,
 } from './challenges.types';
 import { Address } from 'viem';
-import { MintingHubABI } from 'contracts/abis/MintingHub';
-import { ADDRESS } from 'contracts';
+import { ADDRESS } from '@frankencoin/zchf/exports/address.config';
+import { MintingHubV1ABI } from '@frankencoin/zchf/exports/abis/MintingHubV1';
 
 @Injectable()
 export class ChallengesService {
@@ -183,7 +183,7 @@ export class ChallengesService {
 		const mh: Address = ADDRESS[VIEM_CONFIG.chain.id].mintingHub;
 		for (const c of active) {
 			const price = await VIEM_CONFIG.readContract({
-				abi: MintingHubABI,
+				abi: MintingHubV1ABI,
 				address: mh,
 				functionName: 'price',
 				args: [parseInt(c.number.toString())],

@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { VIEM_CONFIG } from 'api.config';
-import { ADDRESS } from 'contracts';
-import { FrankencoinABI } from 'contracts/abis/Frankencoin';
 import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
 import { PositionsService } from 'positions/positions.service';
 import { uniqueValues } from 'utils/format-array';
@@ -9,6 +7,8 @@ import { formatUnits } from 'viem';
 import { AnalyticsExposureItem, ApiAnalyticsCollateralExposure, ApiAnalyticsFpsEarnings } from './analytics.types';
 import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
+import { ADDRESS } from '@frankencoin/zchf/exports/address.config';
+import { FrankencoinABI } from '@frankencoin/zchf/exports/abis/Frankencoin';
 
 @Injectable()
 export class AnalyticsService {

@@ -12,8 +12,8 @@ import {
 import { PositionsService } from 'positions/positions.service';
 import { COINGECKO_CLIENT, VIEM_CHAIN } from 'api.config';
 import { Address } from 'viem';
-import { ADDRESS } from 'contracts';
 import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
+import { ADDRESS } from '@frankencoin/zchf/exports/address.config';
 
 const randRef: number = Math.random() * 0.4 + 0.8;
 

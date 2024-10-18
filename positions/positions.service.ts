@@ -17,9 +17,10 @@ import {
 } from './positions.types';
 import { Address, erc20Abi, getAddress } from 'viem';
 import { FIVEDAYS_MS } from 'utils/const-helper';
-import { PositionABI } from 'contracts/abis/Position';
-import { ADDRESS } from 'contracts';
-import { SavingsABI } from 'contracts/abis/Savings';
+import { PositionV1ABI } from '@frankencoin/zchf/exports/abis/PositionV1';
+import { ADDRESS } from '@frankencoin/zchf/exports/address.config';
+import { SavingsABI } from '@frankencoin/zchf/exports/abis/Savings';
+import { PositionV2ABI } from '@frankencoin/zchf/exports/abis/PositionV2';
 
 @Injectable()
 export class PositionsService {
@@ -156,7 +157,7 @@ export class PositionsService {
 			mintedDataPromises.push(
 				VIEM_CONFIG.readContract({
 					address: p.position,
-					abi: PositionABI,
+					abi: PositionV1ABI,
 					functionName: 'minted',
 				})
 			);
@@ -306,7 +307,7 @@ export class PositionsService {
 			mintedDataPromises.push(
 				VIEM_CONFIG.readContract({
 					address: p.position,
-					abi: PositionABI,
+					abi: PositionV2ABI,
 					functionName: 'minted',
 				})
 			);

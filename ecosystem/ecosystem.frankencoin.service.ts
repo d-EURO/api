@@ -11,11 +11,11 @@ import {
 	ServiceEcosystemFrankencoinKeyValues,
 	ApiEcosystemFrankencoinKeyValues,
 } from './ecosystem.frankencoin.types';
-import { ADDRESS } from 'contracts/address';
 import { PricesService } from 'prices/prices.service';
 import { Address } from 'viem';
 import { EcosystemFpsService } from './ecosystem.fps.service';
 import { EcosystemCollateralService } from './ecosystem.collateral.service';
+import { ADDRESS } from '@frankencoin/zchf/exports/address.config';
 
 @Injectable()
 export class EcosystemFrankencoinService {
