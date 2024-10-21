@@ -9,6 +9,8 @@ import {
 	ApiPositionsOwners,
 	MintingUpdateQuery,
 	MintingUpdateQueryObjectArray,
+	MintingUpdateQueryV1,
+	MintingUpdateQueryV2,
 	OwnersPositionsObjectArray,
 	PositionQuery,
 	PositionQueryV1,
@@ -81,7 +83,7 @@ export class PositionsService {
 	}
 
 	async updatePositonV1s() {
-		this.logger.debug('Updating Positions');
+		this.logger.debug('Updating Positions V1');
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
@@ -129,7 +131,7 @@ export class PositionsService {
 			`,
 		});
 
-		if (!data || !data?.positionV1s?.length) {
+		if (!data || !data?.positionV1s?.items) {
 			this.logger.warn('No Positions V1 found.');
 			return;
 		}
@@ -172,7 +174,7 @@ export class PositionsService {
 			const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
 			const m = (mintedData[idx] as PromiseFulfilledResult<bigint>).value;
 
-			list[p.position.toLowerCase() as Address] = {
+			const entry: PositionQueryV1 = {
 				version: 1,
 
 				position: getAddress(p.position),
@@ -210,7 +212,9 @@ export class PositionsService {
 				availableForPosition: p.availableForPosition,
 				availableForClones: p.availableForClones,
 				minted: typeof m === 'bigint' ? m.toString() : p.minted,
-			} as PositionQueryV1;
+			};
+
+			list[p.position.toLowerCase() as Address] = entry;
 		}
 
 		const a = Object.keys(list).length;
@@ -225,7 +229,7 @@ export class PositionsService {
 	}
 
 	async updatePositonV2s() {
-		this.logger.debug('Updating Positions');
+		this.logger.debug('Updating Positions V2');
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
@@ -322,7 +326,7 @@ export class PositionsService {
 			const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
 			const m = (mintedData[idx] as PromiseFulfilledResult<bigint>).value;
 
-			list[p.position.toLowerCase() as Address] = {
+			const entry: PositionQueryV2 = {
 				version: 2,
 
 				position: getAddress(p.position),
@@ -360,7 +364,9 @@ export class PositionsService {
 				availableForClones: p.availableForClones,
 				availableForMinting: p.availableForMinting,
 				minted: typeof m === 'bigint' ? m.toString() : p.minted,
-			} as PositionQueryV2;
+			};
+
+			list[p.position.toLowerCase() as Address] = entry;
 		}
 
 		const a = Object.keys(list).length;
@@ -387,8 +393,8 @@ export class PositionsService {
 		return { num: Object.keys(m).length, positions: Object.keys(m) as Address[], map: m };
 	}
 
-	async updateMintingUpdates() {
-		this.logger.debug('Updating Positions MintingUpdates');
+	async updateMintingUpdateV1s() {
+		this.logger.debug('Updating Positions MintingUpdates V1');
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
@@ -431,12 +437,14 @@ export class PositionsService {
 		const list: MintingUpdateQueryObjectArray = {};
 
 		for (let idx = 0; idx < items.length; idx++) {
-			const m = items[idx];
+			const m = items[idx] as MintingUpdateQueryV1;
 			const k = m.position.toLowerCase() as Address;
 
 			if (list[k] === undefined) list[k] = [];
 
 			const entry: MintingUpdateQuery = {
+				version: 1,
+
 				id: m.id,
 				txHash: m.txHash,
 				created: parseInt(m.created as any),
@@ -468,6 +476,97 @@ export class PositionsService {
 		const isDiff = a > b;
 
 		if (isDiff) this.logger.log(`MintingUpdates V1 merging, from ${b} to ${a} entries`);
+		this.fetchedMintingUpdates = { ...this.fetchedMintingUpdates, ...list };
+
+		return list;
+	}
+
+	async updateMintingUpdateV2s() {
+		this.logger.debug('Updating Positions MintingUpdates V2');
+		const { data } = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+				query {
+					mintingUpdateV2s(orderBy: "created", orderDirection: "desc", limit: 1000) {
+						items {
+							id
+							txHash
+							created
+							position
+							owner
+							isClone
+							collateral
+							collateralName
+							collateralSymbol
+							collateralDecimals
+							size
+							price
+							minted
+							sizeAdjusted
+							priceAdjusted
+							mintedAdjusted
+							basePremiumPPM
+							riskPremiumPPM
+							reserveContribution
+							feeTimeframe
+							feePPM
+							feePaid
+						}
+					}
+				}
+			`,
+		});
+
+		if (!data || !data?.mintingUpdates?.items) {
+			this.logger.warn('No MintingUpdates V2 found.');
+			return;
+		}
+
+		const items: MintingUpdateQuery[] = data.mintingUpdates.items;
+		const list: MintingUpdateQueryObjectArray = {};
+
+		for (let idx = 0; idx < items.length; idx++) {
+			const m = items[idx] as MintingUpdateQueryV2;
+			const k = m.position.toLowerCase() as Address;
+
+			if (list[k] === undefined) list[k] = [];
+
+			const entry: MintingUpdateQueryV2 = {
+				version: 2,
+
+				id: m.id,
+				txHash: m.txHash,
+				created: parseInt(m.created as any),
+				position: getAddress(m.position),
+				owner: getAddress(m.owner),
+				isClone: m.isClone,
+				collateral: getAddress(m.collateral),
+				collateralName: m.collateralName,
+				collateralSymbol: m.collateralSymbol,
+				collateralDecimals: m.collateralDecimals,
+				size: m.size,
+				price: m.price,
+				minted: m.minted,
+				sizeAdjusted: m.sizeAdjusted,
+				priceAdjusted: m.priceAdjusted,
+				mintedAdjusted: m.mintedAdjusted,
+				annualInterestPPM: m.annualInterestPPM,
+				basePremiumPPM: m.basePremiumPPM,
+				riskPremiumPPM: m.riskPremiumPPM,
+				reserveContribution: m.reserveContribution,
+				feeTimeframe: m.feeTimeframe,
+				feePPM: m.feePPM,
+				feePaid: m.feePaid,
+			};
+
+			list[k].push(entry);
+		}
+
+		const a = Object.values(list).flat(1).length;
+		const b = Object.values(this.fetchedMintingUpdates).flat(1).length;
+		const isDiff = a > b;
+
+		if (isDiff) this.logger.log(`MintingUpdates V2 merging, from ${b} to ${a} entries`);
 		this.fetchedMintingUpdates = { ...this.fetchedMintingUpdates, ...list };
 
 		return list;

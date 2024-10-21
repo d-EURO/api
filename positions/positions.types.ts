@@ -84,7 +84,10 @@ export type PositionQueryV2 = {
 export type PositionQuery = PositionQueryV1 | PositionQueryV2;
 
 export type MintingUpdateQueryId = `${Address}-${number}`;
-export type MintingUpdateQuery = {
+
+export type MintingUpdateQueryV1 = {
+	version: 1;
+
 	id: MintingUpdateQueryId;
 	txHash: string;
 	created: number;
@@ -107,6 +110,35 @@ export type MintingUpdateQuery = {
 	feePPM: number;
 	feePaid: string;
 };
+
+export type MintingUpdateQueryV2 = {
+	version: 2;
+
+	id: MintingUpdateQueryId;
+	txHash: string;
+	created: number;
+	position: Address;
+	owner: Address;
+	isClone: boolean;
+	collateral: Address;
+	collateralName: string;
+	collateralSymbol: string;
+	collateralDecimals: number;
+	size: string;
+	price: string;
+	minted: string;
+	sizeAdjusted: string;
+	priceAdjusted: string;
+	mintedAdjusted: string;
+	annualInterestPPM: number;
+	basePremiumPPM: number;
+	riskPremiumPPM: number;
+	reserveContribution: number;
+	feeTimeframe: number;
+	feePPM: number;
+	feePaid: string;
+};
+export type MintingUpdateQuery = MintingUpdateQueryV1 | MintingUpdateQueryV2;
 
 // ----------------------------------------------------------------------------------
 // Service
