@@ -16,8 +16,9 @@ export type ApiEcosystemFpsInfo = {
 		totalSupply: number;
 		fpsMarketCapInChf: number;
 	};
-	raw: {
-		price: string;
-		totalSupply: string;
+	reserve: {
+		balance: number;
+		equity: number;
+		minter: number;
 	};
 };

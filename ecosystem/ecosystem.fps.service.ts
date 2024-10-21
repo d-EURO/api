@@ -4,6 +4,7 @@ import { ApiEcosystemFpsInfo } from './ecosystem.fps.types';
 import { ABIS, ADDRESS } from 'contracts';
 import { gql } from '@apollo/client/core';
 import { formatUnits } from 'viem';
+import { FrankencoinABI } from 'contracts/abis/Frankencoin';
 
 @Injectable()
 export class EcosystemFpsService {
@@ -29,6 +30,19 @@ export class EcosystemFpsService {
 			address: addr,
 			abi: ABIS.EquityABI,
 			functionName: 'totalSupply',
+		});
+
+		const minterReserveRaw = await VIEM_CONFIG.readContract({
+			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
+			abi: FrankencoinABI,
+			functionName: 'minterReserve',
+		});
+
+		const balanceReserveRaw = await VIEM_CONFIG.readContract({
+			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
+			abi: FrankencoinABI,
+			functionName: 'balanceOf',
+			args: [ADDRESS[VIEM_CONFIG.chain.id].equity],
 		});
 
 		const p = parseInt(fetchedPrice.toString()) / 1e18;
@@ -60,6 +74,12 @@ export class EcosystemFpsService {
 			loss: parseFloat(formatUnits(d.loss, 18)),
 		};
 
+		const equityInReserveRaw = balanceReserveRaw - minterReserveRaw;
+
+		const balanceReserve = parseFloat(formatUnits(balanceReserveRaw, 18));
+		const equityInReserve = parseFloat(formatUnits(equityInReserveRaw, 18));
+		const minterReserve = parseFloat(formatUnits(minterReserveRaw, 18));
+
 		this.fpsInfo = {
 			earnings: earningsData,
 			values: {
@@ -67,9 +87,10 @@ export class EcosystemFpsService {
 				totalSupply: s,
 				fpsMarketCapInChf: p * s,
 			},
-			raw: {
-				price: fetchedPrice.toString(),
-				totalSupply: fetchedTotalSupply.toString(),
+			reserve: {
+				balance: balanceReserve,
+				equity: equityInReserve,
+				minter: minterReserve,
 			},
 		};
 	}
