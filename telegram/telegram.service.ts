@@ -104,7 +104,7 @@ export class TelegramService {
 
 	async sendMessage(group: string | number, message: string) {
 		try {
-			this.logger.debug(`Sending message to group id: ${group}`);
+			this.logger.log(`Sending message to group id: ${group}`);
 			await this.bot.sendMessage(group.toString(), message, { parse_mode: 'Markdown', disable_web_page_preview: true });
 		} catch (error) {
 			const msg = {
@@ -139,6 +139,7 @@ export class TelegramService {
 		if (this.telegramGroupState?.groups == undefined) return;
 		if (this.telegramGroupState.groups.length == 0) return;
 
+		// DEFAULT
 		// Minter Proposal
 		const mintersList = this.minter.getMintersList().list.filter((m) => m.applyDate * 1000 > this.telegramState.minterApplied);
 		if (mintersList.length > 0) {
@@ -213,6 +214,7 @@ export class TelegramService {
 			}
 		}
 
+		// SUPSCRIPTION
 		// MintingUpdates
 		const requestedMintingUpdates = this.position
 			.getMintingUpdatesList()

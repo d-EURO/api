@@ -131,7 +131,7 @@ export class PositionsService {
 			`,
 		});
 
-		if (!data || !data?.positionV1s?.items) {
+		if (!data || !data?.positionV1s?.items?.length) {
 			this.logger.warn('No Positions V1 found.');
 			return;
 		}
@@ -276,7 +276,7 @@ export class PositionsService {
 			`,
 		});
 
-		if (!data || !data?.positionV2s?.items) {
+		if (!data || !data?.positionV2s?.items?.length) {
 			this.logger.warn('No Positions V2 found.');
 			return;
 		}
@@ -428,12 +428,12 @@ export class PositionsService {
 			`,
 		});
 
-		if (!data || !data?.mintingUpdates?.items) {
+		if (!data || !data?.mintingUpdateV1s?.items?.length) {
 			this.logger.warn('No MintingUpdates V1 found.');
 			return;
 		}
 
-		const items: MintingUpdateQuery[] = data.mintingUpdates.items;
+		const items: MintingUpdateQuery[] = data.mintingUpdateV1s.items;
 		const list: MintingUpdateQueryObjectArray = {};
 
 		for (let idx = 0; idx < items.length; idx++) {
@@ -505,6 +505,7 @@ export class PositionsService {
 							sizeAdjusted
 							priceAdjusted
 							mintedAdjusted
+							annualInterestPPM
 							basePremiumPPM
 							riskPremiumPPM
 							reserveContribution
@@ -517,12 +518,12 @@ export class PositionsService {
 			`,
 		});
 
-		if (!data || !data?.mintingUpdates?.items) {
+		if (!data || !data?.mintingUpdateV2s?.items?.length) {
 			this.logger.warn('No MintingUpdates V2 found.');
 			return;
 		}
 
-		const items: MintingUpdateQuery[] = data.mintingUpdates.items;
+		const items: MintingUpdateQuery[] = data.mintingUpdateV2s.items;
 		const list: MintingUpdateQueryObjectArray = {};
 
 		for (let idx = 0; idx < items.length; idx++) {

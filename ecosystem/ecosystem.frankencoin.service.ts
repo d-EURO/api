@@ -50,7 +50,7 @@ export class EcosystemFrankencoinService {
 				usd: Object.values(this.pricesService.getPrices()).find((p) => p.symbol === 'ZCHF')?.price.usd,
 			},
 			fps: this.fpsService.getEcosystemFpsInfo().values,
-			tvl: this.collService.getCollateralStats().totalValueLocked,
+			tvl: this.collService.getCollateralStats()?.totalValueLocked ?? {},
 			...this.ecosystemFrankencoin,
 		};
 	}
