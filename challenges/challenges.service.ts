@@ -221,7 +221,7 @@ export class ChallengesService {
 			`,
 		});
 
-		if (!challenges.data || !challenges?.data?.challengeV1s) {
+		if (!challenges.data || !challenges?.data?.challengeV1s?.items?.length) {
 			this.logger.warn('No Challenge V1 found.');
 			return;
 		}
@@ -265,7 +265,7 @@ export class ChallengesService {
 			`,
 		});
 
-		if (!bids.data || !bids.data.challengeBidV1s) {
+		if (!bids.data || !bids.data?.challengeBidV1s?.items?.length) {
 			this.logger.warn('No Bids V1 found.');
 			return;
 		}
@@ -310,7 +310,7 @@ export class ChallengesService {
 			`,
 		});
 
-		if (!challenges.data || !challenges?.data?.challengeV2s) {
+		if (!challenges.data || !challenges?.data?.challengeV2s?.items?.length) {
 			this.logger.warn('No Challenge V2 found.');
 			return;
 		}
@@ -354,8 +354,8 @@ export class ChallengesService {
 			`,
 		});
 
-		if (!bids.data || !bids.data.challengeBidV2s) {
-			this.logger.warn('No Bids V1 found.');
+		if (!bids.data || !bids.data?.challengeBidV2s?.items?.length) {
+			this.logger.warn('No Bids V2 found.');
 			return;
 		}
 

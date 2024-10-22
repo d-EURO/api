@@ -12,7 +12,7 @@ import { TelegramService } from 'telegram/telegram.service';
 import { Chain } from 'viem';
 import { mainnet, polygon } from 'viem/chains';
 
-export const INDEXING_TIMEOUT_COUNT: number = 10;
+export const INDEXING_TIMEOUT_COUNT: number = 3;
 export const POLLING_DELAY: { [key: Chain['id']]: number } = {
 	[mainnet.id]: 6_000, // blocktime: 12s
 	[polygon.id]: 12_000, // blocktime: 2s, skip: 6 blks

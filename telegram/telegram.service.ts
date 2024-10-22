@@ -18,6 +18,7 @@ import { MinterProposalVetoedMessage } from './messages/MinterProposalVetoed.mes
 import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 import { LeadrateProposalMessage } from './messages/LeadrateProposal.message';
 import { LeadrateChangedMessage } from './messages/LeadrateChanged.message';
+import { BidTakenMessage } from './messages/BidTaken.message';
 
 @Injectable()
 export class TelegramService {
@@ -132,7 +133,7 @@ export class TelegramService {
 	}
 
 	async updateTelegram() {
-		this.logger.debug('Updating updateTelegram');
+		this.logger.debug('Updating Telegram');
 
 		// break if no groups are known
 		if (this.telegramGroupState?.groups == undefined) return;
@@ -184,15 +185,31 @@ export class TelegramService {
 		}
 
 		// Challenges started
-		const requestedChallenges = Object.values(this.challenge.getChallengesMapping().map).filter(
+		const challengesStarted = Object.values(this.challenge.getChallengesMapping().map).filter(
 			(c) => parseInt(c.created.toString()) * 1000 > this.telegramState.challenges
 		);
-		if (requestedChallenges.length > 0) {
+		if (challengesStarted.length > 0) {
 			this.telegramState.challenges = Date.now();
-			for (const c of requestedChallenges) {
+			for (const c of challengesStarted) {
 				const pos = this.position.getPositionsList().list.find((p) => p.position == c.position);
 				if (pos == undefined) return;
 				this.sendMessageAll(ChallengeStartedMessage(pos, c));
+			}
+		}
+
+		// Bids taken
+		const bidsTaken = Object.values(this.challenge.getBidsMapping().map).filter(
+			(b) => parseInt(b.created.toString()) * 1000 > this.telegramState.bids
+		);
+		if (bidsTaken.length > 0) {
+			this.telegramState.bids = Date.now();
+			for (const b of bidsTaken) {
+				const position = this.position.getPositionsList().list.find((p) => p.position.toLowerCase() == b.position.toLowerCase());
+				const challenge = this.challenge
+					.getChallenges()
+					.list.find((c) => c.id == `${b.position.toLowerCase()}-challenge-${b.number}`);
+				if (position == undefined || challenge == undefined) return;
+				this.sendMessageAll(BidTakenMessage(position, challenge, b));
 			}
 		}
 
