@@ -19,7 +19,7 @@ Challenge Size: ${formatCurrency(formatUnits(bid.challengeSize, position.collate
 
 Bid Amount: ${formatCurrency(formatUnits(bid.bid, 18))} ZCHF
 Bid Filled: ${formatCurrency(formatUnits(bid.filledSize, position.collateralDecimals))} ${position.collateralSymbol}
-Bid Price: ${formatCurrency(formatUnits(bid.price, 18))} ZCHF/${position.collateralSymbol}
+Bid Price: ${formatCurrency(formatUnits(bid.price, 36 - position.collateralDecimals))} ZCHF/${position.collateralSymbol}
 
 [Buy ${position.collateralSymbol} in Auction](${AppUrl(`/challenges/${challenge.id}/bid`)})
 [Goto Position](${AppUrl(`/monitoring/${bid.position}`)})

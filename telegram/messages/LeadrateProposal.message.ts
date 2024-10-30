@@ -1,4 +1,5 @@
 import { ApiLeadrateRate, LeadrateProposed } from 'savings/savings.leadrate.types';
+import { formatCurrency } from 'utils/format';
 import { AppUrl, ExplorerTxUrl } from 'utils/func-helper';
 
 export function LeadrateProposalMessage(proposal: LeadrateProposed, rate: ApiLeadrateRate): string {
@@ -12,8 +13,8 @@ Proposal Period: 7 days
 Proposal Until: ${d.toString().split(' ').slice(0, 5).join(' ')}
 Proposer: ${proposal.proposer}
 
-Current Rate: ${rate.rate}
-Proposed Rate: ${proposal.nextRate}
+Current Rate: ${formatCurrency(rate.rate / 10000)}%
+Proposed Rate: ${formatCurrency(proposal.nextRate / 10000)}%
 
 ${u ? '*Rate will remain unchanged*' : '*Rate can be applied after 7 days*'}
 
