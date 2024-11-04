@@ -1,4 +1,4 @@
-import { PriceQueryCurrencies } from 'prices/prices.types';
+import { PriceQueryCurrencies } from '../prices/prices.types';
 import { Address } from 'viem';
 
 // --------------------------------------------------------------------------
