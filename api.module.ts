@@ -27,6 +27,8 @@ import { AnalyticsController } from 'analytics/analytics.controller';
 import { AnalyticsService } from 'analytics/analytics.service';
 import { SavingsLeadrateController } from 'savings/savings.leadrate.controller';
 import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
+import { SavingsCoreController } from 'savings/savings.core.controller';
+import { SavingsCoreService } from 'savings/savings.core.service';
 
 // APP MODULE
 @Module({
@@ -38,6 +40,7 @@ import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 		EcosystemFpsController,
 		EcosystemFrankencoinController,
 		SavingsLeadrateController,
+		SavingsCoreController,
 		PricesController,
 		ChallengesController,
 		AnalyticsController,
@@ -50,6 +53,7 @@ import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 		EcosystemFpsService,
 		EcosystemFrankencoinService,
 		SavingsLeadrateService,
+		SavingsCoreService,
 		PricesService,
 		ChallengesService,
 		TelegramService,
