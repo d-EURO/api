@@ -1,6 +1,6 @@
 {
 	"name": "@frankencoin/api",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"private": false,
 	"license": "MIT",
 	"homepage": "https://api.frankencoin.com",
@@ -14,7 +14,7 @@
 		"start:dev": "yarn install && nest start --watch --entryFile api.main.js",
 		"start:debug": "nest start --debug --watch --entryFile api.main.js",
 		"start:prod": "node dist/api.main.js",
-		"npm:publish": "npm publish --access public",
+		"publish": "npm publish --access public",
 		"lint": "eslint \"{src,apis,libs,test}/**/*.ts\" --fix",
 		"test": "jest",
 		"test:watch": "jest --watch",
