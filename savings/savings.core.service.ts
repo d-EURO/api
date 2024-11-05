@@ -120,8 +120,8 @@ export class SavingsCoreService {
 
 		return {
 			save: savedFetched?.data?.savingsSaveds?.items ?? [],
-			interest: interestFetched?.data?.savingsSaveds?.items ?? [],
-			withdraw: withdrawnFetched?.data?.savingsSaveds?.items ?? [],
+			interest: interestFetched?.data?.savingsInterests?.items ?? [],
+			withdraw: withdrawnFetched?.data?.savingsWithdrawns?.items ?? [],
 		};
 	}
 }
