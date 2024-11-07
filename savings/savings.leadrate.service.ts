@@ -48,14 +48,14 @@ export class SavingsLeadrateService {
 	getInfo(): ApiLeadrateInfo {
 		const r = this.getRates();
 		const p = this.getProposals();
-		const isDiff = r.rate != p.nextRate;
+		const isProposal = r.rate != p.nextRate;
 		const isPending = p.nextchange * 1000 >= Date.now();
-		const isProposal = isDiff && isPending;
 		return {
 			rate: r.rate,
 			nextRate: isProposal ? p.nextRate : undefined,
 			nextchange: isProposal ? p.nextchange : undefined,
 			isProposal,
+			isPending,
 		};
 	}
 

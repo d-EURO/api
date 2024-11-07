@@ -36,6 +36,7 @@ export type ApiLeadrateInfo = {
 	nextRate: number;
 	nextchange: number;
 	isProposal: boolean;
+	isPending: boolean;
 };
 
 export type ApiLeadrateRate = {
