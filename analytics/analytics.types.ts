@@ -52,10 +52,14 @@ export type ApiAnalyticsCollateralExposure = {
 };
 
 export type ApiAnalyticsFpsEarnings = {
-	mintersFees: number;
 	investFees: number;
 	redeemFees: number;
+	minterProposalFees: number;
 	positionProposalFees: number;
 	otherProfitClaims: number;
 	otherContributions: number;
+
+	// loss or costs
+	savingsInterestCosts: number;
+	otherLossClaims: number;
 };
