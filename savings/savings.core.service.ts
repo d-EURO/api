@@ -2,7 +2,7 @@ import { gql } from '@apollo/client/core';
 import { Injectable, Logger } from '@nestjs/common';
 import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
 import { SavingsLeadrateService } from './savings.leadrate.service';
-import { Address, formatUnits } from 'viem';
+import { Address, formatUnits, zeroAddress } from 'viem';
 import { ApiSavingsInfo, ApiSavingsUserTable } from './savings.core.types';
 import { PONDER_CLIENT } from 'api.config';
 
@@ -38,8 +38,8 @@ export class SavingsCoreService {
 		};
 	}
 
-	async getUserTables(userAddress: Address): Promise<ApiSavingsUserTable> {
-		const user: Address = userAddress.toLowerCase() as Address;
+	async getUserTables(userAddress: Address, limit: number = 8): Promise<ApiSavingsUserTable> {
+		const user: Address = userAddress == zeroAddress ? zeroAddress : (userAddress.toLowerCase() as Address);
 		const savedFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
@@ -47,8 +47,8 @@ export class SavingsCoreService {
 					savingsSaveds(
 						orderBy: "blockheight"
 						orderDirection: "desc"
-						where: { account: "${user}" }
-						limit: 8
+						${user == zeroAddress ? '' : `where: { account: "${user}" }`}
+						limit: ${limit}
 					) {
 						items {
 							id
@@ -73,8 +73,8 @@ export class SavingsCoreService {
 					savingsWithdrawns(
 						orderBy: "blockheight"
 						orderDirection: "desc"
-						where: { account: "${user}" }
-						limit: 8
+						${user == zeroAddress ? '' : `where: { account: "${user}" }`}
+						limit: ${limit}
 					) {
 						items {
 							id
@@ -99,8 +99,8 @@ export class SavingsCoreService {
 					savingsInterests(
 						orderBy: "blockheight"
 						orderDirection: "desc"
-						where: { account: "${user}" }
-						limit: 8
+						${user == zeroAddress ? '' : `where: { account: "${user}" }`}
+						limit: ${limit}
 					) {
 						items {
 							id
