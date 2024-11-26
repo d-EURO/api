@@ -25,16 +25,22 @@ import { ChallengesController } from 'challenges/challenges.controller';
 import { Storj } from 'storj/storj.s3.service';
 import { AnalyticsController } from 'analytics/analytics.controller';
 import { AnalyticsService } from 'analytics/analytics.service';
+import { SavingsLeadrateController } from 'savings/savings.leadrate.controller';
+import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
+import { SavingsCoreController } from 'savings/savings.core.controller';
+import { SavingsCoreService } from 'savings/savings.core.service';
 
 // APP MODULE
 @Module({
 	imports: [ConfigModule.forRoot(), ScheduleModule.forRoot()],
 	controllers: [
 		PositionsController,
-		EcosystemFrankencoinController,
+		EcosystemMinterController,
 		EcosystemCollateralController,
 		EcosystemFpsController,
-		EcosystemMinterController,
+		EcosystemFrankencoinController,
+		SavingsLeadrateController,
+		SavingsCoreController,
 		PricesController,
 		ChallengesController,
 		AnalyticsController,
@@ -43,9 +49,11 @@ import { AnalyticsService } from 'analytics/analytics.service';
 		Storj,
 		PositionsService,
 		EcosystemMinterService,
-		EcosystemFrankencoinService,
 		EcosystemCollateralService,
 		EcosystemFpsService,
+		EcosystemFrankencoinService,
+		SavingsLeadrateService,
+		SavingsCoreService,
 		PricesService,
 		ChallengesService,
 		TelegramService,

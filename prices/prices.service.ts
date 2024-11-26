@@ -12,8 +12,8 @@ import {
 import { PositionsService } from 'positions/positions.service';
 import { COINGECKO_CLIENT, VIEM_CHAIN } from 'api.config';
 import { Address } from 'viem';
-import { ADDRESS } from 'contracts';
 import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
+import { ADDRESS } from '@frankencoin/zchf';
 
 const randRef: number = Math.random() * 0.4 + 0.8;
 
@@ -97,7 +97,7 @@ export class PricesService {
 				return value * randRef * (1 + ((Date.now() - ref) / (3600 * 24 * 365)) * 0.001 + Math.random() * 0.01);
 			};
 
-			// TODO: for developer, this is just for testnet soft price mapping
+			// @dev: this is just for testnet soft price mapping
 			let price = { usd: calc(1) };
 			if (erc.symbol === 'ZCHF') price = { usd: calc(1.12) };
 			if (erc.symbol === 'BTC') price = { usd: calc(69000) };

@@ -3,6 +3,8 @@ import { Address } from 'viem';
 // --------------------------------------------------------------------------
 // Ponder return types
 export type ChallengesQueryItem = {
+	version: number;
+
 	id: ChallengesId;
 	position: Address;
 	number: bigint;
@@ -21,6 +23,8 @@ export type ChallengesQueryItem = {
 };
 
 export type BidsQueryItem = {
+	version: number;
+
 	id: BidsId;
 	position: Address;
 	number: bigint;

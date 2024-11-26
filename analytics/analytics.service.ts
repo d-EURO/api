@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { VIEM_CONFIG } from 'api.config';
-import { ADDRESS } from 'contracts';
-import { FrankencoinABI } from 'contracts/abis/Frankencoin';
 import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
 import { PositionsService } from 'positions/positions.service';
 import { uniqueValues } from 'utils/format-array';
@@ -9,6 +7,9 @@ import { formatUnits } from 'viem';
 import { AnalyticsExposureItem, ApiAnalyticsCollateralExposure, ApiAnalyticsFpsEarnings } from './analytics.types';
 import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
+import { ADDRESS } from '@frankencoin/zchf';
+import { FrankencoinABI } from '@frankencoin/zchf';
+import { SavingsCoreService } from 'savings/savings.core.service';
 
 @Injectable()
 export class AnalyticsService {
@@ -19,7 +20,8 @@ export class AnalyticsService {
 		private readonly positions: PositionsService,
 		private readonly fps: EcosystemFpsService,
 		private readonly fc: EcosystemFrankencoinService,
-		private readonly minters: EcosystemMinterService
+		private readonly minters: EcosystemMinterService,
+		private readonly save: SavingsCoreService
 	) {}
 
 	async getCollateralExposure(): Promise<ApiAnalyticsCollateralExposure> {
@@ -142,23 +144,26 @@ export class AnalyticsService {
 		const investFees = parseFloat(formatUnits(investFeeRaw, 18 + 6));
 		const redeemFeeRaw = this.fc.getEcosystemFrankencoinKeyValues()['Equity:RedeemedFeePaidPPM']?.amount || 0n;
 		const redeemFees = parseFloat(formatUnits(redeemFeeRaw, 18 + 6));
-		const mintersFees = this.minters
+		const minterProposalFees = this.minters
 			.getMintersList()
 			.list.reduce<number>((a, b) => a + parseFloat(formatUnits(BigInt(b.applicationFee), 18)), 0);
-		const otherProfitClaims: number = this.fps.getEcosystemFpsInfo().earnings.profit - positionProposalFees - mintersFees;
+		const otherProfitClaims: number = this.fps.getEcosystemFpsInfo().earnings.profit - positionProposalFees - minterProposalFees;
 
 		const expo = await this.getCollateralExposure();
 		const equityAdjusted: number = expo.general.equityInReserve;
 		const otherContributions: number =
-			equityAdjusted - mintersFees - investFees - redeemFees - positionProposalFees - otherProfitClaims;
+			equityAdjusted - minterProposalFees - investFees - redeemFees - positionProposalFees - otherProfitClaims;
 
 		return {
-			mintersFees,
+			minterProposalFees,
 			investFees,
 			redeemFees,
 			positionProposalFees,
 			otherProfitClaims,
 			otherContributions,
+
+			savingsInterestCosts: this.save.getInfo().totalInterest,
+			otherLossClaims: this.fps.getEcosystemFpsInfo().earnings.loss,
 		};
 	}
 }
