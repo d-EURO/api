@@ -13,7 +13,7 @@ import { PositionsService } from 'positions/positions.service';
 import { COINGECKO_CLIENT, VIEM_CHAIN } from 'api.config';
 import { Address } from 'viem';
 import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
-import { ADDRESS } from '@frankencoin/zchf';
+import { ADDRESS } from '@deuro/eurocoin';
 
 const randRef: number = Math.random() * 0.4 + 0.8;
 
@@ -172,7 +172,7 @@ export class PricesService {
 				const priceUsd = this.fetchedPrices[addr]?.price?.usd;
 				if (priceUsd) {
 					const priceChf = Math.round((priceUsd / zchfPrice) * 100) / 100;
-					this.fetchedPrices[addr].price.chf = priceChf;
+					this.fetchedPrices[addr].price.eur = priceChf;
 				}
 			}
 		}

@@ -3,8 +3,8 @@ import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
 import { ApiEcosystemFpsInfo } from './ecosystem.fps.types';
 import { gql } from '@apollo/client/core';
 import { formatUnits } from 'viem';
-import { ADDRESS } from '@frankencoin/zchf';
-import { EquityABI, FrankencoinABI } from '@frankencoin/zchf';
+import { ADDRESS } from '@deuro/eurocoin';
+import { EquityABI, EuroCoinABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class EcosystemFpsService {
@@ -34,13 +34,13 @@ export class EcosystemFpsService {
 
 		const minterReserveRaw = await VIEM_CONFIG.readContract({
 			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
-			abi: FrankencoinABI,
+			abi: EuroCoinABI,
 			functionName: 'minterReserve',
 		});
 
 		const balanceReserveRaw = await VIEM_CONFIG.readContract({
 			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
-			abi: FrankencoinABI,
+			abi: EuroCoinABI,
 			functionName: 'balanceOf',
 			args: [ADDRESS[VIEM_CONFIG.chain.id].equity],
 		});

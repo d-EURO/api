@@ -15,7 +15,7 @@ import { PricesService } from 'prices/prices.service';
 import { Address } from 'viem';
 import { EcosystemFpsService } from './ecosystem.fps.service';
 import { EcosystemCollateralService } from './ecosystem.collateral.service';
-import { ADDRESS } from '@frankencoin/zchf';
+import { ADDRESS } from '@deuro/eurocoin';
 
 @Injectable()
 export class EcosystemFrankencoinService {

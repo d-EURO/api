@@ -7,8 +7,8 @@ import { formatUnits } from 'viem';
 import { AnalyticsExposureItem, ApiAnalyticsCollateralExposure, ApiAnalyticsFpsEarnings } from './analytics.types';
 import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
-import { ADDRESS } from '@frankencoin/zchf';
-import { FrankencoinABI } from '@frankencoin/zchf';
+import { ADDRESS } from '@deuro/eurocoin';
+import { EuroCoinABI } from '@deuro/eurocoin';
 import { SavingsCoreService } from 'savings/savings.core.service';
 
 @Injectable()
@@ -35,13 +35,13 @@ export class AnalyticsService {
 
 		const minterReserveRaw = await VIEM_CONFIG.readContract({
 			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
-			abi: FrankencoinABI,
+			abi: EuroCoinABI,
 			functionName: 'minterReserve',
 		});
 
 		const balanceReserveRaw = await VIEM_CONFIG.readContract({
 			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
-			abi: FrankencoinABI,
+			abi: EuroCoinABI,
 			functionName: 'balanceOf',
 			args: [ADDRESS[VIEM_CONFIG.chain.id].equity],
 		});

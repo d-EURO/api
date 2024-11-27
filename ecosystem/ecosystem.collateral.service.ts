@@ -83,10 +83,10 @@ export class EcosystemCollateralService {
 		const collateralPositionsDetails = this.getCollateralPositionsDetails();
 		const prices = this.pricesService.getPricesMapping();
 
-		const zchfAddress = this.pricesService.getMint()?.address;
-		if (!zchfAddress) return null;
-		const zchfPrice = prices[zchfAddress.toLowerCase()]?.price?.usd as number;
-		if (!zchfPrice) return null;
+		const deuroAddress = this.pricesService.getMint()?.address;
+		if (!deuroAddress) return null;
+		const deuroPrice = prices[deuroAddress.toLowerCase()]?.price?.usd as number;
+		if (!deuroPrice) return null;
 
 		const ecosystemTotalValueLocked: PriceQueryCurrencies = {};
 		const map: { [key: Address]: ApiEcosystemCollateralStatsItem } = {};
@@ -106,7 +106,7 @@ export class EcosystemCollateralService {
 			const totalBalanceNumUsd = parseInt(formatUnits(totalBalance, c.decimals)) * price;
 			const totalValueLocked: PriceQueryCurrencies = {
 				usd: totalBalanceNumUsd,
-				chf: totalBalanceNumUsd / zchfPrice,
+				eur: totalBalanceNumUsd / deuroPrice,
 			};
 
 			// upsert ecosystemTotalValueLocked usd
@@ -116,11 +116,11 @@ export class EcosystemCollateralService {
 				ecosystemTotalValueLocked.usd += totalValueLocked.usd;
 			}
 
-			// upsert ecosystemTotalValueLocked chf
-			if (!ecosystemTotalValueLocked.chf) {
-				ecosystemTotalValueLocked.chf = totalValueLocked.chf;
+			// upsert ecosystemTotalValueLocked eur
+			if (!ecosystemTotalValueLocked.eur) {
+				ecosystemTotalValueLocked.eur = totalValueLocked.eur;
 			} else {
-				ecosystemTotalValueLocked.chf += totalValueLocked.chf;
+				ecosystemTotalValueLocked.eur += totalValueLocked.eur;
 			}
 
 			// upsert map
@@ -142,7 +142,7 @@ export class EcosystemCollateralService {
 				totalValueLocked,
 				price: {
 					usd: price,
-					chf: Math.round((price / zchfPrice) * 100) / 100,
+					eur: Math.round((price / deuroPrice) * 100) / 100,
 				},
 			};
 		}

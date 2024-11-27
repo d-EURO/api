@@ -27,7 +27,7 @@ import {
 	ChallengesQueryStatus,
 } from './challenges.types';
 import { Address } from 'viem';
-import { ADDRESS, MintingHubV1ABI, MintingHubV2ABI } from '@frankencoin/zchf';
+import { ADDRESS, MintingHubV1ABI, MintingHubV2ABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class ChallengesService {

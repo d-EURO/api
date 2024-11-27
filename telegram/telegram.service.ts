@@ -5,7 +5,7 @@ import { TelegramGroupState, TelegramState } from './telegram.types';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
 import { MinterProposalMessage } from './messages/MinterProposal.message';
 import { PositionProposalMessage } from './messages/PositionProposal.message';
-import { Storj } from 'storj/storj.s3.service';
+import { StorageService } from 'storage/storage.service';
 import { Groups, SubscriptionGroups } from './dtos/groups.dto';
 import { WelcomeGroupMessage } from './messages/WelcomeGroup.message';
 import { ChallengesService } from 'challenges/challenges.service';
@@ -24,13 +24,13 @@ import { BidTakenMessage } from './messages/BidTaken.message';
 export class TelegramService {
 	private readonly logger = new Logger(this.constructor.name);
 	private readonly bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
-	private readonly storjPath: string = '/telegram.groups.json';
+	private readonly storagePath: string = '/telegram.groups.json';
 	private telegramHandles: string[] = ['/MintingUpdates', '/help'];
 	private telegramState: TelegramState;
 	private telegramGroupState: TelegramGroupState;
 
 	constructor(
-		private readonly storj: Storj,
+		private readonly storage: StorageService,
 		private readonly minter: EcosystemMinterService,
 		private readonly leadrate: SavingsLeadrateService,
 		private readonly position: PositionsService,
@@ -62,8 +62,8 @@ export class TelegramService {
 	}
 
 	async readBackupGroups() {
-		this.logger.log(`Reading backup groups from storj`);
-		const response = await this.storj.read(this.storjPath, Groups);
+		this.logger.log(`Reading backup groups from storage`);
+		const response = await this.storage.read(this.storagePath, Groups);
 
 		if (response.messageError || response.validationError.length > 0) {
 			this.logger.error(response.messageError);
@@ -79,7 +79,7 @@ export class TelegramService {
 	async writeBackupGroups() {
 		this.telegramGroupState.apiVersion = process.env.npm_package_version;
 		this.telegramGroupState.updatedAt = Date.now();
-		const response = await this.storj.write(this.storjPath, this.telegramGroupState);
+		const response = await this.storage.write(this.storagePath, this.telegramGroupState);
 		const httpStatusCode = response['$metadata'].httpStatusCode;
 		if (httpStatusCode == 200) {
 			this.logger.log(`Telegram group backup stored`);

@@ -19,10 +19,10 @@ import {
 } from './positions.types';
 import { Address, erc20Abi, getAddress } from 'viem';
 import { FIVEDAYS_MS } from 'utils/const-helper';
-import { PositionV1ABI } from '@frankencoin/zchf';
-import { ADDRESS } from '@frankencoin/zchf';
-import { SavingsABI } from '@frankencoin/zchf';
-import { PositionV2ABI } from '@frankencoin/zchf';
+import { PositionV1ABI } from '@deuro/eurocoin';
+import { ADDRESS } from '@deuro/eurocoin';
+import { SavingsABI } from '@deuro/eurocoin';
+import { PositionV2ABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class PositionsService {

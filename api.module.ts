@@ -23,6 +23,7 @@ import { PositionsController } from 'positions/positions.controller';
 import { PricesController } from 'prices/prices.controller';
 import { ChallengesController } from 'challenges/challenges.controller';
 import { Storj } from 'storj/storj.s3.service';
+import { StorageService } from 'storage/storage.service';
 import { AnalyticsController } from 'analytics/analytics.controller';
 import { AnalyticsService } from 'analytics/analytics.service';
 import { SavingsLeadrateController } from 'savings/savings.leadrate.controller';
@@ -47,6 +48,7 @@ import { SavingsCoreService } from 'savings/savings.core.service';
 	],
 	providers: [
 		Storj,
+		StorageService,
 		PositionsService,
 		EcosystemMinterService,
 		EcosystemCollateralService,
