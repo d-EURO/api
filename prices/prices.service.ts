@@ -12,7 +12,7 @@ import {
 import { PositionsService } from 'positions/positions.service';
 import { COINGECKO_CLIENT, VIEM_CHAIN } from 'api.config';
 import { Address } from 'viem';
-import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
+import { EcosystemDepsService as EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
 import { ADDRESS } from '@deuro/eurocoin';
 
 const randRef: number = Math.random() * 0.4 + 0.8;
@@ -24,7 +24,7 @@ export class PricesService {
 
 	constructor(
 		private readonly positionsService: PositionsService,
-		private readonly fps: EcosystemFpsService
+		private readonly deps: EcosystemDepsService
 	) {}
 
 	getPrices(): ApiPriceListing {
@@ -39,18 +39,18 @@ export class PricesService {
 		const p = Object.values(this.positionsService.getPositionsList().list)[0];
 		if (!p) return null;
 		return {
-			address: p.zchf,
-			name: p.zchfName,
-			symbol: p.zchfSymbol,
-			decimals: p.zchfDecimals,
+			address: p.deuro,
+			name: p.deuroName,
+			symbol: p.deuroSymbol,
+			decimals: p.deuroDecimals,
 		};
 	}
 
-	getFps(): ApiPriceERC20 {
+	getDeps(): ApiPriceERC20 {
 		return {
 			address: ADDRESS[VIEM_CHAIN.id].equity,
-			name: 'Frankencoin Pool Share',
-			symbol: 'FPS',
+			name: 'Decentralized Euro Pool Share',
+			symbol: 'DEPS',
 			decimals: 18,
 		};
 	}
@@ -72,13 +72,13 @@ export class PricesService {
 	}
 
 	async fetchSourcesCoingecko(erc: ERC20Info): Promise<PriceQueryCurrencies | null> {
-		// override for Frankencoin Pool Share
+		// override for Decentralized Euro Pool Share
 		if (erc.address.toLowerCase() === ADDRESS[VIEM_CHAIN.id].equity.toLowerCase()) {
-			const priceInChf = this.fps.getEcosystemFpsInfo()?.values?.price;
-			const zchfAddress = ADDRESS[VIEM_CHAIN.id].frankenCoin.toLowerCase();
-			const zchfPrice: number = this.fetchedPrices[zchfAddress]?.price?.usd;
-			if (!zchfPrice) return null;
-			return { usd: priceInChf * zchfPrice };
+			const priceInChf = this.deps.getEcosystemDepsInfo()?.values?.price;
+			const deuroAddress = ADDRESS[VIEM_CHAIN.id].eurocoin.toLowerCase();
+			const deuroPrice: number = this.fetchedPrices[deuroAddress]?.price?.usd;
+			if (!deuroPrice) return null;
+			return { usd: priceInChf * deuroPrice };
 		}
 
 		// all mainnet addresses
@@ -99,7 +99,7 @@ export class PricesService {
 
 			// @dev: this is just for testnet soft price mapping
 			let price = { usd: calc(1) };
-			if (erc.symbol === 'ZCHF') price = { usd: calc(1.12) };
+			if (erc.symbol === 'dEURO') price = { usd: calc(1.12) };
 			if (erc.symbol === 'BTC') price = { usd: calc(69000) };
 			if (erc.symbol === 'WBTC') price = { usd: calc(69000) };
 			if (erc.symbol === 'ETH') price = { usd: calc(3800) };
@@ -117,12 +117,12 @@ export class PricesService {
 	async updatePrices() {
 		this.logger.debug('Updating Prices');
 
-		const fps = this.getFps();
+		const deps = this.getDeps();
 		const m = this.getMint();
 		const c = this.getCollateral();
 
 		if (!m || Object.values(c).length == 0) return;
-		const a = [fps, m, ...Object.values(c)];
+		const a = [deps, m, ...Object.values(c)];
 
 		const pricesQuery: PriceQueryObjectArray = {};
 		let pricesQueryNewCount: number = 0;
@@ -130,7 +130,7 @@ export class PricesService {
 		let pricesQueryUpdateCount: number = 0;
 		let pricesQueryUpdateCountFailed: number = 0;
 
-		const zchfPrice: number = this.fetchedPrices[ADDRESS[VIEM_CHAIN.id].frankenCoin.toLowerCase()]?.price?.usd;
+		const deuroPrice: number = this.fetchedPrices[ADDRESS[VIEM_CHAIN.id].eurocoin.toLowerCase()]?.price?.usd;
 
 		for (const erc of a) {
 			const addr = erc.address.toLowerCase() as Address;
@@ -168,10 +168,10 @@ export class PricesService {
 				}
 			}
 
-			if (zchfPrice) {
+			if (deuroPrice) {
 				const priceUsd = this.fetchedPrices[addr]?.price?.usd;
 				if (priceUsd) {
-					const priceChf = Math.round((priceUsd / zchfPrice) * 100) / 100;
+					const priceChf = Math.round((priceUsd / deuroPrice) * 100) / 100;
 					this.fetchedPrices[addr].price.eur = priceChf;
 				}
 			}

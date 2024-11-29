@@ -24,8 +24,8 @@ export type ConfigType = {
 
 // Create config
 export const CONFIG: ConfigType = {
-	app: process.env.CONFIG_APP_URL || 'https://app.frankencoin.com',
-	indexer: process.env.CONFIG_INDEXER_URL || 'https://ponder.frankencoin.com',
+	app: process.env.CONFIG_APP_URL || 'https://app.deuro.com',
+	indexer: process.env.CONFIG_INDEXER_URL || 'https://ponder.deuro.com/',
 	coingeckoApiKey: process.env.COINGECKO_API_KEY,
 	chain: process.env.CONFIG_CHAIN === 'polygon' ? polygon : mainnet, // @dev: default mainnet
 	network: {

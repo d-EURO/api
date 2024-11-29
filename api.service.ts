@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { CONFIG, VIEM_CONFIG } from 'api.config';
 import { ChallengesService } from 'challenges/challenges.service';
-import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
-import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
+import { EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
+import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
 import { PositionsService } from 'positions/positions.service';
 import { PricesService } from 'prices/prices.service';
@@ -29,8 +29,8 @@ export class ApiService {
 		private readonly minter: EcosystemMinterService,
 		private readonly positions: PositionsService,
 		private readonly prices: PricesService,
-		private readonly frankencoin: EcosystemFrankencoinService,
-		private readonly fps: EcosystemFpsService,
+		private readonly stablecoin: EcosystemStablecoinService,
+		private readonly deps: EcosystemDepsService,
 		private readonly challenges: ChallengesService,
 		private readonly telegram: TelegramService,
 		private readonly leadrate: SavingsLeadrateService
@@ -42,22 +42,22 @@ export class ApiService {
 		this.logger.log(`Fetched blockheight: ${this.fetchedBlockheight}`);
 		const promises = [
 			this.minter.updateMinters(),
-			this.positions.updatePositonV1s(),
+			//this.positions.updatePositonV1s(),
 			this.positions.updatePositonV2s(),
-			this.positions.updateMintingUpdateV1s(),
+			//this.positions.updateMintingUpdateV1s(),
 			this.positions.updateMintingUpdateV2s(),
 			this.prices.updatePrices(),
-			this.frankencoin.updateEcosystemKeyValues(),
-			this.frankencoin.updateEcosystemMintBurnMapping(),
-			this.fps.updateFpsInfo(),
+			this.stablecoin.updateEcosystemKeyValues(),
+			this.stablecoin.updateEcosystemMintBurnMapping(),
+			this.deps.updateDepsInfo(),
 			this.leadrate.updateLeadrateRates(),
 			this.leadrate.updateLeadrateProposals(),
-			this.challenges.updateChallengeV1s(),
+			//this.challenges.updateChallengeV1s(),
 			this.challenges.updateChallengeV2s(),
-			this.challenges.updateBidV1s(),
+			//this.challenges.updateBidV1s(),
 			this.challenges.updateBidV2s(),
 			this.challenges.updateChallengesPrices(),
-			this.telegram.updateTelegram(),
+			//this.telegram.updateTelegram(),
 		];
 
 		return Promise.all(promises);

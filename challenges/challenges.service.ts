@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { gql } from '@apollo/client/core';
-import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
+import { PONDER_CLIENT } from 'api.config';
 import {
 	ApiBidsBidders,
 	ApiBidsChallenges,
@@ -24,10 +24,8 @@ import {
 	ChallengesPricesMapping,
 	ChallengesQueryItem,
 	ChallengesQueryItemMapping,
-	ChallengesQueryStatus,
 } from './challenges.types';
 import { Address } from 'viem';
-import { ADDRESS, MintingHubV1ABI, MintingHubV2ABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class ChallengesService {
@@ -172,6 +170,7 @@ export class ChallengesService {
 	// --------------------------------------------------------------------------
 	// --------------------------------------------------------------------------
 	async updateChallengesPrices() {
+		/*
 		this.logger.debug('Updating ChallengesPrices');
 		const active = this.getChallenges().list.filter((c: ChallengesQueryItem) => c.status === ChallengesQueryStatus.Active);
 
@@ -191,6 +190,7 @@ export class ChallengesService {
 
 		// upsert
 		this.fetchedPrices = { ...this.fetchedPrices, ...challengesPrices };
+		*/
 	}
 
 	// --------------------------------------------------------------------------

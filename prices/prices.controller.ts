@@ -32,12 +32,12 @@ export class PricesController {
 		return this.pricesService.getMint();
 	}
 
-	@Get('erc20/fps')
+	@Get('erc20/deps')
 	@ApiResponse({
-		description: 'Returns ERC20 information about the FPS token',
+		description: 'Returns ERC20 information about the DEPS token',
 	})
-	getFps(): ApiPriceERC20 {
-		return this.pricesService.getFps();
+	getDeps(): ApiPriceERC20 {
+		return this.pricesService.getDeps();
 	}
 
 	@Get('erc20/collateral')

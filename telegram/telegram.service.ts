@@ -1,19 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
-import TelegramBot from 'node-telegram-bot-api';
+//import TelegramBot from 'node-telegram-bot-api';
 import { PositionsService } from 'positions/positions.service';
 import { TelegramGroupState, TelegramState } from './telegram.types';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
 import { MinterProposalMessage } from './messages/MinterProposal.message';
 import { PositionProposalMessage } from './messages/PositionProposal.message';
 import { StorageService } from 'storage/storage.service';
-import { Groups, SubscriptionGroups } from './dtos/groups.dto';
+//import { Groups, SubscriptionGroups } from './dtos/groups.dto';
+import { Groups } from './dtos/groups.dto';
 import { WelcomeGroupMessage } from './messages/WelcomeGroup.message';
 import { ChallengesService } from 'challenges/challenges.service';
 import { ChallengeStartedMessage } from './messages/ChallengeStarted.message';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PricesService } from 'prices/prices.service';
 import { MintingUpdateMessage } from './messages/MintingUpdate.message';
-import { HelpMessage } from './messages/Help.message';
+//import { HelpMessage } from './messages/Help.message';
 import { MinterProposalVetoedMessage } from './messages/MinterProposalVetoed.message';
 import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 import { LeadrateProposalMessage } from './messages/LeadrateProposal.message';
@@ -23,7 +24,7 @@ import { BidTakenMessage } from './messages/BidTaken.message';
 @Injectable()
 export class TelegramService {
 	private readonly logger = new Logger(this.constructor.name);
-	private readonly bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+	//private readonly bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 	private readonly storagePath: string = '/telegram.groups.json';
 	private telegramHandles: string[] = ['/MintingUpdates', '/help'];
 	private telegramState: TelegramState;
@@ -103,6 +104,10 @@ export class TelegramService {
 	}
 
 	async sendMessage(group: string | number, message: string) {
+		console.log('TelegramService::sendMessage():');
+		console.log(group);
+		console.log(message);
+		/*
 		try {
 			this.logger.log(`Sending message to group id: ${group}`);
 			await this.bot.sendMessage(group.toString(), message, { parse_mode: 'Markdown', disable_web_page_preview: true });
@@ -130,6 +135,7 @@ export class TelegramService {
 				this.logger.warn(error);
 			}
 		}
+			*/
 	}
 
 	async updateTelegram() {
@@ -278,6 +284,7 @@ export class TelegramService {
 	}
 
 	async applyListener() {
+		/*
 		const toggle = (handle: string, msg: TelegramBot.Message) => {
 			if (handle !== msg.text) return;
 			const group = msg.chat.id.toString();
@@ -300,5 +307,6 @@ export class TelegramService {
 				this.sendMessage(m.chat.id, HelpMessage(m.chat.id.toString(), this.telegramHandles, this.telegramGroupState.subscription));
 			else this.telegramHandles.forEach((h) => toggle(h, m));
 		});
+		*/
 	}
 }

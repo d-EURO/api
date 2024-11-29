@@ -29,7 +29,7 @@ Collateral: ${position.collateralName} (${position.collateralSymbol})
 At: ${position.collateral}
 Size: ${formatCurrency(size, 2, 2)} ${position.collateralSymbol}
 Min: ${formatCurrency(min, 2, 2)} ${position.collateralSymbol}
-Starting Price: ${formatCurrency(price, 2, 2)} ZCHF
+Starting Price: ${formatCurrency(price, 2, 2)} dEURO
 
 Duration: ${formatCurrency(duration / 1000 / 60 / 60, 1, 1)} hours
 Quick Auction: ${isQuickAuction}

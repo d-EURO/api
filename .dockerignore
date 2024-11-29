@@ -1,0 +1,17 @@
+.dist/
+generated/
+node_modules/
+
+.gitignore
+.npmignore
+.npmrc
+
+.env
+.env.example
+
+.eslintrc.js
+.prettierrc
+.prettierrc.json
+
+Dockerfile
+README.md

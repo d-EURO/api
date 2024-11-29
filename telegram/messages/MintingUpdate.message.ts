@@ -28,19 +28,19 @@ Owner: ${minting.owner}
 [App Position](${AppUrl(`/monitoring/${minting.position}`)})
 
 Collateral: ${minting.collateralName} (${minting.collateralSymbol})
-Market Price: ${formatCurrency(marketPrice, 2)} ZCHF
-Liq. Price: ${formatCurrency(liqPrice, 2)} ZCHF
+Market Price: ${formatCurrency(marketPrice, 2)} dEURO
+Liq. Price: ${formatCurrency(liqPrice, 2)} dEURO
 *Ratio: ${formatCurrency(ratio * 100, 2)}%*
 
-Minted: ${formatCurrency(minted, 2)} ZCHF
-*Changed: ${absStr(mintedAdjusted)}${formatCurrency(mintedAdjusted, 2)} ZCHF*
+Minted: ${formatCurrency(minted, 2)} dEURO
+*Changed: ${absStr(mintedAdjusted)}${formatCurrency(mintedAdjusted, 2)} dEURO*
 
 Annual Interest: ${formatCurrency(minting.annualInterestPPM / 10000, 2)}%
 Reserve: ${formatCurrency(minting.reserveContribution / 10000, 2)}%
 
 FeeTimeframe: ${timefram} days
 FeePct: ${formatCurrency(minting.feePPM / 10000, 2)}%
-*FeePaid: ${formatCurrency(formatUnits(BigInt(minting.feePaid), 18), 2)} ZCHF*
+*FeePaid: ${formatCurrency(formatUnits(BigInt(minting.feePaid), 18), 2)} dEURO*
 
 [Explorer Position](${ExplorerAddressUrl(minting.position)})
 [Explorer Owner](${ExplorerAddressUrl(minting.owner)})

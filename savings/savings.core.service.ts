@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
+import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { SavingsLeadrateService } from './savings.leadrate.service';
 import { Address, formatUnits, zeroAddress } from 'viem';
 import { ApiSavingsInfo, ApiSavingsUserTable } from './savings.core.types';
@@ -11,21 +11,21 @@ export class SavingsCoreService {
 	private readonly logger = new Logger(this.constructor.name);
 
 	constructor(
-		private readonly fc: EcosystemFrankencoinService,
+		private readonly fc: EcosystemStablecoinService,
 		private readonly lead: SavingsLeadrateService
 	) {}
 
 	getInfo(): ApiSavingsInfo {
-		const totalSavedRaw = this.fc.getEcosystemFrankencoinKeyValues()['Savings:TotalSaved']?.amount || 0n;
-		const totalInterestRaw = this.fc.getEcosystemFrankencoinKeyValues()['Savings:TotalInterestCollected']?.amount || 0n;
-		const totalWithdrawnRaw = this.fc.getEcosystemFrankencoinKeyValues()['Savings:TotalWithdrawn']?.amount || 0n;
+		const totalSavedRaw = this.fc.getEcosystemStablecoinKeyValues()['Savings:TotalSaved']?.amount || 0n;
+		const totalInterestRaw = this.fc.getEcosystemStablecoinKeyValues()['Savings:TotalInterestCollected']?.amount || 0n;
+		const totalWithdrawnRaw = this.fc.getEcosystemStablecoinKeyValues()['Savings:TotalWithdrawn']?.amount || 0n;
 		const rate = this.lead.getInfo().rate;
 
 		const totalSaved: number = parseFloat(formatUnits(totalSavedRaw, 18));
 		const totalInterest: number = parseFloat(formatUnits(totalInterestRaw, 18));
 		const totalWithdrawn: number = parseFloat(formatUnits(totalWithdrawnRaw, 18));
 
-		const totalSupply: number = this.fc.getEcosystemFrankencoinInfo().total.supply;
+		const totalSupply: number = this.fc.getEcosystemStablecoinInfo().total.supply;
 		const ratioOfSupply: number = totalSaved / totalSupply;
 
 		return {

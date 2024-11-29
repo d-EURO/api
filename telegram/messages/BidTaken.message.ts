@@ -17,9 +17,9 @@ Bid Type: *${bid.bidType}*
 Collateral: ${position.collateralName} (${position.collateralSymbol})
 Challenge Size: ${formatCurrency(formatUnits(bid.challengeSize, position.collateralDecimals))} ${position.collateralSymbol}
 
-Bid Amount: ${formatCurrency(formatUnits(bid.bid, 18))} ZCHF
+Bid Amount: ${formatCurrency(formatUnits(bid.bid, 18))} dEURO
 Bid Filled: ${formatCurrency(formatUnits(bid.filledSize, position.collateralDecimals))} ${position.collateralSymbol}
-Bid Price: ${formatCurrency(formatUnits(bid.price, 36 - position.collateralDecimals))} ZCHF/${position.collateralSymbol}
+Bid Price: ${formatCurrency(formatUnits(bid.price, 36 - position.collateralDecimals))} dEURO/${position.collateralSymbol}
 
 [Buy ${position.collateralSymbol} in Auction](${AppUrl(`/challenges/${challenge.id}/bid`)})
 [Goto Position](${AppUrl(`/monitoring/${bid.position}`)})

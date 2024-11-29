@@ -14,7 +14,7 @@ export function PositionProposalMessage(position: PositionQuery): string {
 Start: ${new Date(position.start * 1000).toString().split(' ').splice(0, 5).join(' ')}
 Position: ${position.position}
 Owner: ${position.owner}
-Minting Limit: ${formatCurrency(formatUnits(BigInt(position.limitForClones), 18), 2, 2)} ZCHF
+Minting Limit: ${formatCurrency(formatUnits(BigInt(position.limitForClones), 18), 2, 2)} dEURO
 Annual Interest: ${formatCurrency(position.annualInterestPPM / 10000, 1, 1)}%
 Retained Reserve: ${formatCurrency(position.reserveContribution / 10000, 1, 1)}%
 Auction Duration: ${Math.floor(position.challengePeriod / 60 / 60)} hours
@@ -24,7 +24,7 @@ Collateral: ${position.collateralName} (${position.collateralSymbol})
 At: ${position.collateral}
 Balance: ${formatCurrency(bal, 2, 2)} ${position.collateralSymbol}
 Bal. min.: ${formatCurrency(min, 2, 2)} ${position.collateralSymbol}
-Price: ${formatCurrency(price, 2, 2)} ZCHF
+Price: ${formatCurrency(price, 2, 2)} dEURO
 
 [Challenge Position](${AppUrl(`/monitoring/${position.position}/challenge`)})
 [Veto Position](${AppUrl(`/monitoring/${position.position}/veto`)})

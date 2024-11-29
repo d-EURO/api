@@ -24,10 +24,10 @@ export type AnalyticsExposureItem = {
 		totalMintedRatio: number;
 		interestAverage: number;
 		totalTheta: number;
-		thetaPerFpsToken: number;
+		thetaPerDepsToken: number;
 	};
 	reserveRiskWiped: {
-		fpsPrice: number;
+		depsPrice: number;
 		riskRatio: number;
 	};
 };
@@ -39,8 +39,8 @@ export type ApiAnalyticsCollateralExposure = {
 		balanceInReserve: number;
 		mintersContribution: number;
 		equityInReserve: number;
-		fpsPrice: number;
-		fpsTotalSupply: number;
+		depsPrice: number;
+		depsTotalSupply: number;
 		thetaFromPositions: number;
 		thetaPerToken: number;
 		earningsPerAnnum: number;
@@ -51,7 +51,7 @@ export type ApiAnalyticsCollateralExposure = {
 	exposures: AnalyticsExposureItem[];
 };
 
-export type ApiAnalyticsFpsEarnings = {
+export type ApiAnalyticsDepsEarnings = {
 	investFees: number;
 	redeemFees: number;
 	minterProposalFees: number;

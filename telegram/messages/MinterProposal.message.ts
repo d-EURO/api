@@ -12,7 +12,7 @@ Application Period: ${Math.floor(minter.applicationPeriod / 60 / 60)} hours
 Application Veto Until: ${d.toString().split(' ').slice(0, 5).join(' ')}
 Minter: ${minter.minter}
 Suggestor: ${minter.suggestor}
-Application Fee: ${formatCurrency(minter.applicationFee / 1e18, 2, 2)} ZCHF
+Application Fee: ${formatCurrency(minter.applicationFee / 1e18, 2, 2)} dEURO
 Message: ${minter.applyMessage}
 
 [Goto Governance](${AppUrl(`/governance`)})

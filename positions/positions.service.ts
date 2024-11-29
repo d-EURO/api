@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CONFIG, PONDER_CLIENT, VIEM_CONFIG } from '../api.config';
+import { PONDER_CLIENT, VIEM_CONFIG } from '../api.config';
 import { gql } from '@apollo/client/core';
 import {
 	ApiMintingUpdateListing,
@@ -19,10 +19,6 @@ import {
 } from './positions.types';
 import { Address, erc20Abi, getAddress } from 'viem';
 import { FIVEDAYS_MS } from 'utils/const-helper';
-import { PositionV1ABI } from '@deuro/eurocoin';
-import { ADDRESS } from '@deuro/eurocoin';
-import { SavingsABI } from '@deuro/eurocoin';
-import { PositionV2ABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class PositionsService {
@@ -92,7 +88,7 @@ export class PositionsService {
 						items {
 							position
 							owner
-							zchf
+							deuro
 							collateral
 							price
 
@@ -111,9 +107,9 @@ export class PositionsService {
 							expiration
 							challengePeriod
 
-							zchfName
-							zchfSymbol
-							zchfDecimals
+							deuroName
+							deuroSymbol
+							deuroDecimals
 
 							collateralName
 							collateralSymbol
@@ -156,6 +152,7 @@ export class PositionsService {
 
 			// fetch minted - See issue #11
 			// https://github.com/Frankencoin-ZCHF/frankencoin-api/issues/11
+			/*
 			mintedDataPromises.push(
 				VIEM_CONFIG.readContract({
 					address: p.position,
@@ -163,6 +160,7 @@ export class PositionsService {
 					functionName: 'minted',
 				})
 			);
+			*/
 		}
 
 		// await for contract calls
@@ -179,7 +177,7 @@ export class PositionsService {
 
 				position: getAddress(p.position),
 				owner: getAddress(p.owner),
-				zchf: getAddress(p.zchf),
+				deuro: getAddress(p.deuro),
 				collateral: getAddress(p.collateral),
 				price: p.price,
 
@@ -198,9 +196,9 @@ export class PositionsService {
 				expiration: p.expiration,
 				challengePeriod: p.challengePeriod,
 
-				zchfName: p.zchfName,
-				zchfSymbol: p.zchfSymbol,
-				zchfDecimals: p.zchfDecimals,
+				deuroName: p.deuroName,
+				deuroSymbol: p.deuroSymbol,
+				deuroDecimals: p.deuroDecimals,
 
 				collateralName: p.collateralName,
 				collateralSymbol: p.collateralSymbol,
@@ -238,7 +236,7 @@ export class PositionsService {
 						items {
 							position
 							owner
-							zchf
+							deuro
 							collateral
 							price
 
@@ -257,9 +255,9 @@ export class PositionsService {
 							expiration
 							challengePeriod
 
-							zchfName
-							zchfSymbol
-							zchfDecimals
+							deuroName
+							deuroSymbol
+							deuroDecimals
 
 							collateralName
 							collateralSymbol
@@ -286,11 +284,15 @@ export class PositionsService {
 		const balanceOfDataPromises: Promise<bigint>[] = [];
 		const mintedDataPromises: Promise<bigint>[] = [];
 
+		const leadrate: number = 0;
+
+		/*
 		const leadrate: number = await VIEM_CONFIG.readContract({
 			address: ADDRESS[CONFIG.chain.id].savings,
 			abi: SavingsABI,
 			functionName: 'currentRatePPM',
 		});
+		*/
 
 		for (const p of items) {
 			// Forces the collateral balance to be overwritten with the latest blockchain state, instead of the ponder state.
@@ -307,7 +309,8 @@ export class PositionsService {
 
 			// TODO: is this solved in V2?
 			// fetch minted - See issue #11
-			// https://github.com/Frankencoin-ZCHF/frankencoin-api/issues/11
+			// https://github.com/Frankencoin-ZCHF/frankencoin-api/issues/
+			/*
 			mintedDataPromises.push(
 				VIEM_CONFIG.readContract({
 					address: p.position,
@@ -315,6 +318,7 @@ export class PositionsService {
 					functionName: 'minted',
 				})
 			);
+			*/
 		}
 
 		// await for contract calls
@@ -331,7 +335,7 @@ export class PositionsService {
 
 				position: getAddress(p.position),
 				owner: getAddress(p.owner),
-				zchf: getAddress(p.zchf),
+				deuro: getAddress(p.deuro),
 				collateral: getAddress(p.collateral),
 				price: p.price,
 
@@ -351,9 +355,9 @@ export class PositionsService {
 				expiration: p.expiration,
 				challengePeriod: p.challengePeriod,
 
-				zchfName: p.zchfName,
-				zchfSymbol: p.zchfSymbol,
-				zchfDecimals: p.zchfDecimals,
+				deuroName: p.deuroName,
+				deuroSymbol: p.deuroSymbol,
+				deuroDecimals: p.deuroDecimals,
 
 				collateralName: p.collateralName,
 				collateralSymbol: p.collateralSymbol,

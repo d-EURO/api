@@ -13,8 +13,8 @@ $ yarn install
 ```
 PORT=3030
 
-CONFIG_APP_URL=https://app.frankencoin.com
-CONFIG_INDEXER_URL=https://ponder.frankencoin.com
+CONFIG_APP_URL=https://app.deuro.com
+CONFIG_INDEXER_URL=https://ponder.deuro.com
 CONFIG_CHAIN=mainnet
 
 RPC_URL_MAINNET=https://eth-mainnet.g.alchemy.com/v2/...
@@ -26,7 +26,7 @@ TELEGRAM_BOT_TOKEN=...
 
 STORJ_ACCESSKEY=...
 STORJ_SECRETACCESSKEY=...
-STORJ_BUCKET=frankencoin
+STORJ_BUCKET=deuro
 STORJ_REGION=EU1
 STORJ_ENDPOINT=https://gateway.storjshare.io
 ```

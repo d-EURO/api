@@ -6,7 +6,7 @@ export type PositionQueryV1 = {
 
 	position: Address;
 	owner: Address;
-	zchf: Address;
+	deuro: Address;
 	collateral: Address;
 	price: string;
 
@@ -25,9 +25,9 @@ export type PositionQueryV1 = {
 	expiration: number;
 	challengePeriod: number;
 
-	zchfName: string;
-	zchfSymbol: string;
-	zchfDecimals: number;
+	deuroName: string;
+	deuroSymbol: string;
+	deuroDecimals: number;
 
 	collateralName: string;
 	collateralSymbol: string;
@@ -46,7 +46,7 @@ export type PositionQueryV2 = {
 
 	position: Address;
 	owner: Address;
-	zchf: Address;
+	deuro: Address;
 	collateral: Address;
 	price: string;
 
@@ -66,9 +66,9 @@ export type PositionQueryV2 = {
 	expiration: number;
 	challengePeriod: number;
 
-	zchfName: string;
-	zchfSymbol: string;
-	zchfDecimals: number;
+	deuroName: string;
+	deuroSymbol: string;
+	deuroDecimals: number;
 
 	collateralName: string;
 	collateralSymbol: string;

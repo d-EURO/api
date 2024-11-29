@@ -10,9 +10,9 @@ export function HelpMessage(group: string, handles: string[], subs: Subscription
 	}
 
 	return `
-*Hello again, from the Frankencoin API Bot!*
+*Hello again, from the d-EURO API Bot!*
 
-I am listening to changes within the Frankencoin ecosystem.
+I am listening to changes within the d-EURO ecosystem.
 
 *Available subscription handles:*
 ${handles.join('\n')}
@@ -26,6 +26,6 @@ Chain/Network: ${CONFIG.chain.name} (${CONFIG.chain.id})
 Time: ${new Date().toString().split(' ').slice(0, 5).join(' ')}
 
 [Goto App](${AppUrl('')})
-[Github Api](https://github.com/Frankencoin-ZCHF/frankencoin-api)
+[Github Api](https://github.com/d-EURO/api)
 `;
 }

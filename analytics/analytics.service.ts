@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { VIEM_CONFIG } from 'api.config';
-import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
+import { EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
 import { PositionsService } from 'positions/positions.service';
 import { uniqueValues } from 'utils/format-array';
 import { formatUnits } from 'viem';
-import { AnalyticsExposureItem, ApiAnalyticsCollateralExposure, ApiAnalyticsFpsEarnings } from './analytics.types';
-import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
+import { AnalyticsExposureItem, ApiAnalyticsCollateralExposure, ApiAnalyticsDepsEarnings } from './analytics.types';
+import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
 import { ADDRESS } from '@deuro/eurocoin';
 import { EuroCoinABI } from '@deuro/eurocoin';
@@ -18,8 +18,8 @@ export class AnalyticsService {
 
 	constructor(
 		private readonly positions: PositionsService,
-		private readonly fps: EcosystemFpsService,
-		private readonly fc: EcosystemFrankencoinService,
+		private readonly deps: EcosystemDepsService,
+		private readonly fc: EcosystemStablecoinService,
 		private readonly minters: EcosystemMinterService,
 		private readonly save: SavingsCoreService
 	) {}
@@ -28,19 +28,19 @@ export class AnalyticsService {
 		const positions = this.positions.getPositionsOpen().map;
 		const list = Object.values(positions);
 		const collaterals = list.map((p) => p.collateral).filter(uniqueValues);
-		const fps = this.fps.getEcosystemFpsInfo();
+		const deps = this.deps.getEcosystemDepsInfo();
 
 		let positionsTheta: number = 0;
 		let positionsThetaPerToken: number = 0;
 
 		const minterReserveRaw = await VIEM_CONFIG.readContract({
-			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
+			address: ADDRESS[VIEM_CONFIG.chain.id].eurocoin,
 			abi: EuroCoinABI,
 			functionName: 'minterReserve',
 		});
 
 		const balanceReserveRaw = await VIEM_CONFIG.readContract({
-			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
+			address: ADDRESS[VIEM_CONFIG.chain.id].eurocoin,
 			abi: EuroCoinABI,
 			functionName: 'balanceOf',
 			args: [ADDRESS[VIEM_CONFIG.chain.id].equity],
@@ -75,7 +75,7 @@ export class AnalyticsService {
 
 			const totalTheta = (interestAvg * parseFloat(totalMinted)) / 365;
 			positionsTheta += totalTheta;
-			const thetaPerToken = totalTheta / fps.values.totalSupply;
+			const thetaPerToken = totalTheta / deps.values.totalSupply;
 			positionsThetaPerToken += thetaPerToken;
 
 			const totalContributionMul = pos.reduce<bigint>((a, b) => {
@@ -84,8 +84,8 @@ export class AnalyticsService {
 
 			const totalContributionRaw = BigInt(Math.floor(parseInt(formatUnits(totalContributionMul, 6))));
 			const equityInReserveWipedRaw = equityInReserveRaw + totalContributionRaw - totalMintedRaw;
-			const fpsPriceWiped = (parseFloat(formatUnits(equityInReserveWipedRaw, 18)) * 3) / fps.values.totalSupply;
-			const riskRatioWiped = Math.round(1_000_000 * (1 - fpsPriceWiped / fps.values.price)) / 1_000_000;
+			const depsPriceWiped = (parseFloat(formatUnits(equityInReserveWipedRaw, 18)) * 3) / deps.values.totalSupply;
+			const riskRatioWiped = Math.round(1_000_000 * (1 - depsPriceWiped / deps.values.price)) / 1_000_000;
 
 			const data: AnalyticsExposureItem = {
 				collateral: {
@@ -106,10 +106,10 @@ export class AnalyticsService {
 					totalMintedRatio: totalMintedRatio,
 					interestAverage: interestAvg,
 					totalTheta: totalTheta,
-					thetaPerFpsToken: thetaPerToken,
+					thetaPerDepsToken: thetaPerToken,
 				},
 				reserveRiskWiped: {
-					fpsPrice: fpsPriceWiped < 0 ? 0 : fpsPriceWiped,
+					depsPrice: depsPriceWiped < 0 ? 0 : depsPriceWiped,
 					riskRatio: riskRatioWiped,
 				},
 			};
@@ -122,13 +122,13 @@ export class AnalyticsService {
 				balanceInReserve: parseFloat(balanceReserve),
 				mintersContribution: parseFloat(minterReserve),
 				equityInReserve: parseFloat(equityInReserve),
-				fpsPrice: fps.values.price,
-				fpsTotalSupply: fps.values.totalSupply,
+				depsPrice: deps.values.price,
+				depsTotalSupply: deps.values.totalSupply,
 				thetaFromPositions: positionsTheta,
 				thetaPerToken: positionsThetaPerToken,
 				earningsPerAnnum: positionsTheta * 365,
 				earningsPerToken: positionsThetaPerToken * 365,
-				priceToEarnings: fps.values.price / (positionsThetaPerToken * 365),
+				priceToEarnings: deps.values.price / (positionsThetaPerToken * 365),
 				priceToBookValue: 3,
 			},
 			exposures: returnData,
@@ -137,17 +137,17 @@ export class AnalyticsService {
 		return this.exposure;
 	}
 
-	async getFpsEarnings(): Promise<ApiAnalyticsFpsEarnings> {
+	async getDepsEarnings(): Promise<ApiAnalyticsDepsEarnings> {
 		const num: number = this.positions.getPositionsList().list.filter((p) => p.isOriginal).length;
 		const positionProposalFees: number = 1000 * num;
-		const investFeeRaw = this.fc.getEcosystemFrankencoinKeyValues()['Equity:InvestedFeePaidPPM']?.amount || 0n;
+		const investFeeRaw = this.fc.getEcosystemStablecoinKeyValues()['Equity:InvestedFeePaidPPM']?.amount || 0n;
 		const investFees = parseFloat(formatUnits(investFeeRaw, 18 + 6));
-		const redeemFeeRaw = this.fc.getEcosystemFrankencoinKeyValues()['Equity:RedeemedFeePaidPPM']?.amount || 0n;
+		const redeemFeeRaw = this.fc.getEcosystemStablecoinKeyValues()['Equity:RedeemedFeePaidPPM']?.amount || 0n;
 		const redeemFees = parseFloat(formatUnits(redeemFeeRaw, 18 + 6));
 		const minterProposalFees = this.minters
 			.getMintersList()
 			.list.reduce<number>((a, b) => a + parseFloat(formatUnits(BigInt(b.applicationFee), 18)), 0);
-		const otherProfitClaims: number = this.fps.getEcosystemFpsInfo().earnings.profit - positionProposalFees - minterProposalFees;
+		const otherProfitClaims: number = this.deps.getEcosystemDepsInfo().earnings.profit - positionProposalFees - minterProposalFees;
 
 		const expo = await this.getCollateralExposure();
 		const equityAdjusted: number = expo.general.equityInReserve;
@@ -163,7 +163,7 @@ export class AnalyticsService {
 			otherContributions,
 
 			savingsInterestCosts: this.save.getInfo().totalInterest,
-			otherLossClaims: this.fps.getEcosystemFpsInfo().earnings.loss,
+			otherLossClaims: this.deps.getEcosystemDepsInfo().earnings.loss,
 		};
 	}
 }

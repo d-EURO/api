@@ -6,8 +6,8 @@ import { ConfigModule } from '@nestjs/config';
 // SERVICE IMPORTS
 import { ApiService } from 'api.service';
 import { EcosystemCollateralService } from 'ecosystem/ecosystem.collateral.service';
-import { EcosystemFpsService } from 'ecosystem/ecosystem.fps.service';
-import { EcosystemFrankencoinService } from 'ecosystem/ecosystem.frankencoin.service';
+import { EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
+import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
 import { PositionsService } from 'positions/positions.service';
 import { PricesService } from 'prices/prices.service';
@@ -17,8 +17,8 @@ import { TelegramService } from 'telegram/telegram.service';
 // CONTROLLER IMPORTS
 import { EcosystemMinterController } from 'ecosystem/ecosystem.minter.controller';
 import { EcosystemCollateralController } from 'ecosystem/ecosystem.collateral.controller';
-import { EcosystemFpsController } from 'ecosystem/ecosystem.fps.controller';
-import { EcosystemFrankencoinController } from 'ecosystem/ecosystem.frankencoin.controller';
+import { EcosystemDepsController } from 'ecosystem/ecosystem.deps.controller';
+import { EcosystemStablecoinController } from 'ecosystem/ecosystem.stablecoin.controller';
 import { PositionsController } from 'positions/positions.controller';
 import { PricesController } from 'prices/prices.controller';
 import { ChallengesController } from 'challenges/challenges.controller';
@@ -38,8 +38,8 @@ import { SavingsCoreService } from 'savings/savings.core.service';
 		PositionsController,
 		EcosystemMinterController,
 		EcosystemCollateralController,
-		EcosystemFpsController,
-		EcosystemFrankencoinController,
+		EcosystemDepsController,
+		EcosystemStablecoinController,
 		SavingsLeadrateController,
 		SavingsCoreController,
 		PricesController,
@@ -52,8 +52,8 @@ import { SavingsCoreService } from 'savings/savings.core.service';
 		PositionsService,
 		EcosystemMinterService,
 		EcosystemCollateralService,
-		EcosystemFpsService,
-		EcosystemFrankencoinService,
+		EcosystemDepsService,
+		EcosystemStablecoinService,
 		SavingsLeadrateService,
 		SavingsCoreService,
 		PricesService,
