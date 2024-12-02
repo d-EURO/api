@@ -53,7 +53,7 @@ export class ApiService {
 			this.challenges.updateChallengeV2s(),
 			this.challenges.updateBidV2s(),
 			this.challenges.updateChallengesPrices(),
-			//this.telegram.updateTelegram(),
+			this.telegram.updateTelegram(),
 		];
 
 		return Promise.all(promises);

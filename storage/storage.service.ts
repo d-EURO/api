@@ -1,22 +1,26 @@
-import { Injectable, ValidationError } from '@nestjs/common';
+import { Injectable, Logger, ValidationError } from '@nestjs/common';
+import { CONFIG } from 'api.config';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { readFileSync, writeFileSync } from 'fs';
 
 @Injectable()
 export class StorageService {
-	// TODO: write to file system
-	private readonly cache = new Map<string, string>();
+	private readonly logger = new Logger(this.constructor.name);
 
-	async write(key: string, data: any): Promise<void> {
-		this.cache.set(key, JSON.stringify(data));
+	private readonly groupsFile: string = CONFIG.telegramGroupsJson;
+
+	async write(data: any): Promise<void> {
+		writeFileSync(this.groupsFile, JSON.stringify(data));
 	}
 
 	async read<T extends object>(
-		key: string,
 		dtoClassConstructor?: ClassConstructor<T>
 	): Promise<{ data: T; validationError: ValidationError[]; messageError: string }> {
 		try {
-			const body = JSON.parse(this.cache.get(key));
+			this.logger.log(`Reading backup groups from file ${this.groupsFile}`);
+
+			const body = JSON.parse(readFileSync(this.groupsFile, 'utf-8'));
 			const dto = plainToInstance<T, typeof body>(dtoClassConstructor, body);
 			const validationError = dtoClassConstructor ? await validate(dto) : [];
 

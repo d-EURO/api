@@ -20,6 +20,8 @@ export type ConfigType = {
 		mainnet: string;
 		polygon: string;
 	};
+	telegramBotToken: string;
+	telegramGroupsJson: string;
 };
 
 // Create config
@@ -32,6 +34,8 @@ export const CONFIG: ConfigType = {
 		mainnet: process.env.RPC_URL_MAINNET,
 		polygon: process.env.RPC_URL_POLYGON,
 	},
+	telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
+	telegramGroupsJson: process.env.TELEGRAM_GROUPS_JSON,
 };
 
 // Start up message
