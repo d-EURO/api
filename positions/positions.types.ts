@@ -1,47 +1,7 @@
 import { Address } from 'viem';
 // ----------------------------------------------------------------------------------
 // Ponder
-export type PositionQueryV1 = {
-	version: 1;
-
-	position: Address;
-	owner: Address;
-	deuro: Address;
-	collateral: Address;
-	price: string;
-
-	created: number;
-	isOriginal: boolean;
-	isClone: boolean;
-	denied: boolean;
-	closed: boolean;
-	original: Address;
-
-	minimumCollateral: string;
-	annualInterestPPM: number;
-	reserveContribution: number;
-	start: number;
-	cooldown: number;
-	expiration: number;
-	challengePeriod: number;
-
-	deuroName: string;
-	deuroSymbol: string;
-	deuroDecimals: number;
-
-	collateralName: string;
-	collateralSymbol: string;
-	collateralDecimals: number;
-	collateralBalance: string;
-
-	limitForPosition: string;
-	limitForClones: string;
-	availableForPosition: string;
-	availableForClones: string;
-	minted: string;
-};
-
-export type PositionQueryV2 = {
+export type PositionQuery = {
 	version: 2;
 
 	position: Address;
@@ -81,37 +41,9 @@ export type PositionQueryV2 = {
 	minted: string;
 };
 
-export type PositionQuery = PositionQueryV1 | PositionQueryV2;
-
 export type MintingUpdateQueryId = `${Address}-${number}`;
 
-export type MintingUpdateQueryV1 = {
-	version: 1;
-
-	id: MintingUpdateQueryId;
-	txHash: string;
-	created: number;
-	position: Address;
-	owner: Address;
-	isClone: boolean;
-	collateral: Address;
-	collateralName: string;
-	collateralSymbol: string;
-	collateralDecimals: number;
-	size: string;
-	price: string;
-	minted: string;
-	sizeAdjusted: string;
-	priceAdjusted: string;
-	mintedAdjusted: string;
-	annualInterestPPM: number;
-	reserveContribution: number;
-	feeTimeframe: number;
-	feePPM: number;
-	feePaid: string;
-};
-
-export type MintingUpdateQueryV2 = {
+export type MintingUpdateQuery = {
 	version: 2;
 
 	id: MintingUpdateQueryId;
@@ -138,7 +70,6 @@ export type MintingUpdateQueryV2 = {
 	feePPM: number;
 	feePaid: string;
 };
-export type MintingUpdateQuery = MintingUpdateQueryV1 | MintingUpdateQueryV2;
 
 // ----------------------------------------------------------------------------------
 // Service

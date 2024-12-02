@@ -75,7 +75,7 @@ export class PricesService {
 		// override for Decentralized Euro Pool Share
 		if (erc.address.toLowerCase() === ADDRESS[VIEM_CHAIN.id].equity.toLowerCase()) {
 			const priceInChf = this.deps.getEcosystemDepsInfo()?.values?.price;
-			const deuroAddress = ADDRESS[VIEM_CHAIN.id].eurocoin.toLowerCase();
+			const deuroAddress = ADDRESS[VIEM_CHAIN.id].decentralizedEURO.toLowerCase();
 			const deuroPrice: number = this.fetchedPrices[deuroAddress]?.price?.usd;
 			if (!deuroPrice) return null;
 			return { usd: priceInChf * deuroPrice };
@@ -130,7 +130,7 @@ export class PricesService {
 		let pricesQueryUpdateCount: number = 0;
 		let pricesQueryUpdateCountFailed: number = 0;
 
-		const deuroPrice: number = this.fetchedPrices[ADDRESS[VIEM_CHAIN.id].eurocoin.toLowerCase()]?.price?.usd;
+		const deuroPrice: number = this.fetchedPrices[ADDRESS[VIEM_CHAIN.id].decentralizedEURO.toLowerCase()]?.price?.usd;
 
 		for (const erc of a) {
 			const addr = erc.address.toLowerCase() as Address;

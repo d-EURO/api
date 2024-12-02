@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { gql } from '@apollo/client/core';
-import { PONDER_CLIENT } from 'api.config';
+import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
 import {
 	ApiBidsBidders,
 	ApiBidsChallenges,
@@ -24,8 +24,10 @@ import {
 	ChallengesPricesMapping,
 	ChallengesQueryItem,
 	ChallengesQueryItemMapping,
+	ChallengesQueryStatus,
 } from './challenges.types';
 import { Address } from 'viem';
+import { ADDRESS, MintingHubV2ABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class ChallengesService {
@@ -170,7 +172,6 @@ export class ChallengesService {
 	// --------------------------------------------------------------------------
 	// --------------------------------------------------------------------------
 	async updateChallengesPrices() {
-		/*
 		this.logger.debug('Updating ChallengesPrices');
 		const active = this.getChallenges().list.filter((c: ChallengesQueryItem) => c.status === ChallengesQueryStatus.Active);
 
@@ -179,8 +180,8 @@ export class ChallengesService {
 		const id = VIEM_CONFIG.chain.id;
 		for (const c of active) {
 			const price = await VIEM_CONFIG.readContract({
-				abi: c.version === 1 ? MintingHubV1ABI : MintingHubV2ABI,
-				address: c.version === 1 ? ADDRESS[id].mintingHubV1 : ADDRESS[id].mintingHubV2,
+				abi: MintingHubV2ABI,
+				address: ADDRESS[id].mintingHubV2,
 				functionName: 'price',
 				args: [parseInt(c.number.toString())],
 			});
@@ -190,96 +191,6 @@ export class ChallengesService {
 
 		// upsert
 		this.fetchedPrices = { ...this.fetchedPrices, ...challengesPrices };
-		*/
-	}
-
-	// --------------------------------------------------------------------------
-	async updateChallengeV1s() {
-		this.logger.debug('Updating Challenges V1');
-		const challenges = await PONDER_CLIENT.query({
-			fetchPolicy: 'no-cache',
-			query: gql`
-				query {
-					challengeV1s(orderBy: "status", orderDirection: "asc", limit: 1000) {
-						items {
-							id
-							position
-							number
-							challenger
-							start
-							created
-							duration
-							size
-							liqPrice
-							bids
-							filledSize
-							acquiredCollateral
-							status
-						}
-					}
-				}
-			`,
-		});
-
-		if (!challenges.data || !challenges?.data?.challengeV1s?.items?.length) {
-			this.logger.warn('No Challenge V1 found.');
-			return;
-		}
-
-		// mapping
-		const list = challenges.data.challengeV1s.items as ChallengesQueryItem[];
-		const mapped: ChallengesQueryItemMapping = {};
-		for (const i of list) {
-			mapped[i.id] = i;
-			mapped[i.id].version = 1;
-		}
-
-		// upsert
-		this.fetchedChallengesMapping = { ...this.fetchedChallengesMapping, ...mapped };
-	}
-
-	// --------------------------------------------------------------------------
-	async updateBidV1s() {
-		this.logger.debug('Updating Bids V1');
-		const bids = await PONDER_CLIENT.query({
-			fetchPolicy: 'no-cache',
-			query: gql`
-				query {
-					challengeBidV1s(orderBy: "created", orderDirection: "desc", limit: 1000) {
-						items {
-							id
-							position
-							number
-							numberBid
-							bidder
-							created
-							bidType
-							bid
-							price
-							filledSize
-							acquiredCollateral
-							challengeSize
-						}
-					}
-				}
-			`,
-		});
-
-		if (!bids.data || !bids.data?.challengeBidV1s?.items?.length) {
-			this.logger.warn('No Bids V1 found.');
-			return;
-		}
-
-		// mapping
-		const list = bids.data.challengeBidV1s.items as BidsQueryItem[];
-		const mapped: BidsQueryItemMapping = {};
-		for (const i of list) {
-			mapped[i.id] = i;
-			mapped[i.id].version = 1;
-		}
-
-		// upsert
-		this.fetchedBidsMapping = { ...this.fetchedBidsMapping, ...mapped };
 	}
 
 	// --------------------------------------------------------------------------

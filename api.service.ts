@@ -42,9 +42,7 @@ export class ApiService {
 		this.logger.log(`Fetched blockheight: ${this.fetchedBlockheight}`);
 		const promises = [
 			this.minter.updateMinters(),
-			//this.positions.updatePositonV1s(),
 			this.positions.updatePositonV2s(),
-			//this.positions.updateMintingUpdateV1s(),
 			this.positions.updateMintingUpdateV2s(),
 			this.prices.updatePrices(),
 			this.stablecoin.updateEcosystemKeyValues(),
@@ -52,9 +50,7 @@ export class ApiService {
 			this.deps.updateDepsInfo(),
 			this.leadrate.updateLeadrateRates(),
 			this.leadrate.updateLeadrateProposals(),
-			//this.challenges.updateChallengeV1s(),
 			this.challenges.updateChallengeV2s(),
-			//this.challenges.updateBidV1s(),
 			this.challenges.updateBidV2s(),
 			this.challenges.updateChallengesPrices(),
 			//this.telegram.updateTelegram(),

@@ -38,7 +38,7 @@ export class EcosystemStablecoinService {
 		return {
 			erc20: {
 				name: 'Decentralized Euro',
-				address: ADDRESS[CONFIG.chain.id as number].eurocoin,
+				address: ADDRESS[CONFIG.chain.id as number].decentralizedEURO,
 				symbol: 'dEURO',
 				decimals: 18,
 			},

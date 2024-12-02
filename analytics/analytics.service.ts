@@ -8,7 +8,7 @@ import { AnalyticsExposureItem, ApiAnalyticsCollateralExposure, ApiAnalyticsDeps
 import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
 import { ADDRESS } from '@deuro/eurocoin';
-import { EuroCoinABI } from '@deuro/eurocoin';
+import { DecentralizedEUROABI } from '@deuro/eurocoin';
 import { SavingsCoreService } from 'savings/savings.core.service';
 
 @Injectable()
@@ -34,14 +34,14 @@ export class AnalyticsService {
 		let positionsThetaPerToken: number = 0;
 
 		const minterReserveRaw = await VIEM_CONFIG.readContract({
-			address: ADDRESS[VIEM_CONFIG.chain.id].eurocoin,
-			abi: EuroCoinABI,
+			address: ADDRESS[VIEM_CONFIG.chain.id].decentralizedEURO,
+			abi: DecentralizedEUROABI,
 			functionName: 'minterReserve',
 		});
 
 		const balanceReserveRaw = await VIEM_CONFIG.readContract({
-			address: ADDRESS[VIEM_CONFIG.chain.id].eurocoin,
-			abi: EuroCoinABI,
+			address: ADDRESS[VIEM_CONFIG.chain.id].decentralizedEURO,
+			abi: DecentralizedEUROABI,
 			functionName: 'balanceOf',
 			args: [ADDRESS[VIEM_CONFIG.chain.id].equity],
 		});

@@ -4,7 +4,7 @@ import { ApiEcosystemDepsInfo } from './ecosystem.deps.types';
 import { gql } from '@apollo/client/core';
 import { formatUnits } from 'viem';
 import { ADDRESS } from '@deuro/eurocoin';
-import { EquityABI, EuroCoinABI } from '@deuro/eurocoin';
+import { EquityABI, DecentralizedEUROABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class EcosystemDepsService {
@@ -33,14 +33,14 @@ export class EcosystemDepsService {
 		});
 
 		const minterReserveRaw = await VIEM_CONFIG.readContract({
-			address: ADDRESS[VIEM_CONFIG.chain.id].eurocoin,
-			abi: EuroCoinABI,
+			address: ADDRESS[VIEM_CONFIG.chain.id].decentralizedEURO,
+			abi: DecentralizedEUROABI,
 			functionName: 'minterReserve',
 		});
 
 		const balanceReserveRaw = await VIEM_CONFIG.readContract({
-			address: ADDRESS[VIEM_CONFIG.chain.id].eurocoin,
-			abi: EuroCoinABI,
+			address: ADDRESS[VIEM_CONFIG.chain.id].decentralizedEURO,
+			abi: DecentralizedEUROABI,
 			functionName: 'balanceOf',
 			args: [ADDRESS[VIEM_CONFIG.chain.id].equity],
 		});
