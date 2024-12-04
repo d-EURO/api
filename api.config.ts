@@ -22,7 +22,6 @@ export type ConfigType = {
 	};
 	telegramBotToken: string;
 	telegramGroupsJson: string;
-	temporaryTestData: string;
 };
 
 // Create config
@@ -37,7 +36,6 @@ export const CONFIG: ConfigType = {
 	},
 	telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
 	telegramGroupsJson: process.env.TELEGRAM_GROUPS_JSON,
-	temporaryTestData: 'This test data is just to verify, that our github workflow is OK and this entry will be removed afterwards ...',
 };
 
 // Start up message
