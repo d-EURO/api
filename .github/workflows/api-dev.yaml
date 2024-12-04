@@ -42,9 +42,13 @@ jobs:
         with:
           creds: ${{ secrets.DFX_DEV_CREDENTIALS }}
 
-      - name: Build and deploy Container App
-        uses: azure/container-apps-deploy-action@v1
+      - name: Update Azure Container App
+        uses: azure/CLI@v1
         with:
-          containerAppName: ${{ env.AZURE_CONTAINER_APP }}
-          resourceGroup: ${{ env.AZURE_RESOURCE_GROUP }}
-          imageToDeploy: ${{ env.DOCKER_TAGS }}
+          inlineScript: |
+            az containerapp update --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AZURE_CONTAINER_APP }} --image ${{ env.DOCKER_TAGS }}
+
+      - name: Logout from Azure
+        run: |
+          az logout
+        if: always()
