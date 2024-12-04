@@ -39,6 +39,7 @@ export class ApiService {
 	}
 
 	async updateWorkflow() {
+		this.logger.log(`Check github workflow: ${CONFIG.temporaryTestData}`);
 		this.logger.log(`Fetched blockheight: ${this.fetchedBlockheight}`);
 		const promises = [
 			this.minter.updateMinters(),
