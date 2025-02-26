@@ -114,7 +114,6 @@ export class PositionsService {
 							limitForClones
 							availableForClones
 							availableForMinting
-							minted
 						}
 					}
 				}
@@ -170,12 +169,10 @@ export class PositionsService {
 
 		// await for contract calls
 		const balanceOfData = await Promise.allSettled(balanceOfDataPromises);
-		const mintedData = await Promise.allSettled(mintedDataPromises);
 
 		for (let idx = 0; idx < items.length; idx++) {
 			const p = items[idx] as PositionQuery;
 			const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
-			const m = (mintedData[idx] as PromiseFulfilledResult<bigint>).value;
 
 			const entry: PositionQuery = {
 				version: 2,
@@ -214,7 +211,7 @@ export class PositionsService {
 				limitForClones: p.limitForClones,
 				availableForClones: p.availableForClones,
 				availableForMinting: p.availableForMinting,
-				minted: typeof m === 'bigint' ? m.toString() : p.minted,
+				minted: '0',
 			};
 
 			list[p.position.toLowerCase() as Address] = entry;
