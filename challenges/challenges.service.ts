@@ -181,7 +181,7 @@ export class ChallengesService {
 		for (const c of active) {
 			const price = await VIEM_CONFIG.readContract({
 				abi: MintingHubV2ABI,
-				address: ADDRESS[id].mintingHubV2,
+				address: ADDRESS[id].mintingHubGateway,
 				functionName: 'price',
 				args: [parseInt(c.number.toString())],
 			});
