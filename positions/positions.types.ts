@@ -38,7 +38,9 @@ export type PositionQuery = {
 	limitForClones: string;
 	availableForClones: string;
 	availableForMinting: string;
-	minted: string;
+	
+	principal: string;
+	fixedAnnualRatePPM: number;
 };
 
 export type MintingUpdateQueryId = `${Address}-${number}`;

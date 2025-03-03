@@ -59,7 +59,7 @@ export class AnalyticsService {
 			const originals = pos.filter((p) => p.isOriginal === true);
 			const clones = pos.filter((p) => p.isClone === true);
 
-			const totalMintedRaw = pos.reduce<bigint>((a, b) => a + BigInt(b.minted), 0n);
+			const totalMintedRaw = pos.reduce<bigint>((a, b) => a + BigInt(b.principal), 0n);
 			const totalMinted = formatUnits(totalMintedRaw, 18);
 			const totalLimitRaw = pos.reduce<bigint>((a, b) => a + BigInt(b.limitForClones), 0n);
 			const totalLimit = formatUnits(totalLimitRaw, 18);
@@ -67,8 +67,8 @@ export class AnalyticsService {
 			const totalMintedRatio = parseInt(totalMintedRatioPPM.toString()) / 1_000_000;
 
 			const interestMulRaw = pos.reduce<bigint>((a, b) => {
-				const effI = Math.floor((b.annualInterestPPM * 1_000_000) / (1_000_000 - b.reserveContribution));
-				return a + BigInt(b.minted) * BigInt(effI);
+				const effI = Math.floor((b.fixedAnnualRatePPM * 1_000_000) / (1_000_000 - b.reserveContribution));
+				return a + BigInt(b.principal) * BigInt(effI);
 			}, 0n);
 			const interestAvgPPM = totalMintedRaw > 0 ? parseInt(interestMulRaw.toString()) / parseInt(totalMintedRaw.toString()) : 0;
 			const interestAvg = parseInt(interestAvgPPM.toString()) / 1_000_000;
@@ -79,7 +79,7 @@ export class AnalyticsService {
 			positionsThetaPerToken += thetaPerToken;
 
 			const totalContributionMul = pos.reduce<bigint>((a, b) => {
-				return a + BigInt(b.minted) * BigInt(b.reserveContribution);
+				return a + BigInt(b.principal) * BigInt(b.reserveContribution);
 			}, 0n);
 
 			const totalContributionRaw = BigInt(Math.floor(parseInt(formatUnits(totalContributionMul, 6))));
