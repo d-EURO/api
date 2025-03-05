@@ -27,7 +27,7 @@ import {
 	ChallengesQueryStatus,
 } from './challenges.types';
 import { Address } from 'viem';
-import { ADDRESS, MintingHubV2ABI } from '@deuro/eurocoin';
+import { ADDRESS, MintingHubGatewayABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class ChallengesService {
@@ -180,7 +180,7 @@ export class ChallengesService {
 		const id = VIEM_CONFIG.chain.id;
 		for (const c of active) {
 			const price = await VIEM_CONFIG.readContract({
-				abi: MintingHubV2ABI,
+				abi: MintingHubGatewayABI,
 				address: ADDRESS[id].mintingHubGateway,
 				functionName: 'price',
 				args: [parseInt(c.number.toString())],

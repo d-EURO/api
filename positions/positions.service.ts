@@ -114,6 +114,9 @@ export class PositionsService {
 							limitForClones
 							availableForClones
 							availableForMinting
+
+							fixedAnnualRatePPM
+							principal
 						}
 					}
 				}
@@ -211,7 +214,8 @@ export class PositionsService {
 				limitForClones: p.limitForClones,
 				availableForClones: p.availableForClones,
 				availableForMinting: p.availableForMinting,
-				minted: '0',
+				principal: p.principal,
+				fixedAnnualRatePPM: p.fixedAnnualRatePPM,
 			};
 
 			list[p.position.toLowerCase() as Address] = entry;
