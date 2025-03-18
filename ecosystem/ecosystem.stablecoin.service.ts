@@ -47,7 +47,7 @@ export class EcosystemStablecoinService {
 				id: CONFIG.chain.id,
 			},
 			price: {
-				usd: Object.values(this.pricesService.getPrices()).find((p) => p.symbol === 'dEURO')?.price.usd,
+				usd: Object.values(this.pricesService.getPrices()).find((p) => p.symbol === 'dEURO')?.price?.usd || 1,
 			},
 			deps: this.depsService.getEcosystemDepsInfo().values,
 			tvl: this.collService.getCollateralStats()?.totalValueLocked ?? {},
