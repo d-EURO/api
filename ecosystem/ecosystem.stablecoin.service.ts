@@ -1,57 +1,57 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { gql } from '@apollo/client/core';
-import { CONFIG, CONFIG_PROFILE, PONDER_CLIENT } from 'api.config';
+import { CONFIG, PONDER_CLIENT } from 'api.config';
 import {
-	ServiceEcosystemFrankencoin,
+	ServiceEcosystemStablecoin,
 	ServiceEcosystemMintBurnMapping,
 	EcosystemQueryItem,
 	MintBurnAddressMapperQueryItem,
-	ApiEcosystemFrankencoinInfo,
+	ApiEcosystemStablecoinInfo,
 	ApiEcosystemMintBurnMapping,
-	ServiceEcosystemFrankencoinKeyValues,
-	ApiEcosystemFrankencoinKeyValues,
-} from './ecosystem.frankencoin.types';
-import { ADDRESS } from 'contracts/address';
+	ServiceEcosystemStablecoinKeyValues,
+	ApiEcosystemStablecoinKeyValues,
+} from './ecosystem.stablecoin.types';
 import { PricesService } from 'prices/prices.service';
 import { Address } from 'viem';
-import { EcosystemFpsService } from './ecosystem.fps.service';
+import { EcosystemDepsService } from './ecosystem.deps.service';
 import { EcosystemCollateralService } from './ecosystem.collateral.service';
+import { ADDRESS } from '@deuro/eurocoin';
 
 @Injectable()
-export class EcosystemFrankencoinService {
+export class EcosystemStablecoinService {
 	private readonly logger = new Logger(this.constructor.name);
-	private ecosystemFrankencoinKeyValues: ServiceEcosystemFrankencoinKeyValues;
-	private ecosystemFrankencoin: ServiceEcosystemFrankencoin;
+	private ecosystemStablecoinKeyValues: ServiceEcosystemStablecoinKeyValues;
+	private ecosystemStablecoin: ServiceEcosystemStablecoin;
 	private ecosystemMintBurnMapping: ServiceEcosystemMintBurnMapping = {};
 
 	constructor(
-		private readonly fpsService: EcosystemFpsService,
+		private readonly depsService: EcosystemDepsService,
 		private readonly collService: EcosystemCollateralService,
 		private readonly pricesService: PricesService
 	) {}
 
-	getEcosystemFrankencoinKeyValues(): ApiEcosystemFrankencoinKeyValues {
-		return this.ecosystemFrankencoinKeyValues;
+	getEcosystemStablecoinKeyValues(): ApiEcosystemStablecoinKeyValues {
+		return this.ecosystemStablecoinKeyValues;
 	}
 
-	getEcosystemFrankencoinInfo(): ApiEcosystemFrankencoinInfo {
+	getEcosystemStablecoinInfo(): ApiEcosystemStablecoinInfo {
 		return {
 			erc20: {
-				name: 'Frankencoin',
-				address: ADDRESS[CONFIG[CONFIG_PROFILE].chain.id as number].frankenCoin,
-				symbol: 'ZCHF',
+				name: 'Decentralized Euro',
+				address: ADDRESS[CONFIG.chain.id as number].decentralizedEURO,
+				symbol: 'dEURO',
 				decimals: 18,
 			},
 			chain: {
-				name: CONFIG[CONFIG_PROFILE].chain.name,
-				id: CONFIG[CONFIG_PROFILE].chain.id,
+				name: CONFIG.chain.name,
+				id: CONFIG.chain.id,
 			},
 			price: {
-				usd: Object.values(this.pricesService.getPrices()).find((p) => p.symbol === 'ZCHF')?.price.usd,
+				usd: Object.values(this.pricesService.getPrices()).find((p) => p.symbol === 'dEURO')?.price?.usd || 1,
 			},
-			fps: this.fpsService.getEcosystemFpsInfo().values,
-			tvl: this.collService.getCollateralStats().totalValueLocked,
-			...this.ecosystemFrankencoin,
+			deps: this.depsService.getEcosystemDepsInfo()?.values,
+			tvl: this.collService.getCollateralStats()?.totalValueLocked ?? {},
+			...this.ecosystemStablecoin,
 		};
 	}
 
@@ -94,26 +94,26 @@ export class EcosystemFrankencoinService {
 			mappingKeyValues[i.id] = i;
 		}
 
-		this.ecosystemFrankencoinKeyValues = { ...mappingKeyValues };
+		this.ecosystemStablecoinKeyValues = { ...mappingKeyValues };
 
 		// mint burn mapping
-		const mint: number = parseInt(getItem('Frankencoin:Mint')?.amount.toString() ?? '0') / 10 ** 18;
-		const burn: number = parseInt(getItem('Frankencoin:Burn')?.amount.toString() ?? '0') / 10 ** 18;
+		const mint: number = parseInt(getItem('Stablecoin:Mint')?.amount.toString() ?? '0') / 10 ** 18;
+		const burn: number = parseInt(getItem('Stablecoin:Burn')?.amount.toString() ?? '0') / 10 ** 18;
 		const supply: number = mint - burn;
 
-		this.ecosystemFrankencoin = {
+		this.ecosystemStablecoin = {
 			total: {
 				mint: mint,
 				burn: burn,
 				supply: supply,
 			},
 			raw: {
-				mint: getItem('Frankencoin:Mint')?.amount.toString() ?? '0',
-				burn: getItem('Frankencoin:Burn')?.amount.toString() ?? '0',
+				mint: getItem('Stablecoin:Mint')?.amount.toString() ?? '0',
+				burn: getItem('Stablecoin:Burn')?.amount.toString() ?? '0',
 			},
 			counter: {
-				mint: parseInt(getItem('Frankencoin:MintCounter')?.amount.toString() ?? '0'),
-				burn: parseInt(getItem('Frankencoin:BurnCounter')?.amount.toString() ?? '0'),
+				mint: parseInt(getItem('Stablecoin:MintCounter')?.amount.toString() ?? '0'),
+				burn: parseInt(getItem('Stablecoin:BurnCounter')?.amount.toString() ?? '0'),
 			},
 		};
 	}

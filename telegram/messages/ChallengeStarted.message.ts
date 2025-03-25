@@ -29,7 +29,7 @@ Collateral: ${position.collateralName} (${position.collateralSymbol})
 At: ${position.collateral}
 Size: ${formatCurrency(size, 2, 2)} ${position.collateralSymbol}
 Min: ${formatCurrency(min, 2, 2)} ${position.collateralSymbol}
-Starting Price: ${formatCurrency(price, 2, 2)} ZCHF
+Starting Price: ${formatCurrency(price, 2, 2)} dEURO
 
 Duration: ${formatCurrency(duration / 1000 / 60 / 60, 1, 1)} hours
 Quick Auction: ${isQuickAuction}
@@ -37,8 +37,8 @@ Begin: ${new Date(startChallenge).toString().split(' ').slice(0, 5).join(' ')}
 Phase1 End: ${new Date(expirationPhase1).toString().split(' ').slice(0, 5).join(' ')}
 Phase2 End: ${new Date(expirationChallenge).toString().split(' ').slice(0, 5).join(' ')}
 
-[Bid Challenge](${AppUrl(`/challenges/${challenge.number}/bid`)})
-[Goto Challenges](${AppUrl(`/challenges`)})
+[Buy ${position.collateralSymbol} in Auction](${AppUrl(`/challenges/${challenge.id}/bid`)})
+[Goto Position](${AppUrl(`/monitoring/${position.position}`)})
 
 [Explorer Challenger](${ExplorerAddressUrl(challenge.challenger)}) 
 [Explorer Position](${ExplorerAddressUrl(position.position)})

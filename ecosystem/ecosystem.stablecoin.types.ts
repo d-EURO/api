@@ -1,4 +1,4 @@
-import { PriceQueryCurrencies } from 'prices/prices.types';
+import { PriceQueryCurrencies } from '../prices/prices.types';
 import { Address } from 'viem';
 
 // --------------------------------------------------------------------------
@@ -33,11 +33,11 @@ export type MintBurnAddressMapperQueryItem = {
 
 // --------------------------------------------------------------------------
 // Service
-export type ServiceEcosystemFrankencoinKeyValues = {
+export type ServiceEcosystemStablecoinKeyValues = {
 	[key: string]: EcosystemQueryItem;
 };
 
-export type ServiceEcosystemFrankencoin = {
+export type ServiceEcosystemStablecoin = {
 	raw: {
 		mint: string;
 		burn: string;
@@ -59,9 +59,9 @@ export type ServiceEcosystemMintBurnMapping = {
 
 // --------------------------------------------------------------------------
 // Api
-export type ApiEcosystemFrankencoinKeyValues = ServiceEcosystemFrankencoinKeyValues;
+export type ApiEcosystemStablecoinKeyValues = ServiceEcosystemStablecoinKeyValues;
 
-export type ApiEcosystemFrankencoinInfo = ServiceEcosystemFrankencoin & {
+export type ApiEcosystemStablecoinInfo = ServiceEcosystemStablecoin & {
 	erc20: {
 		name: string;
 		address: Address;
@@ -75,10 +75,10 @@ export type ApiEcosystemFrankencoinInfo = ServiceEcosystemFrankencoin & {
 	price: {
 		usd: number;
 	};
-	fps: {
+	deps: {
 		price: number;
 		totalSupply: number;
-		fpsMarketCapInChf: number;
+		depsMarketCapInChf: number;
 	};
 	tvl: PriceQueryCurrencies;
 };

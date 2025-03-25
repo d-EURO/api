@@ -4,7 +4,7 @@ import { EcosystemMinterService } from './ecosystem.minter.service';
 import { ApiMinterListing, ApiMinterMapping } from './ecosystem.minter.types';
 
 @ApiTags('Ecosystem Controller')
-@Controller('ecosystem/frankencoin/minter')
+@Controller('ecosystem/stablecoin/minter')
 export class EcosystemMinterController {
 	constructor(private readonly minter: EcosystemMinterService) {}
 

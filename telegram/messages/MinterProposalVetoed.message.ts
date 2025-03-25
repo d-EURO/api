@@ -8,7 +8,7 @@ export function MinterProposalVetoedMessage(minter: MinterQuery): string {
 
 Minter: ${minter.minter}
 Suggestor: ${minter.suggestor}
-Application Fee: ${formatCurrency(minter.applicationFee / 1e18, 2, 2)} ZCHF
+Application Fee: ${formatCurrency(minter.applicationFee / 1e18, 2, 2)} dEURO
 Message: ${minter.applyMessage}
 
 Vetor: ${minter.vetor}

@@ -2,9 +2,11 @@ import { Address } from 'viem';
 // ----------------------------------------------------------------------------------
 // Ponder
 export type PositionQuery = {
+	version: 2;
+
 	position: Address;
 	owner: Address;
-	zchf: Address;
+	deuro: Address;
 	collateral: Address;
 	price: string;
 
@@ -16,31 +18,36 @@ export type PositionQuery = {
 	original: Address;
 
 	minimumCollateral: string;
-	annualInterestPPM: number;
+	annualInterestPPM: number; // @dev: in V2, sum of leadrate and riskPremium
+	riskPremiumPPM: number;
 	reserveContribution: number;
 	start: number;
 	cooldown: number;
 	expiration: number;
 	challengePeriod: number;
 
-	zchfName: string;
-	zchfSymbol: string;
-	zchfDecimals: number;
+	deuroName: string;
+	deuroSymbol: string;
+	deuroDecimals: number;
 
 	collateralName: string;
 	collateralSymbol: string;
 	collateralDecimals: number;
 	collateralBalance: string;
 
-	limitForPosition: string;
 	limitForClones: string;
-	availableForPosition: string;
 	availableForClones: string;
-	minted: string;
+	availableForMinting: string;
+	
+	principal: string;
+	fixedAnnualRatePPM: number;
 };
 
 export type MintingUpdateQueryId = `${Address}-${number}`;
+
 export type MintingUpdateQuery = {
+	version: 2;
+
 	id: MintingUpdateQueryId;
 	txHash: string;
 	created: number;
@@ -58,6 +65,8 @@ export type MintingUpdateQuery = {
 	priceAdjusted: string;
 	mintedAdjusted: string;
 	annualInterestPPM: number;
+	basePremiumPPM: number;
+	riskPremiumPPM: number;
 	reserveContribution: number;
 	feeTimeframe: number;
 	feePPM: number;

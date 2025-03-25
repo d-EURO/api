@@ -16,7 +16,6 @@ export type ERC20Info = {
 // TODO: Implement other currencies
 export type PriceQueryCurrencies = {
 	usd?: number;
-	chf?: number;
 	eur?: number;
 };
 

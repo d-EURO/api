@@ -6,7 +6,7 @@
 
 // --------------------------------------------------------------------------
 // Api
-export type ApiEcosystemFpsInfo = {
+export type ApiEcosystemDepsInfo = {
 	earnings: {
 		profit: number;
 		loss: number;
@@ -14,7 +14,7 @@ export type ApiEcosystemFpsInfo = {
 	values: {
 		price: number;
 		totalSupply: number;
-		fpsMarketCapInChf: number;
+		depsMarketCapInChf: number;
 	};
 	reserve: {
 		balance: number;

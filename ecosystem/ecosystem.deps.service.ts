@@ -1,46 +1,46 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
-import { ApiEcosystemFpsInfo } from './ecosystem.fps.types';
-import { ABIS, ADDRESS } from 'contracts';
+import { ApiEcosystemDepsInfo } from './ecosystem.deps.types';
 import { gql } from '@apollo/client/core';
 import { formatUnits } from 'viem';
-import { FrankencoinABI } from 'contracts/abis/Frankencoin';
+import { ADDRESS } from '@deuro/eurocoin';
+import { EquityABI, DecentralizedEUROABI } from '@deuro/eurocoin';
 
 @Injectable()
-export class EcosystemFpsService {
+export class EcosystemDepsService {
 	private readonly logger = new Logger(this.constructor.name);
-	private fpsInfo: ApiEcosystemFpsInfo;
+	private depsInfo: ApiEcosystemDepsInfo;
 
-	getEcosystemFpsInfo(): ApiEcosystemFpsInfo {
-		return this.fpsInfo;
+	getEcosystemDepsInfo(): ApiEcosystemDepsInfo {
+		return this.depsInfo;
 	}
 
-	async updateFpsInfo() {
-		this.logger.debug('Updating EcosystemFpsInfo');
+	async updateDepsInfo() {
+		this.logger.debug('Updating EcosystemDepsInfo');
 
 		const chainId = VIEM_CONFIG.chain.id;
 		const addr = ADDRESS[chainId].equity;
 
 		const fetchedPrice = await VIEM_CONFIG.readContract({
 			address: addr,
-			abi: ABIS.EquityABI,
+			abi: EquityABI,
 			functionName: 'price',
 		});
 		const fetchedTotalSupply = await VIEM_CONFIG.readContract({
 			address: addr,
-			abi: ABIS.EquityABI,
+			abi: EquityABI,
 			functionName: 'totalSupply',
 		});
 
 		const minterReserveRaw = await VIEM_CONFIG.readContract({
-			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
-			abi: FrankencoinABI,
+			address: ADDRESS[VIEM_CONFIG.chain.id].decentralizedEURO,
+			abi: DecentralizedEUROABI,
 			functionName: 'minterReserve',
 		});
 
 		const balanceReserveRaw = await VIEM_CONFIG.readContract({
-			address: ADDRESS[VIEM_CONFIG.chain.id].frankenCoin,
-			abi: FrankencoinABI,
+			address: ADDRESS[VIEM_CONFIG.chain.id].decentralizedEURO,
+			abi: DecentralizedEUROABI,
 			functionName: 'balanceOf',
 			args: [ADDRESS[VIEM_CONFIG.chain.id].equity],
 		});
@@ -52,7 +52,7 @@ export class EcosystemFpsService {
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					fPSs(orderBy: "id", limit: 1000) {
+					dEPSs(orderBy: "id", limit: 1000) {
 						items {
 							id
 							profits
@@ -63,13 +63,13 @@ export class EcosystemFpsService {
 			`,
 		});
 
-		if (!profitLossPonder.data || !profitLossPonder.data.fPSs.items) {
+		if (!profitLossPonder.data || !profitLossPonder.data.dEPSs.items.length) {
 			this.logger.warn('No profitLossPonder data found.');
 			return;
 		}
 
-		const d = profitLossPonder.data.fPSs.items.at(0);
-		const earningsData: ApiEcosystemFpsInfo['earnings'] = {
+		const d = profitLossPonder.data.dEPSs.items.at(0);
+		const earningsData: ApiEcosystemDepsInfo['earnings'] = {
 			profit: parseFloat(formatUnits(d.profits, 18)),
 			loss: parseFloat(formatUnits(d.loss, 18)),
 		};
@@ -80,12 +80,12 @@ export class EcosystemFpsService {
 		const equityInReserve = parseFloat(formatUnits(equityInReserveRaw, 18));
 		const minterReserve = parseFloat(formatUnits(minterReserveRaw, 18));
 
-		this.fpsInfo = {
+		this.depsInfo = {
 			earnings: earningsData,
 			values: {
 				price: p,
 				totalSupply: s,
-				fpsMarketCapInChf: p * s,
+				depsMarketCapInChf: p * s,
 			},
 			reserve: {
 				balance: balanceReserve,

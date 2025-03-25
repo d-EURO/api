@@ -15,11 +15,11 @@ import {
 } from './positions.types';
 import { Address, erc20Abi, getAddress } from 'viem';
 import { FIVEDAYS_MS } from 'utils/const-helper';
-import { PositionABI } from 'contracts/abis/Position';
 
 @Injectable()
 export class PositionsService {
 	private readonly logger = new Logger(this.constructor.name);
+	private fetchedPositionV2s: PositionQuery[] = [];
 	private fetchedPositions: PositionsQueryObjectArray = {};
 	private fetchedMintingUpdates: MintingUpdateQueryObjectArray = {};
 
@@ -73,17 +73,17 @@ export class PositionsService {
 		};
 	}
 
-	async updatePositons() {
-		this.logger.debug('Updating positions');
+	async updatePositonV2s() {
+		this.logger.debug('Updating Positions V2');
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					positions(orderBy: "availableForClones", orderDirection: "desc", limit: 1000) {
+					positionV2s(orderBy: "availableForClones", orderDirection: "desc", limit: 1000) {
 						items {
 							position
 							owner
-							zchf
+							deuro
 							collateral
 							price
 
@@ -95,42 +95,53 @@ export class PositionsService {
 							original
 
 							minimumCollateral
-							annualInterestPPM
+							riskPremiumPPM
 							reserveContribution
 							start
 							cooldown
 							expiration
 							challengePeriod
 
-							zchfName
-							zchfSymbol
-							zchfDecimals
+							deuroName
+							deuroSymbol
+							deuroDecimals
 
 							collateralName
 							collateralSymbol
 							collateralDecimals
 							collateralBalance
 
-							limitForPosition
 							limitForClones
-							availableForPosition
 							availableForClones
-							minted
+							availableForMinting
+
+							fixedAnnualRatePPM
+							principal
 						}
 					}
 				}
 			`,
 		});
 
-		if (!data || !data.positions) {
-			this.logger.warn('No positions found.');
+		if (!data || !data?.positionV2s?.items?.length) {
+			this.logger.warn('No Positions V2 found.');
 			return;
 		}
 
-		const items: PositionQuery[] = data.positions.items;
+		const items: PositionQuery[] = data.positionV2s.items as PositionQuery[];
 		const list: PositionsQueryObjectArray = {};
 		const balanceOfDataPromises: Promise<bigint>[] = [];
 		const mintedDataPromises: Promise<bigint>[] = [];
+
+		const leadrate: number = 0;
+
+		/*
+		const leadrate: number = await VIEM_CONFIG.readContract({
+			address: ADDRESS[CONFIG.chain.id].savings,
+			abi: SavingsABI,
+			functionName: 'currentRatePPM',
+		});
+		*/
 
 		for (const p of items) {
 			// Forces the collateral balance to be overwritten with the latest blockchain state, instead of the ponder state.
@@ -145,30 +156,33 @@ export class PositionsService {
 				})
 			);
 
+			// TODO: is this solved in V2?
 			// fetch minted - See issue #11
-			// https://github.com/Frankencoin-ZCHF/frankencoin-api/issues/11
+			// https://github.com/Frankencoin-ZCHF/frankencoin-api/issues/
+			/*
 			mintedDataPromises.push(
 				VIEM_CONFIG.readContract({
 					address: p.position,
-					abi: PositionABI,
+					abi: PositionV2ABI,
 					functionName: 'minted',
 				})
 			);
+			*/
 		}
 
 		// await for contract calls
 		const balanceOfData = await Promise.allSettled(balanceOfDataPromises);
-		const mintedData = await Promise.allSettled(mintedDataPromises);
 
 		for (let idx = 0; idx < items.length; idx++) {
-			const p = items[idx];
+			const p = items[idx] as PositionQuery;
 			const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
-			const m = (mintedData[idx] as PromiseFulfilledResult<bigint>).value;
 
-			list[p.position.toLowerCase()] = {
+			const entry: PositionQuery = {
+				version: 2,
+
 				position: getAddress(p.position),
 				owner: getAddress(p.owner),
-				zchf: getAddress(p.zchf),
+				deuro: getAddress(p.deuro),
 				collateral: getAddress(p.collateral),
 				price: p.price,
 
@@ -180,35 +194,39 @@ export class PositionsService {
 				original: getAddress(p.original),
 
 				minimumCollateral: p.minimumCollateral,
-				annualInterestPPM: p.annualInterestPPM,
+				annualInterestPPM: leadrate + p.riskPremiumPPM,
+				riskPremiumPPM: p.riskPremiumPPM,
 				reserveContribution: p.reserveContribution,
 				start: p.start,
 				cooldown: p.cooldown,
 				expiration: p.expiration,
 				challengePeriod: p.challengePeriod,
 
-				zchfName: p.zchfName,
-				zchfSymbol: p.zchfSymbol,
-				zchfDecimals: p.zchfDecimals,
+				deuroName: p.deuroName,
+				deuroSymbol: p.deuroSymbol,
+				deuroDecimals: p.deuroDecimals,
 
 				collateralName: p.collateralName,
 				collateralSymbol: p.collateralSymbol,
 				collateralDecimals: p.collateralDecimals,
 				collateralBalance: typeof b === 'bigint' ? b.toString() : p.position,
 
-				limitForPosition: p.limitForPosition,
 				limitForClones: p.limitForClones,
-				availableForPosition: p.availableForPosition,
 				availableForClones: p.availableForClones,
-				minted: typeof m === 'bigint' ? m.toString() : p.minted,
+				availableForMinting: p.availableForMinting,
+				principal: p.principal,
+				fixedAnnualRatePPM: p.fixedAnnualRatePPM,
 			};
+
+			list[p.position.toLowerCase() as Address] = entry;
 		}
 
 		const a = Object.keys(list).length;
-		const b = Object.keys(this.fetchedPositions).length;
-		const isDiff = a !== b;
+		const b = this.fetchedPositionV2s.length;
+		const isDiff = a > b;
 
-		if (isDiff) this.logger.log(`Positions merging, from ${b} to ${a} positions`);
+		if (isDiff) this.logger.log(`Positions V2 merging, from ${b} to ${a} positions`);
+		this.fetchedPositionV2s = Object.values(list) as PositionQuery[];
 		this.fetchedPositions = { ...this.fetchedPositions, ...list };
 
 		return list;
@@ -227,13 +245,13 @@ export class PositionsService {
 		return { num: Object.keys(m).length, positions: Object.keys(m) as Address[], map: m };
 	}
 
-	async updateMintingUpdates() {
-		this.logger.debug('Updating positions mintingUpdates');
+	async updateMintingUpdateV2s() {
+		this.logger.debug('Updating Positions MintingUpdates V2');
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					mintingUpdates(orderBy: "created", orderDirection: "desc", limit: 1000) {
+					mintingUpdateV2s(orderBy: "created", orderDirection: "desc", limit: 1000) {
 						items {
 							id
 							txHash
@@ -252,6 +270,8 @@ export class PositionsService {
 							priceAdjusted
 							mintedAdjusted
 							annualInterestPPM
+							basePremiumPPM
+							riskPremiumPPM
 							reserveContribution
 							feeTimeframe
 							feePPM
@@ -262,21 +282,23 @@ export class PositionsService {
 			`,
 		});
 
-		if (!data || !data.mintingUpdates) {
-			this.logger.warn('No mintingUpdates found.');
+		if (!data || !data?.mintingUpdateV2s?.items?.length) {
+			this.logger.warn('No MintingUpdates V2 found.');
 			return;
 		}
 
-		const items: MintingUpdateQuery[] = data.mintingUpdates.items;
+		const items: MintingUpdateQuery[] = data.mintingUpdateV2s.items;
 		const list: MintingUpdateQueryObjectArray = {};
 
 		for (let idx = 0; idx < items.length; idx++) {
-			const m = items[idx];
-			const k = m.position.toLowerCase();
+			const m = items[idx] as MintingUpdateQuery;
+			const k = m.position.toLowerCase() as Address;
 
 			if (list[k] === undefined) list[k] = [];
 
 			const entry: MintingUpdateQuery = {
+				version: 2,
+
 				id: m.id,
 				txHash: m.txHash,
 				created: parseInt(m.created as any),
@@ -294,6 +316,8 @@ export class PositionsService {
 				priceAdjusted: m.priceAdjusted,
 				mintedAdjusted: m.mintedAdjusted,
 				annualInterestPPM: m.annualInterestPPM,
+				basePremiumPPM: m.basePremiumPPM,
+				riskPremiumPPM: m.riskPremiumPPM,
 				reserveContribution: m.reserveContribution,
 				feeTimeframe: m.feeTimeframe,
 				feePPM: m.feePPM,
@@ -307,7 +331,7 @@ export class PositionsService {
 		const b = Object.values(this.fetchedMintingUpdates).flat(1).length;
 		const isDiff = a > b;
 
-		if (isDiff) this.logger.log(`MintingUpdates merging, from ${b} to ${a} entries`);
+		if (isDiff) this.logger.log(`MintingUpdates V2 merging, from ${b} to ${a} entries`);
 		this.fetchedMintingUpdates = { ...this.fetchedMintingUpdates, ...list };
 
 		return list;
