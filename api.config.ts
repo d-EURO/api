@@ -63,6 +63,6 @@ export const VIEM_CONFIG = createPublicClient({
 // COINGECKO CLIENT
 export const COINGECKO_CLIENT = (query: string) => {
 	const hasParams = query.includes('?');
-	const uri: string = `https://api.coingecko.com${query}`;
-	return fetch(`${uri}${hasParams ? '&' : '?'}${CONFIG.coingeckoApiKey}`);
+	const uri: string = `https://pro-api.coingecko.com${query}`;
+	return fetch(`${uri}${hasParams ? '&' : '?'}x_cg_pro_api_key=${CONFIG.coingeckoApiKey}`);
 };
