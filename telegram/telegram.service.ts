@@ -100,17 +100,17 @@ export class TelegramService implements OnModuleInit {
 		}
 	}
 
-	async sendMessageGroup(groups: string[], message: string) {
+	async sendMessageGroup(groups: string[], message: string, video?: string) {
 		if (groups.length == 0) return;
 		for (const group of groups) {
-			await this.sendMessage(group, message);
+			await this.sendMessage(group, message, video);
 		}
 	}
 
-	async sendMessage(group: string | number, message: string) {
+	async sendMessage(group: string | number, message: string, video?: string) {
 		try {
 			this.logger.log(`Sending message to group id: ${group}`);
-			await this.bot.sendMessage(group.toString(), message, { parse_mode: 'Markdown', disable_web_page_preview: true });
+			video ? await this.doSendVideo(group, message, video) : await this.doSendMessage(group, message);
 		} catch (error) {
 			const msg = {
 				notFound: 'chat not found',
@@ -135,6 +135,17 @@ export class TelegramService implements OnModuleInit {
 				this.logger.warn(error);
 			}
 		}
+	}
+
+	private async doSendMessage(group: string | number, message: string): Promise<void> {
+		await this.bot.sendMessage(group.toString(), message, { parse_mode: 'Markdown', disable_web_page_preview: true });
+	}
+
+	private async doSendVideo(group: string | number, message: string, video: string): Promise<void> {
+		await this.bot.sendVideo(group.toString(), video, {
+			caption: message,
+			parse_mode: 'Markdown',
+		});
 	}
 
 	async updateTelegram() {
@@ -235,12 +246,12 @@ export class TelegramService implements OnModuleInit {
 
 		// SavingUpdates
 		const requestedSavingUpdates = await this.saving.getSavingsUpdatesList(new Date(this.telegramState.savingUpdates));
-
 		if (requestedSavingUpdates.length > 0) {
 			this.telegramState.savingUpdates = Date.now();
 			for (const requestedSaving of requestedSavingUpdates) {
 				const groups = this.telegramGroupState.subscription['/SavingUpdates']?.groups || [];
-				this.sendMessageGroup(groups, SavingUpdateMessage(requestedSaving));
+				const messageInfo = SavingUpdateMessage(requestedSaving);
+				this.sendMessageGroup(groups, messageInfo[0], messageInfo[1]);
 			}
 		}
 	}
