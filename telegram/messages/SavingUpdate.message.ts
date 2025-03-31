@@ -1,3 +1,4 @@
+import { CONFIG } from 'api.config';
 import { SavingsSavedQuery } from 'savings/savings.core.types';
 import { formatCurrency } from 'utils/format';
 import { formatUnits } from 'viem';
@@ -11,7 +12,7 @@ export function SavingUpdateMessage(saving: SavingsSavedQuery): string[] {
 👤 [Saver](https://etherscan.io/address/${saving.account}) / [TX](https://etherscan.io/tx/${saving.txHash})
 `;
 
-	const image = './images/Savings_Telegram.mp4';
+	const image = `${CONFIG.telegramImagesDir}/Savings_Telegram.mp4`;
 
 	return [message, image];
 }

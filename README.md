@@ -24,6 +24,7 @@ COINGECKO_API_KEY=[API-KEY]
 
 TELEGRAM_BOT_TOKEN=[API-KEY]
 TELEGRAM_GROUPS_JSON=telegram.groups.json
+TELEGRAM_IMAGES_DIR=./images
 ```
 
 ## Running the app

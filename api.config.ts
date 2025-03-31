@@ -22,6 +22,7 @@ export type ConfigType = {
 	};
 	telegramBotToken: string;
 	telegramGroupsJson: string;
+	telegramImagesDir: string;
 };
 
 // Create config
@@ -36,6 +37,7 @@ export const CONFIG: ConfigType = {
 	},
 	telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
 	telegramGroupsJson: process.env.TELEGRAM_GROUPS_JSON,
+	telegramImagesDir: process.env.TELEGRAM_IMAGES_DIR,
 };
 
 // Start up message
