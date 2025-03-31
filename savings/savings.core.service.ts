@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { SavingsLeadrateService } from './savings.leadrate.service';
 import { Address, formatUnits, zeroAddress } from 'viem';
-import { ApiSavingsInfo, ApiSavingsUserTable } from './savings.core.types';
+import { ApiSavingsInfo, ApiSavingsUserTable, SavingsSavedQuery } from './savings.core.types';
 import { PONDER_CLIENT } from 'api.config';
 
 @Injectable()
@@ -123,5 +123,34 @@ export class SavingsCoreService {
 			interest: interestFetched?.data?.savingsInterests?.items ?? [],
 			withdraw: withdrawnFetched?.data?.savingsWithdrawns?.items ?? [],
 		};
+	}
+
+	async getSavingsUpdatesList(timestamp: Date): Promise<SavingsSavedQuery[]> {
+		const checkTimestamp = Math.trunc(timestamp.getTime() / 1000);
+
+		const savedFetched = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+			query {
+				savingsSaveds(orderBy: "blockheight", orderDirection: "desc"
+				where: { created_gt: "${checkTimestamp}" }
+					) {
+						items {
+							id
+							created
+							blockheight
+							txHash
+							account
+							amount
+							rate
+							total
+							balance
+						}
+					}
+				}
+			`,
+		});
+
+		return savedFetched?.data?.savingsSaveds?.items ?? [];
 	}
 }
