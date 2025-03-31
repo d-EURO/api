@@ -20,12 +20,14 @@ import { LeadrateProposalMessage } from './messages/LeadrateProposal.message';
 import { LeadrateChangedMessage } from './messages/LeadrateChanged.message';
 import { BidTakenMessage } from './messages/BidTaken.message';
 import { CONFIG } from 'api.config';
+import { SavingsCoreService } from 'savings/savings.core.service';
+import { SavingUpdateMessage } from './messages/SavingUpdate.message';
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
 	private readonly logger = new Logger(this.constructor.name);
 	private readonly bot = new TelegramBot(CONFIG.telegramBotToken, { polling: true });
-	private readonly telegramHandles: string[] = ['/MintingUpdates', '/help'];
+	private readonly telegramHandles: string[] = ['/MintingUpdates', '/SavingUpdates', '/help'];
 	private readonly telegramState: TelegramState;
 	private telegramGroupState: TelegramGroupState;
 
@@ -35,7 +37,8 @@ export class TelegramService implements OnModuleInit {
 		private readonly leadrate: SavingsLeadrateService,
 		private readonly position: PositionsService,
 		private readonly prices: PricesService,
-		private readonly challenge: ChallengesService
+		private readonly challenge: ChallengesService,
+		private readonly saving: SavingsCoreService
 	) {
 		const time: number = Date.now();
 		this.telegramState = {
@@ -45,6 +48,7 @@ export class TelegramService implements OnModuleInit {
 			leadrateChanged: time,
 			positions: time,
 			mintingUpdates: time,
+			savingUpdates: time,
 			challenges: time,
 			bids: time,
 		};
@@ -226,6 +230,17 @@ export class TelegramService implements OnModuleInit {
 				const groups = this.telegramGroupState.subscription['/MintingUpdates']?.groups || [];
 				const prices = this.prices.getPricesMapping();
 				this.sendMessageGroup(groups, MintingUpdateMessage(m, prices));
+			}
+		}
+
+		// SavingUpdates
+		const requestedSavingUpdates = await this.saving.getSavingsUpdatesList(new Date(this.telegramState.savingUpdates));
+
+		if (requestedSavingUpdates.length > 0) {
+			this.telegramState.savingUpdates = Date.now();
+			for (const requestedSaving of requestedSavingUpdates) {
+				const groups = this.telegramGroupState.subscription['/SavingUpdates']?.groups || [];
+				this.sendMessageGroup(groups, SavingUpdateMessage(requestedSaving));
 			}
 		}
 	}

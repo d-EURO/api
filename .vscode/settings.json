@@ -1,0 +1,9 @@
+{
+  "cSpell.words": [
+  ],
+  "prettier.printWidth": 140,
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "node_modules": true
+  }
+}
