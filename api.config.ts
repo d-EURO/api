@@ -44,6 +44,9 @@ export const CONFIG: ConfigType = {
 console.log(`Starting API with this config:`);
 console.log(CONFIG);
 
+// Refer to https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files
+process.env.NTBA_FIX_350 = 'true';
+
 // PONDER CLIENT REQUEST
 export const PONDER_CLIENT = new ApolloClient({
 	uri: CONFIG.indexer,
