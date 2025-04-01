@@ -22,6 +22,7 @@ export type ConfigType = {
 	};
 	telegramBotToken: string;
 	telegramGroupsJson: string;
+	telegramImagesDir: string;
 };
 
 // Create config
@@ -36,11 +37,15 @@ export const CONFIG: ConfigType = {
 	},
 	telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
 	telegramGroupsJson: process.env.TELEGRAM_GROUPS_JSON,
+	telegramImagesDir: process.env.TELEGRAM_IMAGES_DIR,
 };
 
 // Start up message
 console.log(`Starting API with this config:`);
 console.log(CONFIG);
+
+// Refer to https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files
+process.env.NTBA_FIX_350 = 'true';
 
 // PONDER CLIENT REQUEST
 export const PONDER_CLIENT = new ApolloClient({
