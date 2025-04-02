@@ -27,7 +27,6 @@ Bal. min.: ${formatCurrency(min, 2, 2)} ${position.collateralSymbol}
 Price: ${formatCurrency(price, 2, 2)} dEURO
 
 [Challenge Position](${AppUrl(`/monitoring/${position.position}/challenge`)})
-[Veto Position](${AppUrl(`/monitoring/${position.position}/veto`)})
 
 [Explorer Position](${ExplorerAddressUrl(position.position)})
 [Explorer Owner](${ExplorerAddressUrl(position.owner)}) 
