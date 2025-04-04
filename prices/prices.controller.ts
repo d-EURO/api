@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiPriceERC20, ApiPriceERC20Mapping, ApiPriceListing, ApiPriceMapping } from 'prices/prices.types';
+import { ApiPriceERC20, ApiPriceERC20Mapping, ApiPriceListing, ApiPriceMapping, PriceQueryCurrencies } from 'prices/prices.types';
 import { PricesService } from './prices.service';
 
 @ApiTags('Prices Controller')
@@ -46,5 +46,13 @@ export class PricesController {
 	})
 	getCollateral(): ApiPriceERC20Mapping {
 		return this.pricesService.getCollateral();
+	}
+
+	@Get('eur')
+	@ApiResponse({
+		description: 'Returns the price of EUR in USD',
+	})
+	getEuroPrice(): PriceQueryCurrencies {
+		return this.pricesService.getEuroPrice();
 	}
 }

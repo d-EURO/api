@@ -28,6 +28,7 @@ enum ZchfEcosystem {
 export class PricesService {
 	private readonly logger = new Logger(this.constructor.name);
 	private fetchedPrices: PriceQueryObjectArray = {};
+	private euroPrice: PriceQueryCurrencies = {};
 
 	constructor(
 		private readonly positionsService: PositionsService,
@@ -78,24 +79,31 @@ export class PricesService {
 		return c;
 	}
 
+	getEuroPrice(): PriceQueryCurrencies {
+		return this.euroPrice;
+	}
+
 	async fetchFromEcosystemDeps(erc: ERC20Info): Promise<PriceQueryCurrencies | null> {
-		const priceInChf = this.deps.getEcosystemDepsInfo()?.values?.price;
+		const price = this.deps.getEcosystemDepsInfo()?.values?.price;
+		if (!price) return null;
+
 		const deuroAddress = ADDRESS[VIEM_CHAIN.id].decentralizedEURO.toLowerCase();
-		const deuroPrice: number = this.fetchedPrices[deuroAddress]?.price?.usd;
-		if (!deuroPrice) return null;
-		return { usd: priceInChf * deuroPrice };
+		const quote = this.euroPrice?.usd || this.fetchedPrices[deuroAddress]?.price?.usd;
+		const usdPrice = quote ? price * quote : price;
+
+		return { usd: usdPrice, eur: price };
 	}
 
 	async fetchSourcesCoingecko(erc: ERC20Info): Promise<PriceQueryCurrencies | null> {
 		// all mainnet addresses
 		if ((VIEM_CHAIN.id as number) === 1) {
-			const url = `/api/v3/simple/token_price/ethereum?contract_addresses=${erc.address}&vs_currencies=usd`;
-			const data = await (await COINGECKO_CLIENT(url)).json();
+			const url = `/api/v3/simple/token_price/ethereum?contract_addresses=${erc.address}&vs_currencies=usd%2Ceur`;
+			const data = await(await COINGECKO_CLIENT(url)).json();
 			if (data.status) {
 				this.logger.debug(data.status?.error_message || 'Error fetching price from coingecko');
 				return null;
 			}
-			return Object.values(data)[0] as { usd: number };
+			return Object.values(data)[0] as { usd: number; eur: number };
 		} else {
 			// all other chain addresses (test deployments)
 			const calc = (value: number) => {
@@ -120,6 +128,16 @@ export class PricesService {
 		}
 	}
 
+	async fetchEuroPrice(): Promise<PriceQueryCurrencies | null> {
+		const url = `/api/v3/simple/price?ids=usd&vs_currencies=eur`;
+		const data = await (await COINGECKO_CLIENT(url)).json();
+		if (data.status) {
+			this.logger.debug(data.status?.error_message || 'Error fetching price from coingecko');
+			return null;
+		}
+		return { eur: 1, usd: 1 / Number(data.usd.eur) };
+	}
+
 	async fetchFromZchfSources(): Promise<PriceQueryCurrencies | null> {
 		const { FPS, ZCHF } = ZchfEcosystem;
 		const priceZchf = await this.fetchSourcesCoingecko({ address: ZCHF, name: 'ZCHF', symbol: 'ZCHF', decimals: 18 });
@@ -127,7 +145,15 @@ export class PricesService {
 
 		const priceWfps = await VIEM_CONFIG.readContract({
 			address: FPS,
-			abi: [{"inputs":[],"name":"price","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
+			abi: [
+				{
+					inputs: [],
+					name: 'price',
+					outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+					stateMutability: 'view',
+					type: 'function',
+				},
+			],
 			functionName: 'price',
 			args: [],
 		});
@@ -137,9 +163,15 @@ export class PricesService {
 	}
 
 	async fetchPrice(erc: ERC20Info): Promise<PriceQueryCurrencies | null> {
-		if (erc.address.toLowerCase() === ADDRESS[VIEM_CHAIN.id].equity.toLowerCase()) {
+		if (
+			erc.address.toLowerCase() === ADDRESS[VIEM_CHAIN.id].equity.toLowerCase() ||
+			erc.address.toLowerCase() === ADDRESS[VIEM_CHAIN.id].DEPSwrapper.toLowerCase()
+		) {
 			return this.fetchFromEcosystemDeps(erc);
-		} else if (erc.address.toLowerCase() === ZchfEcosystem.WFPS.toLowerCase() || erc.address.toLowerCase() === ZchfEcosystem.FPS.toLowerCase()) {
+		} else if (
+			erc.address.toLowerCase() === ZchfEcosystem.WFPS.toLowerCase() ||
+			erc.address.toLowerCase() === ZchfEcosystem.FPS.toLowerCase()
+		) {
 			return this.fetchFromZchfSources();
 		} else {
 			return this.fetchSourcesCoingecko(erc);
@@ -148,6 +180,9 @@ export class PricesService {
 
 	async updatePrices() {
 		this.logger.debug('Updating Prices');
+
+		const euroPrice = await this.fetchEuroPrice();
+		if (euroPrice) this.euroPrice = euroPrice;
 
 		const deps = this.getDeps();
 		const m = this.getMint();
@@ -161,8 +196,6 @@ export class PricesService {
 		let pricesQueryNewCountFailed: number = 0;
 		let pricesQueryUpdateCount: number = 0;
 		let pricesQueryUpdateCountFailed: number = 0;
-
-		const deuroPrice: number = this.fetchedPrices[ADDRESS[VIEM_CHAIN.id].decentralizedEURO.toLowerCase()]?.price?.usd;
 
 		for (const erc of a) {
 			const addr = erc.address.toLowerCase() as Address;
@@ -179,12 +212,8 @@ export class PricesService {
 					timestamp: price === null ? 0 : Date.now(),
 					price: price === null ? { usd: 1 } : price,
 				};
-
-				continue;
-			}
-
-			// needs to update => try to fetch
-			if (oldEntry.timestamp + 300_000 < Date.now()) {
+			} else if (oldEntry.timestamp + 300_000 < Date.now()) {
+				// needs to update => try to fetch
 				pricesQueryUpdateCount += 1;
 				this.logger.debug(`Price for ${erc.name} out of date, trying to fetch...`);
 				const price = await this.fetchPrice(erc);
@@ -200,11 +229,14 @@ export class PricesService {
 				}
 			}
 
+			const deuroPrice: number =
+				this.euroPrice?.usd || this.fetchedPrices[ADDRESS[VIEM_CHAIN.id].decentralizedEURO.toLowerCase()]?.price?.usd;
+
 			if (deuroPrice) {
-				const priceUsd = this.fetchedPrices[addr]?.price?.usd;
-				if (priceUsd) {
-					const priceChf = Math.round((priceUsd / deuroPrice) * 100) / 100;
-					this.fetchedPrices[addr].price.eur = priceChf;
+				const priceUsd = pricesQuery[addr]?.price?.usd;
+				const priceEur = pricesQuery[addr]?.price?.eur;
+				if (priceUsd && !priceEur) {
+					pricesQuery[addr].price.eur = Math.round((priceUsd / deuroPrice) * 100) / 100;
 				}
 			}
 		}
