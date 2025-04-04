@@ -220,14 +220,14 @@ export class PositionsService {
 				collateralName: p.collateralName,
 				collateralSymbol: p.collateralSymbol,
 				collateralDecimals: p.collateralDecimals,
-				collateralBalance: typeof b === 'bigint' ? b.toString() : p.position,
+				collateralBalance: typeof b === 'bigint' ? b.toString() : p.collateralBalance,
 
 				limitForClones: p.limitForClones,
 				availableForClones: p.availableForClones,
 				availableForMinting: p.availableForMinting,
 				principal: p.principal,
 				fixedAnnualRatePPM: p.fixedAnnualRatePPM,
-				virtualPrice: typeof v === 'bigint' ? v.toString() : p.price,
+				virtualPrice: typeof v === 'bigint' ? v.toString() : p.virtualPrice,
 			};
 
 			list[p.position.toLowerCase() as Address] = entry;
