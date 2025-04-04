@@ -15,6 +15,7 @@ import {
 } from './positions.types';
 import { Address, erc20Abi, getAddress } from 'viem';
 import { FIVEDAYS_MS } from 'utils/const-helper';
+import { PositionV2ABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class PositionsService {
@@ -131,7 +132,7 @@ export class PositionsService {
 		const items: PositionQuery[] = data.positionV2s.items as PositionQuery[];
 		const list: PositionsQueryObjectArray = {};
 		const balanceOfDataPromises: Promise<bigint>[] = [];
-		const mintedDataPromises: Promise<bigint>[] = [];
+		const virtualPriceDataPromises: Promise<bigint>[] = [];
 
 		const leadrate: number = 0;
 
@@ -156,6 +157,14 @@ export class PositionsService {
 				})
 			);
 
+			virtualPriceDataPromises.push(
+				VIEM_CONFIG.readContract({
+					address: p.position,
+					abi: PositionV2ABI,
+					functionName: 'virtualPrice',
+				})
+			);
+
 			// TODO: is this solved in V2?
 			// fetch minted - See issue #11
 			// https://github.com/Frankencoin-ZCHF/frankencoin-api/issues/
@@ -172,10 +181,12 @@ export class PositionsService {
 
 		// await for contract calls
 		const balanceOfData = await Promise.allSettled(balanceOfDataPromises);
+		const virtualPriceData = await Promise.allSettled(virtualPriceDataPromises);
 
 		for (let idx = 0; idx < items.length; idx++) {
 			const p = items[idx] as PositionQuery;
 			const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
+			const v = (virtualPriceData[idx] as PromiseFulfilledResult<bigint>).value;
 
 			const entry: PositionQuery = {
 				version: 2,
@@ -216,6 +227,7 @@ export class PositionsService {
 				availableForMinting: p.availableForMinting,
 				principal: p.principal,
 				fixedAnnualRatePPM: p.fixedAnnualRatePPM,
+				virtualPrice: typeof v === 'bigint' ? v.toString() : p.price,
 			};
 
 			list[p.position.toLowerCase() as Address] = entry;
