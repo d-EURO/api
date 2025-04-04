@@ -236,8 +236,7 @@ export class PricesService {
 				const priceUsd = pricesQuery[addr]?.price?.usd;
 				const priceEur = pricesQuery[addr]?.price?.eur;
 				if (priceUsd && !priceEur) {
-					const priceChf = Math.round((priceUsd / deuroPrice) * 100) / 100;
-					pricesQuery[addr].price.eur = priceChf;
+					pricesQuery[addr].price.eur = Math.round((priceUsd / deuroPrice) * 100) / 100;
 				}
 			}
 		}
