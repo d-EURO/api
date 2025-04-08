@@ -38,7 +38,7 @@ export type PositionQuery = {
 	limitForClones: string;
 	availableForClones: string;
 	availableForMinting: string;
-	
+	virtualPrice: string;
 	principal: string;
 	fixedAnnualRatePPM: number;
 };
