@@ -55,6 +55,10 @@ export class EcosystemStablecoinService {
 		};
 	}
 
+	getTotalSupply(): number {
+		return this.ecosystemStablecoin.total.supply;
+	}
+
 	getEcosystemMintBurnMapping(): ApiEcosystemMintBurnMapping {
 		return {
 			num: Object.keys(this.ecosystemMintBurnMapping).length,
