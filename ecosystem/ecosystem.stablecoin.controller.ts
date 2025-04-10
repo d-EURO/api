@@ -16,6 +16,14 @@ export class EcosystemStablecoinController {
 		return this.stablecoin.getEcosystemStablecoinInfo();
 	}
 
+	@Get('info/totalSupply')
+	@ApiResponse({
+		description: 'dEURO total supply',
+	})
+	getStablecoinTotalSupply(): number {
+		return this.stablecoin.getTotalSupply();
+	}
+
 	@Get('keyvalues')
 	@ApiResponse({
 		description: 'Returns Stablecoin key value mapping object.',
