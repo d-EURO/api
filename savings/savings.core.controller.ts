@@ -1,7 +1,7 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SavingsCoreService } from './savings.core.service';
-import { ApiSavingsInfo, ApiSavingsUserTable } from './savings.core.types';
+import { ApiSavingsInfo, ApiSavingsUserTable, ApiSavingsUserLeaderboard } from './savings.core.types';
 import { Address, zeroAddress } from 'viem';
 
 @ApiTags('Savings Controller')
@@ -15,6 +15,14 @@ export class SavingsCoreController {
 	})
 	getInfo(): ApiSavingsInfo {
 		return this.savings.getInfo();
+	}
+
+	@Get('info/leaderboard')
+	@ApiResponse({
+		description: 'returns the current savings information for leaderboard.',
+	})
+	getInfoLeaderboard(): ApiSavingsUserLeaderboard[] {
+		return this.savings.getSavingsUserLeaderboard();
 	}
 
 	@Get('user/:address')

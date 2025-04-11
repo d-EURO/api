@@ -11,6 +11,7 @@ import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 import { TelegramService } from 'telegram/telegram.service';
 import { Chain } from 'viem';
 import { mainnet, polygon } from 'viem/chains';
+import { SavingsCoreService } from 'savings/savings.core.service';
 
 export const INDEXING_TIMEOUT_COUNT: number = 3;
 export const POLLING_DELAY: { [key: Chain['id']]: number } = {
@@ -33,7 +34,8 @@ export class ApiService {
 		private readonly deps: EcosystemDepsService,
 		private readonly challenges: ChallengesService,
 		private readonly telegram: TelegramService,
-		private readonly leadrate: SavingsLeadrateService
+		private readonly leadrate: SavingsLeadrateService,
+		private readonly savings: SavingsCoreService
 	) {
 		setTimeout(() => this.updateBlockheight(), 100);
 	}
@@ -54,6 +56,7 @@ export class ApiService {
 			this.challenges.updateBidV2s(),
 			this.challenges.updateChallengesPrices(),
 			this.telegram.updateTelegram(),
+			this.savings.updateSavingsUserLeaderboard(),
 		];
 
 		return Promise.all(promises);
