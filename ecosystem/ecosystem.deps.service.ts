@@ -94,4 +94,8 @@ export class EcosystemDepsService {
 			},
 		};
 	}
+
+	getTotalSupply(): number {
+		return this.depsInfo?.values?.totalSupply ?? 0;
+	}
 }

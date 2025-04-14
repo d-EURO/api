@@ -15,4 +15,12 @@ export class EcosystemDepsController {
 	getCollateralList(): ApiEcosystemDepsInfo {
 		return this.deps.getEcosystemDepsInfo();
 	}
+
+	@Get('info/totalSupply')
+	@ApiResponse({
+		description: 'Returns the total supply of the DEPS token',
+	})
+	getTotalSupply(): number {
+		return this.deps.getTotalSupply();
+	}
 }
