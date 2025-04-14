@@ -2,7 +2,7 @@ import { gql } from '@apollo/client/core';
 import { Injectable, Logger } from '@nestjs/common';
 import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { SavingsLeadrateService } from './savings.leadrate.service';
-import { Address, formatUnits, zeroAddress } from 'viem';
+import { Address, formatUnits, hexToString, zeroAddress } from 'viem';
 import { ApiSavingsInfo, ApiSavingsUserTable, SavingsSavedQuery } from './savings.core.types';
 import { PONDER_CLIENT } from 'api.config';
 
@@ -151,6 +151,44 @@ export class SavingsCoreService {
 			`,
 		});
 
-		return savedFetched?.data?.savingsSaveds?.items ?? [];
+		const savingSaveds = savedFetched?.data?.savingsSaveds?.items ?? [];
+
+		for (const savingsSaved of savingSaveds) {
+			savingsSaved.refCode = await this.getRefCode(savingsSaved.txHash);
+		}
+
+		return savingSaveds;
+	}
+
+	private async getRefCode(txHash: string): Promise<string | undefined> {
+		const frontendFetched = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+			query {
+  					frontendBonusHistoryMappings(
+						where: { txHash: "${txHash}" }
+					) {
+						items {
+							id
+							frontendCode
+							payout
+							source
+							timestamp
+							txHash
+						}
+					}
+				}
+			`,
+		});
+
+		const frontendBonusHistoryMappings = frontendFetched.data.frontendBonusHistoryMappings;
+
+		if (frontendBonusHistoryMappings.items.length > 0) {
+			const frontendCode = frontendBonusHistoryMappings.items[0].frontendCode ?? '0xff';
+
+			if (frontendCode.toString().startsWith('0x00')) {
+				return hexToString(frontendCode).replace(/\0/g, '');
+			}
+		}
 	}
 }

@@ -13,6 +13,7 @@ export type SavingsSavedQuery = {
 	rate: number;
 	total: string;
 	balance: string;
+	refCode?: string;
 };
 
 export type SavingsIdInterest = `${Address}-${number}`;
