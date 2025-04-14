@@ -60,3 +60,10 @@ export type ApiSavingsUserTable = {
 	interest: SavingsInterestQuery[];
 	withdraw: SavingsWithdrawQuery[];
 };
+
+export type ApiSavingsUserLeaderboard = {
+	account: Address;
+	amountSaved: string;
+	unrealizedInterest: string;
+	interestReceived: string;
+};
