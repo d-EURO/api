@@ -191,6 +191,7 @@ export class SavingsCoreService {
 							rate
 							total
 							balance
+							frontendCode
 						}
 					}
 				}
@@ -200,41 +201,13 @@ export class SavingsCoreService {
 		const savingSaveds = savedFetched?.data?.savingsSaveds?.items ?? [];
 
 		for (const savingsSaved of savingSaveds) {
-			savingsSaved.refCode = await this.getRefCode(savingsSaved.txHash);
+			const frontendCode = savingsSaved.frontendCode ?? '0xff';
+
+			if (frontendCode.toString().startsWith('0x00')) {
+				savingsSaved.refCode = hexToString(frontendCode).replace(/\0/g, '');
+			}
 		}
 
 		return savingSaveds;
-	}
-
-	private async getRefCode(txHash: string): Promise<string | undefined> {
-		const frontendFetched = await PONDER_CLIENT.query({
-			fetchPolicy: 'no-cache',
-			query: gql`
-			query {
-  					frontendBonusHistoryMappings(
-						where: { txHash: "${txHash}" }
-					) {
-						items {
-							id
-							frontendCode
-							payout
-							source
-							timestamp
-							txHash
-						}
-					}
-				}
-			`,
-		});
-
-		const frontendBonusHistoryMappings = frontendFetched.data.frontendBonusHistoryMappings;
-
-		if (frontendBonusHistoryMappings.items.length > 0) {
-			const frontendCode = frontendBonusHistoryMappings.items[0].frontendCode ?? '0xff';
-
-			if (frontendCode.toString().startsWith('0x00')) {
-				return hexToString(frontendCode).replace(/\0/g, '');
-			}
-		}
 	}
 }

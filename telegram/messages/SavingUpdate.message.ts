@@ -4,7 +4,10 @@ import { formatCurrency } from 'utils/format';
 import { formatUnits } from 'viem';
 
 export function SavingUpdateMessage(saving: SavingsSavedQuery): string[] {
-	const usedRef = saving.refCode ? `🪢 used Ref: ${saving.refCode}` : '';
+	const { frontendCode, refCode } = saving;
+	const trimmedFrontendCode = frontendCode ? frontendCode.substring(0, 4) + '...' + frontendCode.substring(frontendCode.length - 4) : '';
+	const code = refCode || trimmedFrontendCode;
+	const usedRef = code ? `🪢 used Ref: ${code}` : '';
 
 	const message = `
 *New dEURO Savings!*
