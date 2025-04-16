@@ -7,10 +7,14 @@ export type TelegramState = {
 	leadrateProposal: number;
 	leadrateChanged: number;
 	positions: number;
-	mintingUpdates: number;
-	savingUpdates: number;
 	challenges: number;
 	bids: number;
+};
+
+export type TelegramSubscriptionState = {
+	mintingUpdates: number;
+	savingUpdates: number;
+	frontendCodeUpdates: number;
 };
 
 export type TelegramGroupState = {
