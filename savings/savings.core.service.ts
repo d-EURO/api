@@ -2,13 +2,15 @@ import { gql } from '@apollo/client/core';
 import { Injectable, Logger } from '@nestjs/common';
 import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { SavingsLeadrateService } from './savings.leadrate.service';
-import { Address, formatUnits, hexToString, zeroAddress } from 'viem';
-import { ApiSavingsInfo, ApiSavingsUserTable, SavingsSavedQuery } from './savings.core.types';
-import { PONDER_CLIENT } from 'api.config';
+import { Address, formatUnits, zeroAddress } from 'viem';
+import { ApiSavingsInfo, ApiSavingsUserTable, ApiSavingsUserLeaderboard, SavingsSavedQuery } from './savings.core.types';
+import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
+import { ADDRESS, SavingsGatewayABI } from '@deuro/eurocoin';
 
 @Injectable()
 export class SavingsCoreService {
 	private readonly logger = new Logger(this.constructor.name);
+	private fetchedSavingsUserLeaderboard: ApiSavingsUserLeaderboard[] = [];
 
 	constructor(
 		private readonly fc: EcosystemStablecoinService,
@@ -36,6 +38,49 @@ export class SavingsCoreService {
 			rate,
 			ratioOfSupply,
 		};
+	}
+
+	async updateSavingsUserLeaderboard(): Promise<void> {
+		const data = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+				{
+					savingsUserLeaderboards(orderBy: "amountSaved", orderDirection: "desc") {
+						items {
+							id
+							amountSaved
+							interestReceived
+						}
+					}
+				}
+			`,
+		});
+
+		const items = data?.data?.savingsUserLeaderboards?.items ?? [];
+
+		const mapped = await Promise.all(
+			items.map(async (item) => {
+				const unrealizedInterest = await VIEM_CONFIG.readContract({
+					address: ADDRESS[VIEM_CONFIG.chain.id].savingsGateway,
+					abi: SavingsGatewayABI,
+					functionName: 'accruedInterest',
+					args: [item.id],
+				});
+
+				return {
+					account: item.id,
+					amountSaved: item.amountSaved,
+					unrealizedInterest: unrealizedInterest.toString(),
+					interestReceived: item.interestReceived,
+				};
+			})
+		);
+
+		this.fetchedSavingsUserLeaderboard = mapped;
+	}
+
+	getSavingsUserLeaderboard(): ApiSavingsUserLeaderboard[] {
+		return this.fetchedSavingsUserLeaderboard;
 	}
 
 	async getUserTables(userAddress: Address, limit: number = 8): Promise<ApiSavingsUserTable> {
@@ -145,50 +190,13 @@ export class SavingsCoreService {
 							rate
 							total
 							balance
-						}
-					}
-				}
-			`,
-		});
-
-		const savingSaveds = savedFetched?.data?.savingsSaveds?.items ?? [];
-
-		for (const savingsSaved of savingSaveds) {
-			savingsSaved.refCode = await this.getRefCode(savingsSaved.txHash);
-		}
-
-		return savingSaveds;
-	}
-
-	private async getRefCode(txHash: string): Promise<string | undefined> {
-		const frontendFetched = await PONDER_CLIENT.query({
-			fetchPolicy: 'no-cache',
-			query: gql`
-			query {
-  					frontendBonusHistoryMappings(
-						where: { txHash: "${txHash}" }
-					) {
-						items {
-							id
 							frontendCode
-							payout
-							source
-							timestamp
-							txHash
 						}
 					}
 				}
 			`,
 		});
 
-		const frontendBonusHistoryMappings = frontendFetched.data.frontendBonusHistoryMappings;
-
-		if (frontendBonusHistoryMappings.items.length > 0) {
-			const frontendCode = frontendBonusHistoryMappings.items[0].frontendCode ?? '0xff';
-
-			if (frontendCode.toString().startsWith('0x00')) {
-				return hexToString(frontendCode).replace(/\0/g, '');
-			}
-		}
+		return savedFetched?.data?.savingsSaveds?.items ?? [];
 	}
 }

@@ -13,7 +13,7 @@ export type SavingsSavedQuery = {
 	rate: number;
 	total: string;
 	balance: string;
-	refCode?: string;
+	frontendCode: string;
 };
 
 export type SavingsIdInterest = `${Address}-${number}`;
@@ -59,4 +59,11 @@ export type ApiSavingsUserTable = {
 	save: SavingsSavedQuery[];
 	interest: SavingsInterestQuery[];
 	withdraw: SavingsWithdrawQuery[];
+};
+
+export type ApiSavingsUserLeaderboard = {
+	account: Address;
+	amountSaved: string;
+	unrealizedInterest: string;
+	interestReceived: string;
 };
