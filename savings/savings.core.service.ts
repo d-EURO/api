@@ -1,11 +1,11 @@
 import { gql } from '@apollo/client/core';
-import { Injectable, Logger } from '@nestjs/common';
-import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
-import { SavingsLeadrateService } from './savings.leadrate.service';
-import { Address, formatUnits, zeroAddress } from 'viem';
-import { ApiSavingsInfo, ApiSavingsUserTable, ApiSavingsUserLeaderboard, SavingsSavedQuery } from './savings.core.types';
-import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
 import { ADDRESS, SavingsGatewayABI } from '@deuro/eurocoin';
+import { Injectable, Logger } from '@nestjs/common';
+import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
+import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
+import { Address, formatUnits, zeroAddress } from 'viem';
+import { ApiSavingsInfo, ApiSavingsUserLeaderboard, ApiSavingsUserTable } from './savings.core.types';
+import { SavingsLeadrateService } from './savings.leadrate.service';
 
 @Injectable()
 export class SavingsCoreService {
@@ -168,35 +168,5 @@ export class SavingsCoreService {
 			interest: interestFetched?.data?.savingsInterests?.items ?? [],
 			withdraw: withdrawnFetched?.data?.savingsWithdrawns?.items ?? [],
 		};
-	}
-
-	async getSavingsUpdatesList(timestamp: Date): Promise<SavingsSavedQuery[]> {
-		const checkTimestamp = Math.trunc(timestamp.getTime() / 1000);
-
-		const savedFetched = await PONDER_CLIENT.query({
-			fetchPolicy: 'no-cache',
-			query: gql`
-			query {
-				savingsSaveds(orderBy: "blockheight", orderDirection: "desc"
-				where: { created_gt: "${checkTimestamp}" }
-					) {
-						items {
-							id
-							created
-							blockheight
-							txHash
-							account
-							amount
-							rate
-							total
-							balance
-							frontendCode
-						}
-					}
-				}
-			`,
-		});
-
-		return savedFetched?.data?.savingsSaveds?.items ?? [];
 	}
 }
