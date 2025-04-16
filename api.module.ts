@@ -29,6 +29,7 @@ import { SavingsLeadrateController } from 'savings/savings.leadrate.controller';
 import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 import { SavingsCoreController } from 'savings/savings.core.controller';
 import { SavingsCoreService } from 'savings/savings.core.service';
+import { FrontendCodeService } from 'frontendcode/frontendcode.service';
 
 // APP MODULE
 @Module({
@@ -59,6 +60,7 @@ import { SavingsCoreService } from 'savings/savings.core.service';
 		TelegramService,
 		ApiService,
 		AnalyticsService,
+		FrontendCodeService,
 	],
 })
 export class AppModule {}

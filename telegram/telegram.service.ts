@@ -1,34 +1,36 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { CONFIG } from 'api.config';
+import { ChallengesService } from 'challenges/challenges.service';
+import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
+import { FrontendCodeService } from 'frontendcode/frontendcode.service';
 import TelegramBot from 'node-telegram-bot-api';
 import { PositionsService } from 'positions/positions.service';
-import { TelegramGroupState, TelegramState } from './telegram.types';
-import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
-import { MinterProposalMessage } from './messages/MinterProposal.message';
-import { PositionProposalMessage } from './messages/PositionProposal.message';
+import { PricesService } from 'prices/prices.service';
+import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 import { StorageService } from 'storage/storage.service';
 import { Groups, SubscriptionGroups } from './dtos/groups.dto';
-import { WelcomeGroupMessage } from './messages/WelcomeGroup.message';
-import { ChallengesService } from 'challenges/challenges.service';
-import { ChallengeStartedMessage } from './messages/ChallengeStarted.message';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { PricesService } from 'prices/prices.service';
-import { MintingUpdateMessage } from './messages/MintingUpdate.message';
-import { HelpMessage } from './messages/Help.message';
-import { MinterProposalVetoedMessage } from './messages/MinterProposalVetoed.message';
-import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
-import { LeadrateProposalMessage } from './messages/LeadrateProposal.message';
-import { LeadrateChangedMessage } from './messages/LeadrateChanged.message';
 import { BidTakenMessage } from './messages/BidTaken.message';
-import { CONFIG } from 'api.config';
-import { SavingsCoreService } from 'savings/savings.core.service';
+import { ChallengeStartedMessage } from './messages/ChallengeStarted.message';
+import { FrontendCodeRegisteredMessage } from './messages/FrontendCodeRegistered.message';
+import { HelpMessage } from './messages/Help.message';
+import { LeadrateChangedMessage } from './messages/LeadrateChanged.message';
+import { LeadrateProposalMessage } from './messages/LeadrateProposal.message';
+import { MinterProposalMessage } from './messages/MinterProposal.message';
+import { MinterProposalVetoedMessage } from './messages/MinterProposalVetoed.message';
+import { MintingUpdateMessage } from './messages/MintingUpdate.message';
+import { PositionProposalMessage } from './messages/PositionProposal.message';
 import { SavingUpdateMessage } from './messages/SavingUpdate.message';
+import { WelcomeGroupMessage } from './messages/WelcomeGroup.message';
+import { TelegramGroupState, TelegramState, TelegramSubscriptionState } from './telegram.types';
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
 	private readonly logger = new Logger(this.constructor.name);
 	private readonly bot = new TelegramBot(CONFIG.telegramBotToken, { polling: true });
-	private readonly telegramHandles: string[] = ['/MintingUpdates', '/SavingUpdates', '/help'];
+	private readonly telegramHandles: string[] = ['/MintingUpdates', '/SavingUpdates', '/FrontendCodeUpdates', '/help'];
 	private readonly telegramState: TelegramState;
+	private readonly telegramSubscriptionState: TelegramSubscriptionState;
 	private telegramGroupState: TelegramGroupState;
 
 	constructor(
@@ -38,7 +40,7 @@ export class TelegramService implements OnModuleInit {
 		private readonly position: PositionsService,
 		private readonly prices: PricesService,
 		private readonly challenge: ChallengesService,
-		private readonly saving: SavingsCoreService
+		private readonly frontendCode: FrontendCodeService
 	) {
 		const time: number = Date.now();
 		this.telegramState = {
@@ -47,10 +49,14 @@ export class TelegramService implements OnModuleInit {
 			leadrateProposal: time,
 			leadrateChanged: time,
 			positions: time,
-			mintingUpdates: time,
-			savingUpdates: time,
 			challenges: time,
 			bids: time,
+		};
+
+		this.telegramSubscriptionState = {
+			mintingUpdates: time,
+			savingUpdates: time,
+			frontendCodeUpdates: time,
 		};
 
 		this.telegramGroupState = {
@@ -230,29 +236,65 @@ export class TelegramService implements OnModuleInit {
 			}
 		}
 
-		// SUPSCRIPTION
-		// MintingUpdates
-		const requestedMintingUpdates = this.position
-			.getMintingUpdatesList()
-			.list.filter((m) => m.created * 1000 > this.telegramState.mintingUpdates && BigInt(m.mintedAdjusted) > 0n);
-		if (requestedMintingUpdates.length > 0) {
-			this.telegramState.mintingUpdates = Date.now();
-			for (const m of requestedMintingUpdates) {
-				const groups = this.telegramGroupState.subscription['/MintingUpdates']?.groups || [];
-				const prices = this.prices.getPricesMapping();
-				this.sendMessageGroup(groups, MintingUpdateMessage(m, prices));
-			}
-		}
+		// Subscriptions
+		void this.updateSubscriptions();
+	}
 
-		// SavingUpdates
-		const requestedSavingUpdates = await this.saving.getSavingsUpdatesList(new Date(this.telegramState.savingUpdates));
-		if (requestedSavingUpdates.length > 0) {
-			this.telegramState.savingUpdates = Date.now();
-			for (const requestedSaving of requestedSavingUpdates) {
-				const groups = this.telegramGroupState.subscription['/SavingUpdates']?.groups || [];
-				const messageInfo = SavingUpdateMessage(requestedSaving);
-				this.sendMessageGroup(groups, messageInfo[0], messageInfo[1]);
+	private async updateSubscriptions(): Promise<void> {
+		void this.sendMintingUpdates();
+		void this.sendSavingUpdates();
+		void this.sendFrontendCodeUpdates();
+	}
+
+	private async sendMintingUpdates(): Promise<void> {
+		try {
+			const requestedMintingUpdates = this.position
+				.getMintingUpdatesList()
+				.list.filter((m) => m.created * 1000 > this.telegramSubscriptionState.mintingUpdates && BigInt(m.mintedAdjusted) > 0n);
+			if (requestedMintingUpdates.length > 0) {
+				this.telegramSubscriptionState.mintingUpdates = Date.now();
+				for (const mintingUpdate of requestedMintingUpdates) {
+					const groups = this.telegramGroupState.subscription['/MintingUpdates']?.groups || [];
+					const prices = this.prices.getPricesMapping();
+					this.sendMessageGroup(groups, MintingUpdateMessage(mintingUpdate, prices));
+				}
 			}
+		} catch (e) {
+			this.logger.error('Error while sending minting updates:', e);
+		}
+	}
+
+	private async sendSavingUpdates(): Promise<void> {
+		try {
+			const requestedSavingsSaveds = await this.frontendCode.getSavingsSaveds(new Date(this.telegramSubscriptionState.savingUpdates));
+			if (requestedSavingsSaveds.length > 0) {
+				this.telegramSubscriptionState.savingUpdates = Date.now();
+				for (const savingSaved of requestedSavingsSaveds) {
+					const groups = this.telegramGroupState.subscription['/SavingUpdates']?.groups || [];
+					const messageInfo = SavingUpdateMessage(savingSaved);
+					this.sendMessageGroup(groups, messageInfo[0], messageInfo[1]);
+				}
+			}
+		} catch (e) {
+			this.logger.error('Error while sending saving updates:', e);
+		}
+	}
+
+	private async sendFrontendCodeUpdates(): Promise<void> {
+		try {
+			const requestedFrontendCodeRegistereds = await this.frontendCode.getFrontendCodeRegistereds(
+				new Date(this.telegramSubscriptionState.frontendCodeUpdates)
+			);
+			if (requestedFrontendCodeRegistereds.length > 0) {
+				this.telegramSubscriptionState.frontendCodeUpdates = Date.now();
+				for (const frontendCodeRegistered of requestedFrontendCodeRegistereds) {
+					const groups = this.telegramGroupState.subscription['/FrontendCodeUpdates']?.groups || [];
+					const messageInfo = FrontendCodeRegisteredMessage(frontendCodeRegistered);
+					this.sendMessageGroup(groups, messageInfo[0], messageInfo[1]);
+				}
+			}
+		} catch (e) {
+			this.logger.error('Error while sending frontend code updates:', e);
 		}
 	}
 
