@@ -10,6 +10,7 @@ export type ApiEcosystemDepsInfo = {
 	earnings: {
 		profit: number;
 		loss: number;
+		unrealizedProfit: number;
 	};
 	values: {
 		price: number;
