@@ -1,15 +1,16 @@
+import { gql } from '@apollo/client/core';
+import { ADDRESS, DecentralizedEUROABI, EquityABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
 import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
-import { ApiEcosystemDepsInfo } from './ecosystem.deps.types';
-import { gql } from '@apollo/client/core';
+import { PositionsService } from 'positions/positions.service';
 import { formatUnits } from 'viem';
-import { ADDRESS } from '@deuro/eurocoin';
-import { EquityABI, DecentralizedEUROABI } from '@deuro/eurocoin';
-
+import { ApiEcosystemDepsInfo } from './ecosystem.deps.types';
 @Injectable()
 export class EcosystemDepsService {
 	private readonly logger = new Logger(this.constructor.name);
 	private depsInfo: ApiEcosystemDepsInfo;
+
+	constructor(private readonly positionsService: PositionsService) {}
 
 	getEcosystemDepsInfo(): ApiEcosystemDepsInfo {
 		return this.depsInfo;
@@ -69,9 +70,11 @@ export class EcosystemDepsService {
 		}
 
 		const d = profitLossPonder.data.dEPSs.items.at(0);
+		const unrealizedProfit = this.getUnrealizedProfit();
 		const earningsData: ApiEcosystemDepsInfo['earnings'] = {
 			profit: parseFloat(formatUnits(d.profits, 18)),
 			loss: parseFloat(formatUnits(d.loss, 18)),
+			unrealizedProfit: parseFloat(formatUnits(unrealizedProfit, 18)),
 		};
 
 		const equityInReserveRaw = balanceReserveRaw - minterReserveRaw;
@@ -93,6 +96,17 @@ export class EcosystemDepsService {
 				minter: minterReserve,
 			},
 		};
+	}
+
+	private getUnrealizedProfit(): bigint {
+		const positions = this.positionsService.getPositionsList().list;
+		const openPositions = positions.filter((p) => !p.closed && !p.denied);
+
+		const unrealizedProfit = openPositions.reduce((acc, p) => {
+			return acc + BigInt(p.interest);
+		}, 0n);
+
+		return unrealizedProfit;
 	}
 
 	getTotalSupply(): number {
