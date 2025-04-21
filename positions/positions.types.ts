@@ -41,6 +41,7 @@ export type PositionQuery = {
 	virtualPrice: string;
 	principal: string;
 	fixedAnnualRatePPM: number;
+	interest: string;
 };
 
 export type MintingUpdateQueryId = `${Address}-${number}`;
