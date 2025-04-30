@@ -12,7 +12,7 @@ export function FrontendCodeRegisteredMessage(registered: FrontendCodeRegistered
 👤 [Referrer](https://etherscan.io/address/${registered.owner}) / [TX](https://etherscan.io/tx/${registered.txHash})
 `;
 
-	const image = `${CONFIG.telegram.imagesDir}/Referrallink_Telegram.mp4`;
+	const image = `${CONFIG.telegram.imagesDir}/ReferralLink.mp4`;
 
 	return [message, image];
 }

@@ -17,7 +17,7 @@ export function SavingUpdateMessage(saving: FrontendCodeSavingsQuery): string[] 
 ${usedRef}
 `;
 
-	const image = `${CONFIG.telegram.imagesDir}/Savings_Telegram.mp4`;
+	const image = `${CONFIG.telegram.imagesDir}/Savings.mp4`;
 
 	return [message, image];
 }

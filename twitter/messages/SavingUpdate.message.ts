@@ -18,7 +18,7 @@ New dEURO Savings!
 ${usedRef}
 `;
 
-	const image = `${CONFIG.twitter.imagesDir}/Savings_Twitter.png`;
+	const image = `${CONFIG.twitter.imagesDir}/Savings.png`;
 
 	return [message, image];
 }

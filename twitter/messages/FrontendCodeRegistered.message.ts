@@ -13,7 +13,7 @@ New dEURO Ambassador
 🛒 TX: https://etherscan.io/tx/${registered.txHash}
 `;
 
-	const image = `${CONFIG.twitter.imagesDir}/Referrallink_Twitter.png`;
+	const image = `${CONFIG.twitter.imagesDir}/ReferralLink.png`;
 
 	return [message, image];
 }
