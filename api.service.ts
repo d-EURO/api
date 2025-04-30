@@ -3,15 +3,16 @@ import { Interval } from '@nestjs/schedule';
 import { CONFIG, VIEM_CONFIG } from 'api.config';
 import { ChallengesService } from 'challenges/challenges.service';
 import { EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
-import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
+import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { PositionsService } from 'positions/positions.service';
 import { PricesService } from 'prices/prices.service';
+import { SavingsCoreService } from 'savings/savings.core.service';
 import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 import { TelegramService } from 'telegram/telegram.service';
+import { TwitterService } from 'twitter/twitter.service';
 import { Chain } from 'viem';
 import { mainnet, polygon } from 'viem/chains';
-import { SavingsCoreService } from 'savings/savings.core.service';
 
 export const INDEXING_TIMEOUT_COUNT: number = 3;
 export const POLLING_DELAY: { [key: Chain['id']]: number } = {
@@ -33,9 +34,10 @@ export class ApiService {
 		private readonly stablecoin: EcosystemStablecoinService,
 		private readonly deps: EcosystemDepsService,
 		private readonly challenges: ChallengesService,
-		private readonly telegram: TelegramService,
 		private readonly leadrate: SavingsLeadrateService,
-		private readonly savings: SavingsCoreService
+		private readonly savings: SavingsCoreService,
+		private readonly telegram: TelegramService,
+		private readonly twitter: TwitterService
 	) {
 		setTimeout(() => this.updateBlockheight(), 100);
 	}
@@ -55,8 +57,9 @@ export class ApiService {
 			this.challenges.updateChallengeV2s(),
 			this.challenges.updateBidV2s(),
 			this.challenges.updateChallengesPrices(),
-			this.telegram.updateTelegram(),
 			this.savings.updateSavingsUserLeaderboard(),
+			this.telegram.updateTelegram(),
+			this.twitter.updateTwitter(),
 		];
 
 		return Promise.all(promises);

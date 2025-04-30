@@ -1,35 +1,36 @@
 // CORE IMPORTS
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // SERVICE IMPORTS
 import { ApiService } from 'api.service';
+import { ChallengesService } from 'challenges/challenges.service';
 import { EcosystemCollateralService } from 'ecosystem/ecosystem.collateral.service';
 import { EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
-import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
+import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { PositionsService } from 'positions/positions.service';
 import { PricesService } from 'prices/prices.service';
-import { ChallengesService } from 'challenges/challenges.service';
 import { TelegramService } from 'telegram/telegram.service';
 
 // CONTROLLER IMPORTS
-import { EcosystemMinterController } from 'ecosystem/ecosystem.minter.controller';
-import { EcosystemCollateralController } from 'ecosystem/ecosystem.collateral.controller';
-import { EcosystemDepsController } from 'ecosystem/ecosystem.deps.controller';
-import { EcosystemStablecoinController } from 'ecosystem/ecosystem.stablecoin.controller';
-import { PositionsController } from 'positions/positions.controller';
-import { PricesController } from 'prices/prices.controller';
-import { ChallengesController } from 'challenges/challenges.controller';
-import { StorageService } from 'storage/storage.service';
 import { AnalyticsController } from 'analytics/analytics.controller';
 import { AnalyticsService } from 'analytics/analytics.service';
-import { SavingsLeadrateController } from 'savings/savings.leadrate.controller';
-import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
+import { ChallengesController } from 'challenges/challenges.controller';
+import { EcosystemCollateralController } from 'ecosystem/ecosystem.collateral.controller';
+import { EcosystemDepsController } from 'ecosystem/ecosystem.deps.controller';
+import { EcosystemMinterController } from 'ecosystem/ecosystem.minter.controller';
+import { EcosystemStablecoinController } from 'ecosystem/ecosystem.stablecoin.controller';
+import { FrontendCodeService } from 'frontendcode/frontendcode.service';
+import { PositionsController } from 'positions/positions.controller';
+import { PricesController } from 'prices/prices.controller';
 import { SavingsCoreController } from 'savings/savings.core.controller';
 import { SavingsCoreService } from 'savings/savings.core.service';
-import { FrontendCodeService } from 'frontendcode/frontendcode.service';
+import { SavingsLeadrateController } from 'savings/savings.leadrate.controller';
+import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
+import { StorageService } from 'storage/storage.service';
+import { TwitterService } from 'twitter/twitter.service';
 
 // APP MODULE
 @Module({
@@ -57,10 +58,11 @@ import { FrontendCodeService } from 'frontendcode/frontendcode.service';
 		SavingsCoreService,
 		PricesService,
 		ChallengesService,
-		TelegramService,
 		ApiService,
 		AnalyticsService,
 		FrontendCodeService,
+		TelegramService,
+		TwitterService,
 	],
 })
 export class AppModule {}

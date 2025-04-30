@@ -20,6 +20,7 @@ export class FrontendCodeService {
 					) {
 						items {
 							txHash
+							owner
 							frontendCode
 						}
 					}
