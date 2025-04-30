@@ -1,5 +1,5 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client/core';
-import { http, createPublicClient, Chain } from 'viem';
+import { Chain, createPublicClient, http } from 'viem';
 import { mainnet, polygon } from 'viem/chains';
 
 import * as dotenv from 'dotenv';
@@ -20,9 +20,19 @@ export type ConfigType = {
 		mainnet: string;
 		polygon: string;
 	};
-	telegramBotToken: string;
-	telegramGroupsJson: string;
-	telegramImagesDir: string;
+	telegram: {
+		botToken: string;
+		groupsJson: string;
+		imagesDir: string;
+	};
+	twitter: {
+		clientId: string;
+		clientSecret: string;
+		appKey: string;
+		appSecret: string;
+		tokenJson: string;
+		imagesDir: string;
+	};
 };
 
 // Create config
@@ -35,9 +45,19 @@ export const CONFIG: ConfigType = {
 		mainnet: process.env.RPC_URL_MAINNET,
 		polygon: process.env.RPC_URL_POLYGON,
 	},
-	telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
-	telegramGroupsJson: process.env.TELEGRAM_GROUPS_JSON,
-	telegramImagesDir: process.env.TELEGRAM_IMAGES_DIR,
+	telegram: {
+		botToken: process.env.TELEGRAM_BOT_TOKEN,
+		groupsJson: process.env.TELEGRAM_GROUPS_JSON,
+		imagesDir: process.env.TELEGRAM_IMAGES_DIR,
+	},
+	twitter: {
+		clientId: process.env.TWITTER_CLIENT_ID,
+		clientSecret: process.env.TWITTER_CLIENT_SECRET,
+		appKey: process.env.TWITTER_CLIENT_APP_KEY,
+		appSecret: process.env.TWITTER_CLIENT_APP_SECRET,
+		tokenJson: process.env.TWITTER_TOKEN_JSON,
+		imagesDir: process.env.TWITTER_IMAGES_DIR,
+	},
 };
 
 // Start up message

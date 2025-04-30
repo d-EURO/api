@@ -40,6 +40,7 @@
 		"node-telegram-bot-api": "^0.66.0",
 		"reflect-metadata": "^0.2.0",
 		"rxjs": "^7.8.1",
+		"twitter-api-v2": "^1.22.0",
 		"viem": "^2.19.1"
 	},
 	"devDependencies": {

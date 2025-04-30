@@ -6,13 +6,14 @@ export function FrontendCodeRegisteredMessage(registered: FrontendCodeRegistered
 	const refCode = createRefCode(registered.frontendCode);
 
 	const message = `
-*New dEURO Ambassador*
+New dEURO Ambassador
 
-⚙️ Referral-Code: [${refCode}](https://app.deuro.com?ref=${refCode})
-👤 [Referrer](https://etherscan.io/address/${registered.owner}) / [TX](https://etherscan.io/tx/${registered.txHash})
+⚙️ Referral-Code: https://app.deuro.com?ref=${refCode}
+👤 Referrer: https://etherscan.io/address/${registered.owner}
+🛒 TX: https://etherscan.io/tx/${registered.txHash}
 `;
 
-	const image = `${CONFIG.telegram.imagesDir}/Referrallink_Telegram.mp4`;
+	const image = `${CONFIG.twitter.imagesDir}/Referrallink_Twitter.png`;
 
 	return [message, image];
 }

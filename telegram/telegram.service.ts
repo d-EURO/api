@@ -27,7 +27,7 @@ import { TelegramGroupState, TelegramState, TelegramSubscriptionState } from './
 @Injectable()
 export class TelegramService implements OnModuleInit {
 	private readonly logger = new Logger(this.constructor.name);
-	private readonly bot = new TelegramBot(CONFIG.telegramBotToken, { polling: true });
+	private readonly bot = new TelegramBot(CONFIG.telegram.botToken, { polling: true });
 	private readonly telegramHandles: string[] = ['/MintingUpdates', '/SavingUpdates', '/FrontendCodeUpdates', '/help'];
 	private readonly telegramState: TelegramState;
 	private readonly telegramSubscriptionState: TelegramSubscriptionState;
@@ -43,6 +43,7 @@ export class TelegramService implements OnModuleInit {
 		private readonly frontendCode: FrontendCodeService
 	) {
 		const time: number = Date.now();
+
 		this.telegramState = {
 			minterApplied: time,
 			minterVetoed: time,

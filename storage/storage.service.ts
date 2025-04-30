@@ -8,7 +8,7 @@ import { readFileSync, writeFileSync } from 'fs';
 export class StorageService {
 	private readonly logger = new Logger(this.constructor.name);
 
-	private readonly groupsFile: string = CONFIG.telegramGroupsJson;
+	private readonly groupsFile: string = CONFIG.telegram.groupsJson;
 
 	async write(data: any): Promise<void> {
 		writeFileSync(this.groupsFile, JSON.stringify(data));
