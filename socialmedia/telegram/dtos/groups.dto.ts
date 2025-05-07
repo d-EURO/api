@@ -8,8 +8,6 @@ export class Groups {
 		this.createdAt = 0;
 		this.updatedAt = 0;
 		this.groups = [];
-		//this.ignore = [];
-		//this.subscription = {};
 	}
 
 	@IsString()
@@ -24,28 +22,4 @@ export class Groups {
 	@IsArray()
 	@IsString({ each: true })
 	groups: string[];
-
-	//@IsOptional() // @dev: for backwards compatible states
-	//@IsArray()
-	//@IsString({ each: true })
-	//ignore?: string[];
-
-	//@IsOptional() // @dev: for backwards compatible states
-	//@IsObject()
-	//@ValidateNested({ each: true })
-	//subscription?: Subscription;
 }
-
-//export type Subscription = {
-//	[key: string]: SubscriptionGroups;
-//};
-
-//export class SubscriptionGroups {
-//	constructor() {
-//		this.groups = [];
-//	}
-
-//	@IsArray()
-//	@IsString({ each: true })
-//	groups: string[];
-//}
