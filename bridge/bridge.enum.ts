@@ -1,5 +1,9 @@
 export enum StablecoinEnum {
-	EURC = 'EURC',
 	EURS = 'EURS',
 	VEUR = 'VEUR',
+	EURC = 'EURC',
+	EURR = 'EURR',
+	EUROP = 'EUROP',
+	EURI = 'EURI',
+	EURE = 'EURE',
 }
