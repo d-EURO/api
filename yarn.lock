@@ -407,10 +407,10 @@
     tunnel-agent "^0.6.0"
     uuid "^8.3.2"
 
-"@deuro/eurocoin@1.0.12":
-  version "1.0.12"
-  resolved "https://registry.yarnpkg.com/@deuro/eurocoin/-/eurocoin-1.0.12.tgz#e78ffa59f0dfe11bcb9e3a6d21badcabcfbb7d5c"
-  integrity sha512-UBJ2hWxnhvfWDEqYvrSzdNG6pVrFDtA7q4maHFT5sDi/99Zf1N4T3kzyQTjWOQXXTs72Ku+81tV9z5gn5c/ybQ==
+"@deuro/eurocoin@^1.0.13":
+  version "1.0.13"
+  resolved "https://registry.yarnpkg.com/@deuro/eurocoin/-/eurocoin-1.0.13.tgz#05e9c6ff13d4bfcaa8ad14aa377b2815709cfc80"
+  integrity sha512-NrAHpgLrlx662BgTcgkxBXNvNPl+bUeQPaVGwOsDrJXyVsJJVfpBwPcqZ+CaOVUEZfwDePYTWZe2e82bVqRkTQ==
   dependencies:
     "@flashbots/ethers-provider-bundle" "^1.0.0"
     hardhat-abi-exporter "^2.10.0"
@@ -6774,6 +6774,7 @@ word-wrap@^1.2.5:
   integrity sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==
 
 "wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
+  name wrap-ansi-cjs
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
