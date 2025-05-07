@@ -21,6 +21,7 @@ export class TradesService {
                             trader
                             amount
                             shares
+                            frontendCode
                         }
                     }
                 }
