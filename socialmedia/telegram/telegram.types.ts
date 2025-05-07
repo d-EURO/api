@@ -1,5 +1,3 @@
-import { SubscriptionGroups } from './dtos/groups.dto';
-
 // @dev: timestamps of last trigger emits
 export type TelegramState = {
 	minterApplied: number;
@@ -9,12 +7,14 @@ export type TelegramState = {
 	positions: number;
 	challenges: number;
 	bids: number;
+	mintingUpdates: number;
 };
 
 export type TelegramSubscriptionState = {
 	mintingUpdates: number;
 	savingUpdates: number;
 	frontendCodeUpdates: number;
+	tradeUpdates: number;
 };
 
 export type TelegramGroupState = {
@@ -22,8 +22,4 @@ export type TelegramGroupState = {
 	createdAt: number;
 	updatedAt: number;
 	groups: string[];
-	ignore: string[];
-	subscription: {
-		[key: string]: SubscriptionGroups;
-	};
 };

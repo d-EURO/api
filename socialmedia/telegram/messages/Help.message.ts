@@ -1,14 +1,19 @@
 import { CONFIG } from 'api.config';
 import { AppUrl } from 'utils/func-helper';
 
-export function WelcomeGroupMessage(group: string | number, handles: string[]): string {
+export function HelpMessage(groups: string[], group: string, handles: string[]): string {
+	const isSubscribed = groups.includes(group);
+
 	return `
 *Welcome to the d-EURO API Bot*
 
-If you receive this message, it means the bot recognized this chat. (${group})
+I am listening to changes within the d-EURO ecosystem.
 
-*Available subscription handles:*
+*Available commands:*
 ${handles.join('\n')}
+
+*Subscription state:*
+${isSubscribed ? 'You are subscriped.' : 'You are not subscriped.'}
 
 *Environment*
 Api Version: ${process.env.npm_package_version}
@@ -17,5 +22,5 @@ Time: ${new Date().toString().split(' ').slice(0, 5).join(' ')}
 
 [Goto App](${AppUrl('')})
 [Github Api](https://github.com/d-EURO/api)
-                        `;
+`;
 }

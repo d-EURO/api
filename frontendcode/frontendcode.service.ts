@@ -1,12 +1,10 @@
 import { gql } from '@apollo/client/core';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PONDER_CLIENT } from 'api.config';
 import { FrontendCodeRegisteredQuery, FrontendCodeSavingsQuery } from './frontendcode.types';
 
 @Injectable()
 export class FrontendCodeService {
-	private readonly logger = new Logger(this.constructor.name);
-
 	async getFrontendCodeRegistereds(timestamp: Date): Promise<FrontendCodeRegisteredQuery[]> {
 		const checkTimestamp = Math.trunc(timestamp.getTime() / 1000);
 

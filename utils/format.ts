@@ -4,13 +4,13 @@ export const formatCurrency = (value: string | number, minimumFractionDigits = 0
 	if (amount === null || !!isNaN(amount)) return null;
 
 	if (amount < 0.01 && amount > 0 && maximumFractionDigits) {
-		return '< 0.01';
+		return '< 0,01';
 	}
 
-	const formatter = new Intl.NumberFormat('en-US', {
+	const formatter = new Intl.NumberFormat('de-DE', {
 		maximumFractionDigits,
 		minimumFractionDigits,
 	});
 
-	return formatter.format(amount).split(',').join(`'`);
+	return formatter.format(amount);
 };
