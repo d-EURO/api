@@ -27,7 +27,7 @@ nDEPS/DEPS Invest!
 ${usedRef}
 `;
 
-	const image = `${CONFIG.telegram.imagesDir}/EquityInvest.png`;
+	const image = `${CONFIG.twitter.imagesDir}/EquityInvest.png`;
 
 	return [message, image];
 }
