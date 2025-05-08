@@ -9,8 +9,7 @@ import { PositionsService } from 'positions/positions.service';
 import { PricesService } from 'prices/prices.service';
 import { SavingsCoreService } from 'savings/savings.core.service';
 import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
-import { TelegramService } from 'telegram/telegram.service';
-import { TwitterService } from 'twitter/twitter.service';
+import { SocialMediaService } from 'socialmedia/socialmedia.service';
 import { Chain } from 'viem';
 import { mainnet, polygon } from 'viem/chains';
 
@@ -36,8 +35,7 @@ export class ApiService {
 		private readonly challenges: ChallengesService,
 		private readonly leadrate: SavingsLeadrateService,
 		private readonly savings: SavingsCoreService,
-		private readonly telegram: TelegramService,
-		private readonly twitter: TwitterService
+		private readonly socialMediaService: SocialMediaService
 	) {
 		setTimeout(() => this.updateBlockheight(), 100);
 	}
@@ -58,11 +56,13 @@ export class ApiService {
 			this.challenges.updateBidV2s(),
 			this.challenges.updateChallengesPrices(),
 			this.savings.updateSavingsUserLeaderboard(),
-			this.telegram.updateTelegram(),
-			this.twitter.updateTwitter(),
 		];
 
 		return Promise.all(promises);
+	}
+
+	async updateSocialMedia() {
+		this.socialMediaService.update();
 	}
 
 	@Interval(POLLING_DELAY[CONFIG.chain.id])
@@ -72,6 +72,7 @@ export class ApiService {
 		if (tmp > this.fetchedBlockheight && !this.indexing) {
 			this.indexing = true;
 			await this.updateWorkflow();
+			await this.updateSocialMedia();
 			this.indexingTimeoutCount = 0;
 			this.fetchedBlockheight = tmp;
 			this.indexing = false;

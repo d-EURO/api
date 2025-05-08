@@ -1,6 +1,6 @@
 import { CONFIG } from 'api.config';
 import { FrontendCodeRegisteredQuery } from 'frontendcode/frontendcode.types';
-import { createRefCode } from 'utils/message-helper';
+import { createRefCode } from 'socialmedia/socialmedia.helper';
 
 export function FrontendCodeRegisteredMessage(registered: FrontendCodeRegisteredQuery): string[] {
 	const refCode = createRefCode(registered.frontendCode);

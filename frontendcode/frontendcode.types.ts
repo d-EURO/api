@@ -4,7 +4,7 @@ import { Address } from 'viem';
 // Ponder return types
 export type FrontendCodeRegisteredQuery = {
 	txHash: string;
-	owner: string;
+	owner: Address;
 	frontendCode: string;
 };
 
