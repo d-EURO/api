@@ -13,8 +13,7 @@ New Swap!
 ➡️ ${stablecoin} ${formatCurrency(formatUnits(BigInt(stablecoinBridge.amount), 18))}
 ⬅️ dEURO ${formatCurrency(formatUnits(BigInt(stablecoinBridge.amount), 18))}
 
-👤 Swapper: https://etherscan.io/address/${stablecoinBridge.swapper}
-🛒 TX: https://etherscan.io/tx/${stablecoinBridge.txHash}
+🔗 Verifiable on the blockchain
 `;
 
 	const image = `${CONFIG.twitter.imagesDir}/SwapStablecoin.png`;

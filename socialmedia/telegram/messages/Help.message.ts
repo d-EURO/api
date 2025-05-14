@@ -13,7 +13,7 @@ I am listening to changes within the d-EURO ecosystem.
 ${handles.join('\n')}
 
 *Subscription state:*
-${isSubscribed ? 'You are subscriped.' : 'You are not subscriped.'}
+${isSubscribed ? 'You are subscribed.' : 'You are not subscribed.'}
 
 *Environment*
 Api Version: ${process.env.npm_package_version}

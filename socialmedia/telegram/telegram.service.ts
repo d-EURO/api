@@ -306,7 +306,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		if (isSubscribed) return;
 
 		this.telegramGroupState.groups.push(group);
-		this.sendMessage(group, `You are now subscriped.`);
+		this.sendMessage(group, `You are now subscribed.`);
 
 		this.writeBackupGroups();
 	}
@@ -318,7 +318,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 
 		const newGroups = this.telegramGroupState.groups.filter((g) => g != group);
 		this.telegramGroupState.groups = newGroups;
-		this.sendMessage(group, `You are not subscriped anymore.`);
+		this.sendMessage(group, `You are not subscribed anymore.`);
 
 		this.writeBackupGroups();
 	}
