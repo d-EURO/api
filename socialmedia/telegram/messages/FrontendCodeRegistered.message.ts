@@ -3,7 +3,7 @@ import { FrontendCodeRegisteredQuery } from 'frontendcode/frontendcode.types';
 import { createRefCode } from 'socialmedia/socialmedia.helper';
 
 export function FrontendCodeRegisteredMessage(registered: FrontendCodeRegisteredQuery): string[] {
-	const refCode = createRefCode(registered.frontendCode);
+	const refCode = createRefCode(registered.frontendCode) ?? '';
 
 	const message = `
 *New dEURO Ambassador*
