@@ -83,7 +83,7 @@ export class SavingsCoreService {
 		return this.fetchedSavingsUserLeaderboard;
 	}
 
-	async getUserTables(userAddress: Address, limit: number = 8): Promise<ApiSavingsUserTable> {
+	async getUserTables(userAddress: Address, limit: number = 15): Promise<ApiSavingsUserTable> {
 		const user: Address = userAddress == zeroAddress ? zeroAddress : (userAddress.toLowerCase() as Address);
 		const savedFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
