@@ -1,12 +1,12 @@
 import { CONFIG } from 'api.config';
-import { createRefCode } from 'socialmedia/socialmedia.helper';
+import { createRefCodeLabelLink } from 'socialmedia/socialmedia.helper';
 import { TradeQuery } from 'trades/trade.types';
 import { formatCurrency } from 'utils/format';
 import { formatUnits } from 'viem';
 
 export function TradeMessage(trade: TradeQuery, marketCap: number, totalShares: bigint): string[] {
-	const refCode = createRefCode(trade.frontendCode);
-	const usedRef = refCode ? `🪢 used Ref: [${refCode}](https://app.deuro.com?ref=${refCode})` : '';
+	const refCodeLabelLink = createRefCodeLabelLink(trade.frontendCode);
+	const usedRef = refCodeLabelLink ? `🪢 used Ref: ${refCodeLabelLink}` : '';
 
 	const actualShares = Number(formatUnits(totalShares, 18));
 	const sharesBefore = actualShares - Number(formatUnits(BigInt(trade.shares), 18));

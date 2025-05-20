@@ -1,12 +1,12 @@
 import { CONFIG } from 'api.config';
 import { FrontendCodeSavingsQuery } from 'frontendcode/frontendcode.types';
-import { createRefCode } from 'socialmedia/socialmedia.helper';
+import { createRefCodeLabelLink } from 'socialmedia/socialmedia.helper';
 import { formatCurrency } from 'utils/format';
 import { formatUnits } from 'viem';
 
 export function SavingUpdateMessage(saving: FrontendCodeSavingsQuery): string[] {
-	const refCode = createRefCode(saving.frontendCode);
-	const usedRef = refCode ? `🪢 used Ref: [${refCode}](https://app.deuro.com?ref=${refCode})` : '';
+	const refCodeLabelLink = createRefCodeLabelLink(saving.frontendCode);
+	const usedRef = refCodeLabelLink ? `🪢 used Ref: ${refCodeLabelLink}` : '';
 
 	const message = `
 *New dEURO Savings!*
