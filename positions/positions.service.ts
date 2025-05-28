@@ -1,9 +1,9 @@
 import { gql } from '@apollo/client/core';
-import { PositionV2ABI } from '@deuro/eurocoin';
+import { ADDRESS, PositionV2ABI, SavingsABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
 import { FIVEDAYS_MS } from 'utils/const-helper';
 import { Address, erc20Abi, getAddress } from 'viem';
-import { PONDER_CLIENT, VIEM_CONFIG } from '../api.config';
+import { CONFIG, PONDER_CLIENT, VIEM_CONFIG } from '../api.config';
 import {
 	ApiMintingUpdateListing,
 	ApiMintingUpdateMapping,
@@ -135,15 +135,11 @@ export class PositionsService {
 		const virtualPriceDataPromises: Promise<bigint>[] = [];
 		const interestPromises: Promise<bigint>[] = [];
 
-		const leadrate: number = 0;
-
-		/*
-		const leadrate: number = await VIEM_CONFIG.readContract({
-			address: ADDRESS[CONFIG.chain.id].savings,
+		const leadrate = await VIEM_CONFIG.readContract({
+			address: ADDRESS[CONFIG.chain.id].savingsGateway,
 			abi: SavingsABI,
 			functionName: 'currentRatePPM',
 		});
-		*/
 
 		for (const p of items) {
 			// Forces the collateral balance to be overwritten with the latest blockchain state, instead of the ponder state.
