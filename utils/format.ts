@@ -1,4 +1,4 @@
-export const formatCurrency = (value: string | number, minimumFractionDigits = 0, maximumFractionDigits = 2) => {
+export const formatCurrency = (value: string | number, minimumFractionDigits = 2, maximumFractionDigits = 2) => {
 	const amount = typeof value === 'string' ? parseFloat(value) : value;
 
 	if (amount === null || !!isNaN(amount)) return null;
@@ -8,8 +8,8 @@ export const formatCurrency = (value: string | number, minimumFractionDigits = 0
 	}
 
 	const formatter = new Intl.NumberFormat('de-DE', {
-		maximumFractionDigits,
 		minimumFractionDigits,
+		maximumFractionDigits,
 	});
 
 	return formatter.format(amount);
