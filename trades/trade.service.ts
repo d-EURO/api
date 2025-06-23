@@ -14,7 +14,10 @@ export class TradesService {
                 query {
                     trades(
                         orderBy: "time", orderDirection: "desc"
-                        where: { time_gt: "${checkTimestamp}" }
+                        where: {
+                            time_gt: "${checkTimestamp}",
+                            shares_gt: "0"
+                        }
                     ) {
                         items {
                             txHash
