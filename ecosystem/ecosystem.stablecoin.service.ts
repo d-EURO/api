@@ -1,21 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { gql } from '@apollo/client/core';
+import { ADDRESS } from '@deuro/eurocoin';
+import { Injectable, Logger } from '@nestjs/common';
 import { CONFIG, PONDER_CLIENT } from 'api.config';
-import {
-	ServiceEcosystemStablecoin,
-	ServiceEcosystemMintBurnMapping,
-	EcosystemQueryItem,
-	MintBurnAddressMapperQueryItem,
-	ApiEcosystemStablecoinInfo,
-	ApiEcosystemMintBurnMapping,
-	ServiceEcosystemStablecoinKeyValues,
-	ApiEcosystemStablecoinKeyValues,
-} from './ecosystem.stablecoin.types';
 import { PricesService } from 'prices/prices.service';
 import { Address } from 'viem';
-import { EcosystemDepsService } from './ecosystem.deps.service';
 import { EcosystemCollateralService } from './ecosystem.collateral.service';
-import { ADDRESS } from '@deuro/eurocoin';
+import { EcosystemDepsService } from './ecosystem.deps.service';
+import {
+	ApiEcosystemMintBurnMapping,
+	ApiEcosystemStablecoinInfo,
+	ApiEcosystemStablecoinKeyValues,
+	EcosystemQueryItem,
+	MintBurnAddressMapperQueryItem,
+	ServiceEcosystemMintBurnMapping,
+	ServiceEcosystemStablecoin,
+	ServiceEcosystemStablecoinKeyValues,
+} from './ecosystem.stablecoin.types';
 
 @Injectable()
 export class EcosystemStablecoinService {
@@ -73,7 +73,7 @@ export class EcosystemStablecoinService {
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					ecosystems(orderBy: "id") {
+					ecosystems(orderBy: "id", limit: 1000) {
 						items {
 							id
 							value
