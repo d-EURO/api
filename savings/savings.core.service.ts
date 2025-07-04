@@ -1,7 +1,8 @@
 import { gql } from '@apollo/client/core';
 import { ADDRESS, SavingsGatewayABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
-import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
+import { VIEM_CONFIG } from 'api.config';
+import { PONDER_CLIENT } from 'api.apollo.config';
 import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { Address, formatUnits, zeroAddress } from 'viem';
 import { ApiSavingsInfo, ApiSavingsUserLeaderboard, ApiSavingsUserTable } from './savings.core.types';

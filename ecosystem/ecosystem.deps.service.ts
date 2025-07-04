@@ -1,7 +1,8 @@
 import { gql } from '@apollo/client/core';
 import { ADDRESS, DecentralizedEUROABI, EquityABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
-import { PONDER_CLIENT, VIEM_CONFIG } from 'api.config';
+import { VIEM_CONFIG } from 'api.config';
+import { PONDER_CLIENT } from 'api.apollo.config';
 import { PositionsService } from 'positions/positions.service';
 import { formatUnits } from 'viem';
 import { ApiEcosystemDepsInfo } from './ecosystem.deps.types';

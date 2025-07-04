@@ -3,7 +3,8 @@ import { ADDRESS, PositionV2ABI, SavingsABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
 import { FIVEDAYS_MS } from 'utils/const-helper';
 import { Address, erc20Abi, getAddress } from 'viem';
-import { CONFIG, PONDER_CLIENT, VIEM_CONFIG } from '../api.config';
+import { CONFIG, VIEM_CONFIG } from '../api.config';
+import { PONDER_CLIENT } from '../api.apollo.config';
 import {
 	ApiMintingUpdateListing,
 	ApiMintingUpdateMapping,
