@@ -62,11 +62,7 @@ export class ApiService {
 	}
 
 	async updateSocialMedia() {
-		try {
-			await this.socialMediaService.update();
-		} catch (error) {
-			this.logger.error('Failed to update social media:', error);
-		}
+		this.socialMediaService.update().catch((err) => this.logger.error('Failed to update social media:', err));
 	}
 
 	@Interval(POLLING_DELAY[CONFIG.chain.id])
