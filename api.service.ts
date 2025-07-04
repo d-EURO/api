@@ -55,7 +55,6 @@ export class ApiService {
 			this.challenges.updateChallengeV2s().catch((err) => this.logger.error('Failed to update challenges:', err)),
 			this.challenges.updateBidV2s().catch((err) => this.logger.error('Failed to update bids:', err)),
 			this.challenges.updateChallengesPrices().catch((err) => this.logger.error('Failed to update challenge prices:', err)),
-			this.socialMediaService.update().catch((err) => this.logger.error('Failed to update social media:', err)),
 			this.savings.updateSavingsUserLeaderboard().catch((err) => this.logger.error('Failed to update savings leaderboard:', err)),
 		];
 
@@ -63,7 +62,11 @@ export class ApiService {
 	}
 
 	async updateSocialMedia() {
-		this.socialMediaService.update();
+		try {
+			await this.socialMediaService.update();
+		} catch (error) {
+			this.logger.error('Failed to update social media:', error);
+		}
 	}
 
 	@Interval(POLLING_DELAY[CONFIG.chain.id])
@@ -75,6 +78,7 @@ export class ApiService {
 				this.indexing = true;
 				try {
 					await this.updateWorkflow();
+					await this.updateSocialMedia();
 					this.indexingTimeoutCount = 0;
 					this.fetchedBlockheight = tmp;
 				} catch (error) {
