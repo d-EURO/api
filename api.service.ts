@@ -43,43 +43,53 @@ export class ApiService {
 	async updateWorkflow() {
 		this.logger.log(`Fetched blockheight: ${this.fetchedBlockheight}`);
 		const promises = [
-			this.minter.updateMinters(),
-			this.positions.updatePositonV2s(),
-			this.positions.updateMintingUpdateV2s(),
-			this.prices.updatePrices(),
-			this.stablecoin.updateEcosystemKeyValues(),
-			this.stablecoin.updateEcosystemMintBurnMapping(),
-			this.deps.updateDepsInfo(),
-			this.leadrate.updateLeadrateRates(),
-			this.leadrate.updateLeadrateProposals(),
-			this.challenges.updateChallengeV2s(),
-			this.challenges.updateBidV2s(),
-			this.challenges.updateChallengesPrices(),
-			this.savings.updateSavingsUserLeaderboard(),
+			this.minter.updateMinters().catch((err) => this.logger.error('Failed to update minters:', err)),
+			this.positions.updatePositonV2s().catch((err) => this.logger.error('Failed to update positions:', err)),
+			this.positions.updateMintingUpdateV2s().catch((err) => this.logger.error('Failed to update minting updates:', err)),
+			this.prices.updatePrices().catch((err) => this.logger.error('Failed to update prices:', err)),
+			this.stablecoin.updateEcosystemKeyValues().catch((err) => this.logger.error('Failed to update ecosystem key values:', err)),
+			this.stablecoin.updateEcosystemMintBurnMapping().catch((err) => this.logger.error('Failed to update mint burn mapping:', err)),
+			this.deps.updateDepsInfo().catch((err) => this.logger.error('Failed to update deps info:', err)),
+			this.leadrate.updateLeadrateRates().catch((err) => this.logger.error('Failed to update leadrate rates:', err)),
+			this.leadrate.updateLeadrateProposals().catch((err) => this.logger.error('Failed to update leadrate proposals:', err)),
+			this.challenges.updateChallengeV2s().catch((err) => this.logger.error('Failed to update challenges:', err)),
+			this.challenges.updateBidV2s().catch((err) => this.logger.error('Failed to update bids:', err)),
+			this.challenges.updateChallengesPrices().catch((err) => this.logger.error('Failed to update challenge prices:', err)),
+			this.savings.updateSavingsUserLeaderboard().catch((err) => this.logger.error('Failed to update savings leaderboard:', err)),
 		];
 
 		return Promise.all(promises);
 	}
 
 	async updateSocialMedia() {
-		this.socialMediaService.update();
+		this.socialMediaService.update().catch((err) => this.logger.error('Failed to update social media:', err));
 	}
 
 	@Interval(POLLING_DELAY[CONFIG.chain.id])
 	async updateBlockheight() {
-		const tmp: number = parseInt((await VIEM_CONFIG.getBlockNumber()).toString());
-		this.indexingTimeoutCount += 1;
-		if (tmp > this.fetchedBlockheight && !this.indexing) {
-			this.indexing = true;
-			await this.updateWorkflow();
-			await this.updateSocialMedia();
-			this.indexingTimeoutCount = 0;
-			this.fetchedBlockheight = tmp;
-			this.indexing = false;
-		}
-		if (this.indexingTimeoutCount >= INDEXING_TIMEOUT_COUNT && this.indexing) {
-			this.indexingTimeoutCount = 0;
-			this.indexing = false;
+		try {
+			const tmp: number = parseInt((await VIEM_CONFIG.getBlockNumber()).toString());
+			this.indexingTimeoutCount += 1;
+			if (tmp > this.fetchedBlockheight && !this.indexing) {
+				this.indexing = true;
+				try {
+					await this.updateWorkflow();
+					await this.updateSocialMedia();
+					this.indexingTimeoutCount = 0;
+					this.fetchedBlockheight = tmp;
+				} catch (error) {
+					this.logger.error('Error in updateWorkflow:', error);
+				} finally {
+					this.indexing = false;
+				}
+			}
+			if (this.indexingTimeoutCount >= INDEXING_TIMEOUT_COUNT && this.indexing) {
+				this.logger.warn(`Indexing timeout reached after ${INDEXING_TIMEOUT_COUNT} attempts`);
+				this.indexingTimeoutCount = 0;
+				this.indexing = false;
+			}
+		} catch (error) {
+			this.logger.error('Error getting block number:', error);
 		}
 	}
 }

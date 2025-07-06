@@ -1,7 +1,8 @@
 import { gql } from '@apollo/client/core';
 import { ADDRESS } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
-import { CONFIG, PONDER_CLIENT } from 'api.config';
+import { PONDER_CLIENT } from 'api.apollo.config';
+import { CONFIG } from 'api.config';
 import { PricesService } from 'prices/prices.service';
 import { Address } from 'viem';
 import { EcosystemCollateralService } from './ecosystem.collateral.service';

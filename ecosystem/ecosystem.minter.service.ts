@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PONDER_CLIENT } from '../api.config';
+import { PONDER_CLIENT } from '../api.apollo.config';
 import { gql } from '@apollo/client/core';
 import { ApiMinterListing, ApiMinterMapping, MinterQuery, MinterQueryObjectArray } from './ecosystem.minter.types';
 import { Address } from 'viem';

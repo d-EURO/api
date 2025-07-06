@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client/core';
 import { Injectable } from '@nestjs/common';
-import { PONDER_CLIENT } from 'api.config';
+import { PONDER_CLIENT } from 'api.apollo.config';
 import { FrontendCodeRegisteredQuery, FrontendCodeSavingsQuery } from './frontendcode.types';
 
 @Injectable()
