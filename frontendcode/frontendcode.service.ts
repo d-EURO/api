@@ -11,7 +11,7 @@ export class FrontendCodeService {
 		const frontendCodeFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetFrontendCodeRegistered {
 					frontendCodeRegistereds(
 						orderBy: "created", orderDirection: "desc"
 						where: { created_gt: "${checkTimestamp}" }
@@ -35,7 +35,7 @@ export class FrontendCodeService {
 		const savedFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetFrontendCodeSavingsSaved {
 					savingsSaveds(
 						orderBy: "created", orderDirection: "desc"
 						where: { created_gt: "${checkTimestamp}" }

@@ -53,7 +53,7 @@ export class EcosystemDepsService {
 		const profitLossPonder = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetDEPS {
 					dEPSs(orderBy: "id", limit: 1000) {
 						items {
 							id

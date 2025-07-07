@@ -80,7 +80,7 @@ export class PositionsService {
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetPositionsV2 {
 					positionV2s(orderBy: "availableForClones", orderDirection: "desc", limit: 1000) {
 						items {
 							position
@@ -271,7 +271,7 @@ export class PositionsService {
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetMintingUpdatesV2 {
 					mintingUpdateV2s(orderBy: "created", orderDirection: "desc", limit: 1000) {
 						items {
 							id

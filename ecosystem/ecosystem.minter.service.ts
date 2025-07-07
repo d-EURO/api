@@ -31,7 +31,7 @@ export class EcosystemMinterService {
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetMinters {
 					minters(orderBy: "id", limit: 1000) {
 						items {
 							id

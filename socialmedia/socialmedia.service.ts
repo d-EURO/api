@@ -134,7 +134,7 @@ export class SocialMediaService {
 		try {
 			const checkDate = new Date(this.socialMediaState.bridgeUpdates);
 
-			for (const stablecoin in StablecoinEnum) {
+			for (const stablecoin of Object.values(StablecoinEnum)) {
 				const requestedBridged = await this.bridges.getBridgedStables(stablecoin, checkDate);
 
 				if (requestedBridged.length > 0) {
