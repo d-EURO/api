@@ -25,6 +25,7 @@ export class ApiService {
 	private indexing: boolean = false;
 	private indexingTimeoutCount: number = 0;
 	private fetchedBlockheight: number = 0;
+	private isUpdatingWorkflow: boolean = false;
 
 	constructor(
 		private readonly minter: EcosystemMinterService,
@@ -41,45 +42,56 @@ export class ApiService {
 	}
 
 	async updateWorkflow() {
+		if (this.isUpdatingWorkflow) {
+			this.logger.warn(`Skipping updateWorkflow - previous update still in progress at block ${this.fetchedBlockheight}`);
+			return;
+		}
+
+		this.isUpdatingWorkflow = true;
 		this.logger.log(`Fetched blockheight: ${this.fetchedBlockheight}`);
 
-		const batch1 = [
-			this.minter.updateMinters().catch((err) => this.logger.error('Failed to update minters:', err)),
-			this.positions.updatePositonV2s().catch((err) => this.logger.error('Failed to update positions:', err)),
-			this.positions.updateMintingUpdateV2s().catch((err) => this.logger.error('Failed to update minting updates:', err)),
-		];
+		try {
+			const timeTask = async (name: string, fn: () => Promise<any>) => {
+				const start = Date.now();
+				try {
+					await fn();
+					this.logger.debug(`${name} completed in ${Date.now() - start}ms`);
+				} catch (err) {
+					this.logger.error(`Failed to update ${name} after ${Date.now() - start}ms:`, err);
+					throw err;
+				}
+			};
 
-		const batch2 = [
-			this.prices.updatePrices().catch((err) => this.logger.error('Failed to update prices:', err)),
-			this.stablecoin.updateEcosystemKeyValues().catch((err) => this.logger.error('Failed to update ecosystem key values:', err)),
-			this.stablecoin.updateEcosystemMintBurnMapping().catch((err) => this.logger.error('Failed to update mint burn mapping:', err)),
-		];
+			const batch1 = [
+				timeTask('updateMinters', () => this.minter.updateMinters()).catch(() => {}),
+				timeTask('updatePositonV2s', () => this.positions.updatePositonV2s()).catch(() => {}),
+				timeTask('updateMintingUpdateV2s', () => this.positions.updateMintingUpdateV2s()).catch(() => {}),
+				timeTask('updatePrices', () => this.prices.updatePrices()).catch(() => {}),
+			];
 
-		const batch3 = [
-			this.deps.updateDepsInfo().catch((err) => this.logger.error('Failed to update deps info:', err)),
-			this.leadrate.updateLeadrateRates().catch((err) => this.logger.error('Failed to update leadrate rates:', err)),
-			this.leadrate.updateLeadrateProposals().catch((err) => this.logger.error('Failed to update leadrate proposals:', err)),
-		];
+			const batch2 = [
+				timeTask('updateEcosystemKeyValues', () => this.stablecoin.updateEcosystemKeyValues()).catch(() => {}),
+				timeTask('updateEcosystemMintBurnMapping', () => this.stablecoin.updateEcosystemMintBurnMapping()).catch(() => {}),
+				timeTask('updateDepsInfo', () => this.deps.updateDepsInfo()).catch(() => {}),
+				timeTask('updateLeadrateRates', () => this.leadrate.updateLeadrateRates()).catch(() => {}),
+				timeTask('updateLeadrateProposals', () => this.leadrate.updateLeadrateProposals()).catch(() => {}),
+			];
 
-		const batch4 = [
-			this.challenges.updateChallengeV2s().catch((err) => this.logger.error('Failed to update challenges:', err)),
-			this.challenges.updateBidV2s().catch((err) => this.logger.error('Failed to update bids:', err)),
-		];
+			const batch3 = [
+				timeTask('updateChallenges', () => this.challenges.updateChallengeV2s()).catch(() => {}),
+				timeTask('updateBids', () => this.challenges.updateBidV2s()).catch(() => {}),
+				timeTask('updateChallengesPrices', () => this.challenges.updateChallengesPrices()).catch(() => {}),
+				timeTask('updateSavingsUserLeaderboard', () => this.savings.updateSavingsUserLeaderboard()).catch(() => {}),
+			];
 
-		const batch5 = [
-			this.challenges.updateChallengesPrices().catch((err) => this.logger.error('Failed to update challenge prices:', err)),
-			this.savings.updateSavingsUserLeaderboard().catch((err) => this.logger.error('Failed to update savings leaderboard:', err)),
-		];
-
-		await Promise.all(batch1);
-		await new Promise((resolve) => setTimeout(resolve, 50));
-		await Promise.all(batch2);
-		await new Promise((resolve) => setTimeout(resolve, 50));
-		await Promise.all(batch3);
-		await new Promise((resolve) => setTimeout(resolve, 50));
-		await Promise.all(batch4);
-		await new Promise((resolve) => setTimeout(resolve, 50));
-		await Promise.all(batch5);
+			await Promise.all(batch1);
+			await new Promise((resolve) => setTimeout(resolve, 50));
+			await Promise.all(batch2);
+			await new Promise((resolve) => setTimeout(resolve, 50));
+			await Promise.all(batch3);
+		} finally {
+			this.isUpdatingWorkflow = false;
+		}
 	}
 
 	async updateSocialMedia() {

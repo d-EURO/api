@@ -1,6 +1,5 @@
-import { ApolloClient, ApolloError, ApolloLink, createHttpLink, InMemoryCache, ServerError } from '@apollo/client/core';
+import { ApolloClient, ApolloLink, createHttpLink, InMemoryCache } from '@apollo/client/core';
 import { onError } from '@apollo/client/link/error';
-import { RetryLink } from '@apollo/client/link/retry';
 import fetch from 'cross-fetch';
 import { CONFIG } from './api.config';
 
@@ -23,22 +22,6 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 	}
 });
 
-const retryLink = new RetryLink({
-	delay: {
-		initial: 1000,
-		max: 5000,
-		jitter: true,
-	},
-	attempts: {
-		max: 3,
-		retryIf: (error: ApolloError): boolean => {
-			// Retry on 5xx errors and network failures
-			const statusCode = (error.networkError as ServerError)?.statusCode;
-			return !!error && (statusCode >= 500 || error.message?.includes('fetch failed'));
-		},
-	},
-});
-
 const httpLink = createHttpLink({
 	uri: CONFIG.indexer,
 	fetch: (uri: RequestInfo | URL, options?: RequestInit) => {
@@ -56,7 +39,7 @@ const httpLink = createHttpLink({
 	},
 });
 
-const link = ApolloLink.from([errorLink, retryLink, httpLink]);
+const link = ApolloLink.from([errorLink, httpLink]);
 
 export const PONDER_CLIENT = new ApolloClient({
 	link,
