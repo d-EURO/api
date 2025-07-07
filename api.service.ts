@@ -42,23 +42,34 @@ export class ApiService {
 
 	async updateWorkflow() {
 		this.logger.log(`Fetched blockheight: ${this.fetchedBlockheight}`);
-		const promises = [
+
+		const batch1 = [
 			this.minter.updateMinters().catch((err) => this.logger.error('Failed to update minters:', err)),
 			this.positions.updatePositonV2s().catch((err) => this.logger.error('Failed to update positions:', err)),
 			this.positions.updateMintingUpdateV2s().catch((err) => this.logger.error('Failed to update minting updates:', err)),
 			this.prices.updatePrices().catch((err) => this.logger.error('Failed to update prices:', err)),
+		];
+
+		const batch2 = [
 			this.stablecoin.updateEcosystemKeyValues().catch((err) => this.logger.error('Failed to update ecosystem key values:', err)),
 			this.stablecoin.updateEcosystemMintBurnMapping().catch((err) => this.logger.error('Failed to update mint burn mapping:', err)),
 			this.deps.updateDepsInfo().catch((err) => this.logger.error('Failed to update deps info:', err)),
 			this.leadrate.updateLeadrateRates().catch((err) => this.logger.error('Failed to update leadrate rates:', err)),
 			this.leadrate.updateLeadrateProposals().catch((err) => this.logger.error('Failed to update leadrate proposals:', err)),
+		];
+
+		const batch3 = [
 			this.challenges.updateChallengeV2s().catch((err) => this.logger.error('Failed to update challenges:', err)),
 			this.challenges.updateBidV2s().catch((err) => this.logger.error('Failed to update bids:', err)),
 			this.challenges.updateChallengesPrices().catch((err) => this.logger.error('Failed to update challenge prices:', err)),
 			this.savings.updateSavingsUserLeaderboard().catch((err) => this.logger.error('Failed to update savings leaderboard:', err)),
 		];
 
-		return Promise.all(promises);
+		await Promise.all(batch1);
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		await Promise.all(batch2);
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		await Promise.all(batch3);
 	}
 
 	async updateSocialMedia() {
