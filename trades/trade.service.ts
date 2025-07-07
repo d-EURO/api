@@ -11,7 +11,7 @@ export class TradesService {
 		const tradeFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-                query {
+                query GetTrades {
                     trades(
                         orderBy: "time", orderDirection: "desc"
                         where: {
@@ -38,7 +38,7 @@ export class TradesService {
 		const tradeFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-                query {
+                query GetTraderShares {
                     trades(
                         where: { 
                             trader: "${trader}"

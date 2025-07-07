@@ -64,7 +64,7 @@ export class SavingsLeadrateService {
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetSavingsRateChanged {
 					savingsRateChangeds(orderBy: "blockheight", orderDirection: "desc") {
 						items {
 							id
@@ -107,7 +107,7 @@ export class SavingsLeadrateService {
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetSavingsRateProposed {
 					savingsRateProposeds(orderBy: "blockheight", orderDirection: "desc") {
 						items {
 							id

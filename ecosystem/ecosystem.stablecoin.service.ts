@@ -73,7 +73,7 @@ export class EcosystemStablecoinService {
 		const ecosystem = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetEcosystems {
 					ecosystems(orderBy: "id", limit: 1000) {
 						items {
 							id
@@ -130,7 +130,7 @@ export class EcosystemStablecoinService {
 		const response = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetMintBurnAddressMappers {
 					mintBurnAddressMappers(orderBy: "id", limit: 1000) {
 						items {
 							id

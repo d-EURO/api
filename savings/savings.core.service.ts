@@ -89,7 +89,7 @@ export class SavingsCoreService {
 		const savedFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetSavingsSaved {
 					savingsSaveds(
 						orderBy: "blockheight"
 						orderDirection: "desc"
@@ -115,7 +115,7 @@ export class SavingsCoreService {
 		const withdrawnFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetSavingsWithdrawn {
 					savingsWithdrawns(
 						orderBy: "blockheight"
 						orderDirection: "desc"
@@ -141,7 +141,7 @@ export class SavingsCoreService {
 		const interestFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetSavingsInterest {
 					savingsInterests(
 						orderBy: "blockheight"
 						orderDirection: "desc"

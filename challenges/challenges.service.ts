@@ -200,7 +200,7 @@ export class ChallengesService {
 		const challenges = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetChallengesV2 {
 					challengeV2s(orderBy: "status", orderDirection: "asc", limit: 1000) {
 						items {
 							id
@@ -245,7 +245,7 @@ export class ChallengesService {
 		const bids = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetChallengeBidsV2 {
 					challengeBidV2s(orderBy: "created", orderDirection: "desc", limit: 1000) {
 						items {
 							id
