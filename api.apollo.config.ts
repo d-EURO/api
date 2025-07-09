@@ -28,7 +28,7 @@ const httpLink = createHttpLink({
 		const controller = new AbortController();
 		const timeout = setTimeout(() => {
 			controller.abort();
-		}, 60000); // 60 second timeout
+		}, 10000); // 10 second timeout
 
 		return fetch(uri, {
 			...options,
