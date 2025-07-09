@@ -25,6 +25,7 @@ export class ApiService {
 	private indexing: boolean = false;
 	private indexingTimeoutCount: number = 0;
 	private fetchedBlockheight: number = 0;
+	private isUpdatingWorkflow: boolean = false;
 
 	constructor(
 		private readonly minter: EcosystemMinterService,
@@ -41,45 +42,77 @@ export class ApiService {
 	}
 
 	async updateWorkflow() {
-		this.logger.log(`Fetched blockheight: ${this.fetchedBlockheight}`);
-		const promises = [
-			this.minter.updateMinters(),
-			this.positions.updatePositonV2s(),
-			this.positions.updateMintingUpdateV2s(),
-			this.prices.updatePrices(),
-			this.stablecoin.updateEcosystemKeyValues(),
-			this.stablecoin.updateEcosystemMintBurnMapping(),
-			this.deps.updateDepsInfo(),
-			this.leadrate.updateLeadrateRates(),
-			this.leadrate.updateLeadrateProposals(),
-			this.challenges.updateChallengeV2s(),
-			this.challenges.updateBidV2s(),
-			this.challenges.updateChallengesPrices(),
-			this.savings.updateSavingsUserLeaderboard(),
-		];
+		if (this.isUpdatingWorkflow) {
+			this.logger.warn(`Skipping updateWorkflow - previous update still in progress at block ${this.fetchedBlockheight}`);
+			return;
+		}
 
-		return Promise.all(promises);
+		this.isUpdatingWorkflow = true;
+		this.logger.log(`Fetched blockheight: ${this.fetchedBlockheight}`);
+
+		try {
+			const timeTask = async (name: string, fn: () => Promise<any>) => {
+				const start = Date.now();
+				try {
+					await fn();
+					this.logger.debug(`${name} completed in ${Date.now() - start}ms`);
+				} catch (err) {
+					this.logger.error(`Failed to update ${name} after ${Date.now() - start}ms:`, err);
+					throw err;
+				}
+			};
+
+			const promises = [
+				await timeTask('updateMinters', () => this.minter.updateMinters()).catch(() => {}),
+				await timeTask('updatePositonV2s', () => this.positions.updatePositonV2s()).catch(() => {}),
+				await timeTask('updateMintingUpdateV2s', () => this.positions.updateMintingUpdateV2s()).catch(() => {}),
+				await timeTask('updatePrices', () => this.prices.updatePrices()).catch(() => {}),
+				await timeTask('updateEcosystemKeyValues', () => this.stablecoin.updateEcosystemKeyValues()).catch(() => {}),
+				await timeTask('updateEcosystemMintBurnMapping', () => this.stablecoin.updateEcosystemMintBurnMapping()).catch(() => {}),
+				await timeTask('updateDepsInfo', () => this.deps.updateDepsInfo()).catch(() => {}),
+				await timeTask('updateLeadrateRates', () => this.leadrate.updateLeadrateRates()).catch(() => {}),
+				await timeTask('updateLeadrateProposals', () => this.leadrate.updateLeadrateProposals()).catch(() => {}),
+				await timeTask('updateChallengeV2s', () => this.challenges.updateChallengeV2s()).catch(() => {}),
+				await timeTask('updateBidV2s', () => this.challenges.updateBidV2s()).catch(() => {}),
+				await timeTask('updateChallengesPrices', () => this.challenges.updateChallengesPrices()).catch(() => {}),
+				await timeTask('updateSavingsUserLeaderboard', () => this.savings.updateSavingsUserLeaderboard()).catch(() => {}),
+			];
+
+			await Promise.all(promises);
+		} finally {
+			this.isUpdatingWorkflow = false;
+		}
 	}
 
 	async updateSocialMedia() {
-		this.socialMediaService.update();
+		this.socialMediaService.update().catch((err) => this.logger.error('Failed to update social media:', err));
 	}
 
 	@Interval(POLLING_DELAY[CONFIG.chain.id])
 	async updateBlockheight() {
-		const tmp: number = parseInt((await VIEM_CONFIG.getBlockNumber()).toString());
-		this.indexingTimeoutCount += 1;
-		if (tmp > this.fetchedBlockheight && !this.indexing) {
-			this.indexing = true;
-			await this.updateWorkflow();
-			await this.updateSocialMedia();
-			this.indexingTimeoutCount = 0;
-			this.fetchedBlockheight = tmp;
-			this.indexing = false;
-		}
-		if (this.indexingTimeoutCount >= INDEXING_TIMEOUT_COUNT && this.indexing) {
-			this.indexingTimeoutCount = 0;
-			this.indexing = false;
+		try {
+			const tmp: number = parseInt((await VIEM_CONFIG.getBlockNumber()).toString());
+			this.indexingTimeoutCount += 1;
+			if (tmp > this.fetchedBlockheight && !this.indexing) {
+				this.indexing = true;
+				try {
+					await this.updateWorkflow();
+					await this.updateSocialMedia();
+					this.indexingTimeoutCount = 0;
+					this.fetchedBlockheight = tmp;
+				} catch (error) {
+					this.logger.error('Error in updateWorkflow:', error);
+				} finally {
+					this.indexing = false;
+				}
+			}
+			if (this.indexingTimeoutCount >= INDEXING_TIMEOUT_COUNT && this.indexing) {
+				this.logger.warn(`Indexing timeout reached after ${INDEXING_TIMEOUT_COUNT} attempts`);
+				this.indexingTimeoutCount = 0;
+				this.indexing = false;
+			}
+		} catch (error) {
+			this.logger.error('Error getting block number:', error);
 		}
 	}
 }

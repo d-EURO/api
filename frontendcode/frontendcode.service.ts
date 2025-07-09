@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client/core';
 import { Injectable } from '@nestjs/common';
-import { PONDER_CLIENT } from 'api.config';
+import { PONDER_CLIENT } from 'api.apollo.config';
 import { FrontendCodeRegisteredQuery, FrontendCodeSavingsQuery } from './frontendcode.types';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class FrontendCodeService {
 		const frontendCodeFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetFrontendCodeRegistered {
 					frontendCodeRegistereds(
 						orderBy: "created", orderDirection: "desc"
 						where: { created_gt: "${checkTimestamp}" }
@@ -35,7 +35,7 @@ export class FrontendCodeService {
 		const savedFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetFrontendCodeSavingsSaved {
 					savingsSaveds(
 						orderBy: "created", orderDirection: "desc"
 						where: { created_gt: "${checkTimestamp}" }

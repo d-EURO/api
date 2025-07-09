@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { PONDER_CLIENT } from 'api.config';
+import { PONDER_CLIENT } from 'api.apollo.config';
 import {
 	ApiLeadrateInfo,
 	ApiLeadrateProposed,
@@ -64,7 +64,7 @@ export class SavingsLeadrateService {
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetSavingsRateChanged {
 					savingsRateChangeds(orderBy: "blockheight", orderDirection: "desc") {
 						items {
 							id
@@ -107,7 +107,7 @@ export class SavingsLeadrateService {
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetSavingsRateProposed {
 					savingsRateProposeds(orderBy: "blockheight", orderDirection: "desc") {
 						items {
 							id

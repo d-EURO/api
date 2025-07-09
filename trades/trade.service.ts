@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client/core';
 import { Injectable } from '@nestjs/common';
-import { PONDER_CLIENT } from 'api.config';
+import { PONDER_CLIENT } from 'api.apollo.config';
 import { TradeQuery } from './trade.types';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class TradesService {
 		const tradeFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-                query {
+                query GetTrades {
                     trades(
                         orderBy: "time", orderDirection: "desc"
                         where: {
@@ -38,7 +38,7 @@ export class TradesService {
 		const tradeFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-                query {
+                query GetTraderShares {
                     trades(
                         where: { 
                             trader: "${trader}"

@@ -3,7 +3,8 @@ import { ADDRESS, PositionV2ABI, SavingsABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
 import { FIVEDAYS_MS } from 'utils/const-helper';
 import { Address, erc20Abi, getAddress } from 'viem';
-import { CONFIG, PONDER_CLIENT, VIEM_CONFIG } from '../api.config';
+import { CONFIG, VIEM_CONFIG } from '../api.config';
+import { PONDER_CLIENT } from '../api.apollo.config';
 import {
 	ApiMintingUpdateListing,
 	ApiMintingUpdateMapping,
@@ -79,7 +80,7 @@ export class PositionsService {
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetPositionsV2 {
 					positionV2s(orderBy: "availableForClones", orderDirection: "desc", limit: 1000) {
 						items {
 							position
@@ -270,7 +271,7 @@ export class PositionsService {
 		const { data } = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetMintingUpdatesV2 {
 					mintingUpdateV2s(orderBy: "created", orderDirection: "desc", limit: 1000) {
 						items {
 							id

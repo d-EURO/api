@@ -1,7 +1,8 @@
 import { gql } from '@apollo/client/core';
 import { ADDRESS } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
-import { CONFIG, PONDER_CLIENT } from 'api.config';
+import { PONDER_CLIENT } from 'api.apollo.config';
+import { CONFIG } from 'api.config';
 import { PricesService } from 'prices/prices.service';
 import { Address } from 'viem';
 import { EcosystemCollateralService } from './ecosystem.collateral.service';
@@ -72,7 +73,7 @@ export class EcosystemStablecoinService {
 		const ecosystem = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetEcosystems {
 					ecosystems(orderBy: "id", limit: 1000) {
 						items {
 							id
@@ -129,7 +130,7 @@ export class EcosystemStablecoinService {
 		const response = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query {
+				query GetMintBurnAddressMappers {
 					mintBurnAddressMappers(orderBy: "id", limit: 1000) {
 						items {
 							id

@@ -1,4 +1,3 @@
-import { ApolloClient, InMemoryCache } from '@apollo/client/core';
 import { Chain, createPublicClient, http } from 'viem';
 import { mainnet, polygon } from 'viem/chains';
 
@@ -66,12 +65,6 @@ console.log(CONFIG);
 
 // Refer to https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files
 process.env.NTBA_FIX_350 = 'true';
-
-// PONDER CLIENT REQUEST
-export const PONDER_CLIENT = new ApolloClient({
-	uri: CONFIG.indexer,
-	cache: new InMemoryCache(),
-});
 
 // VIEM CONFIG
 export const VIEM_CHAIN = CONFIG.chain;

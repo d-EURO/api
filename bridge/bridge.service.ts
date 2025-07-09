@@ -1,18 +1,19 @@
 import { gql } from '@apollo/client/core';
 import { Injectable } from '@nestjs/common';
-import { PONDER_CLIENT } from 'api.config';
+import { PONDER_CLIENT } from 'api.apollo.config';
 import { StablecoinBridgeQuery } from './bridge.types';
+
+import { StablecoinEnum } from './bridge.enum';
 
 @Injectable()
 export class BridgeService {
-	async getBridgedStables(stablecoinParam: string, timestamp: Date): Promise<StablecoinBridgeQuery[]> {
-		const stablecoin = stablecoinParam.toUpperCase();
+	async getBridgedStables(stablecoin: StablecoinEnum, timestamp: Date): Promise<StablecoinBridgeQuery[]> {
 		const checkTimestamp = Math.trunc(timestamp.getTime() / 1000);
 
 		const bridgeFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-                query {
+                query GetBridge${stablecoin} {
                     bridge${stablecoin}s(
                         orderBy: "timestamp", orderDirection: "desc"
                         where: {
