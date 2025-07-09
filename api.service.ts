@@ -62,33 +62,23 @@ export class ApiService {
 				}
 			};
 
-			const batch1 = [
-				timeTask('updateMinters', () => this.minter.updateMinters()).catch(() => {}),
-				timeTask('updatePositonV2s', () => this.positions.updatePositonV2s()).catch(() => {}),
-				timeTask('updateMintingUpdateV2s', () => this.positions.updateMintingUpdateV2s()).catch(() => {}),
-				timeTask('updatePrices', () => this.prices.updatePrices()).catch(() => {}),
+			const promises = [
+				await timeTask('updateMinters', () => this.minter.updateMinters()).catch(() => {}),
+				await timeTask('updatePositonV2s', () => this.positions.updatePositonV2s()).catch(() => {}),
+				await timeTask('updateMintingUpdateV2s', () => this.positions.updateMintingUpdateV2s()).catch(() => {}),
+				await timeTask('updatePrices', () => this.prices.updatePrices()).catch(() => {}),
+				await timeTask('updateEcosystemKeyValues', () => this.stablecoin.updateEcosystemKeyValues()).catch(() => {}),
+				await timeTask('updateEcosystemMintBurnMapping', () => this.stablecoin.updateEcosystemMintBurnMapping()).catch(() => {}),
+				await timeTask('updateDepsInfo', () => this.deps.updateDepsInfo()).catch(() => {}),
+				await timeTask('updateLeadrateRates', () => this.leadrate.updateLeadrateRates()).catch(() => {}),
+				await timeTask('updateLeadrateProposals', () => this.leadrate.updateLeadrateProposals()).catch(() => {}),
+				await timeTask('updateChallengeV2s', () => this.challenges.updateChallengeV2s()).catch(() => {}),
+				await timeTask('updateBidV2s', () => this.challenges.updateBidV2s()).catch(() => {}),
+				await timeTask('updateChallengesPrices', () => this.challenges.updateChallengesPrices()).catch(() => {}),
+				await timeTask('updateSavingsUserLeaderboard', () => this.savings.updateSavingsUserLeaderboard()).catch(() => {}),
 			];
 
-			const batch2 = [
-				timeTask('updateEcosystemKeyValues', () => this.stablecoin.updateEcosystemKeyValues()).catch(() => {}),
-				timeTask('updateEcosystemMintBurnMapping', () => this.stablecoin.updateEcosystemMintBurnMapping()).catch(() => {}),
-				timeTask('updateDepsInfo', () => this.deps.updateDepsInfo()).catch(() => {}),
-				timeTask('updateLeadrateRates', () => this.leadrate.updateLeadrateRates()).catch(() => {}),
-				timeTask('updateLeadrateProposals', () => this.leadrate.updateLeadrateProposals()).catch(() => {}),
-			];
-
-			const batch3 = [
-				timeTask('updateChallenges', () => this.challenges.updateChallengeV2s()).catch(() => {}),
-				timeTask('updateBids', () => this.challenges.updateBidV2s()).catch(() => {}),
-				timeTask('updateChallengesPrices', () => this.challenges.updateChallengesPrices()).catch(() => {}),
-				timeTask('updateSavingsUserLeaderboard', () => this.savings.updateSavingsUserLeaderboard()).catch(() => {}),
-			];
-
-			await Promise.all(batch1);
-			await new Promise((resolve) => setTimeout(resolve, 50));
-			await Promise.all(batch2);
-			await new Promise((resolve) => setTimeout(resolve, 50));
-			await Promise.all(batch3);
+			await Promise.all(promises);
 		} finally {
 			this.isUpdatingWorkflow = false;
 		}
