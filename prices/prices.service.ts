@@ -1,4 +1,9 @@
+import { ADDRESS } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
+import { COINGECKO_CLIENT, VIEM_CHAIN, VIEM_CONFIG } from 'api.config';
+import { EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
+import { PositionsService } from 'positions/positions.service';
+import { Address, formatUnits } from 'viem';
 import {
 	ApiPriceERC20,
 	ApiPriceERC20Mapping,
@@ -9,12 +14,6 @@ import {
 	PriceQueryCurrencies,
 	PriceQueryObjectArray,
 } from './prices.types';
-import { PositionsService } from 'positions/positions.service';
-import { COINGECKO_CLIENT, VIEM_CHAIN, VIEM_CONFIG } from 'api.config';
-import { Address } from 'viem';
-import { EcosystemDepsService as EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
-import { ADDRESS } from '@deuro/eurocoin';
-import { formatUnits } from 'viem';
 
 const randRef: number = Math.random() * 0.4 + 0.8;
 
@@ -29,6 +28,7 @@ export class PricesService {
 	private readonly logger = new Logger(this.constructor.name);
 	private fetchedPrices: PriceQueryObjectArray = {};
 	private euroPrice: PriceQueryCurrencies = {};
+	private depsPrice: PriceQueryCurrencies = {};
 
 	constructor(
 		private readonly positionsService: PositionsService,
@@ -63,6 +63,11 @@ export class PricesService {
 		};
 	}
 
+	async getDepsPrice(): Promise<PriceQueryCurrencies> {
+		if (!this.depsPrice) this.depsPrice = await this.fetchFromEcosystemDeps(this.getDeps());
+		return { usd: Number(this.depsPrice.usd.toFixed(4)), eur: Number(this.depsPrice.eur.toFixed(4)) };
+	}
+
 	getCollateral(): ApiPriceERC20Mapping {
 		const pos = Object.values(this.positionsService.getPositionsList().list);
 		const c: ERC20InfoObjectArray = {};
@@ -91,14 +96,15 @@ export class PricesService {
 		const quote = this.euroPrice?.usd || this.fetchedPrices[deuroAddress]?.price?.usd;
 		const usdPrice = quote ? price * quote : price;
 
-		return { usd: usdPrice, eur: price };
+		this.depsPrice = { usd: usdPrice, eur: price };
+		return this.depsPrice;
 	}
 
 	async fetchSourcesCoingecko(erc: ERC20Info): Promise<PriceQueryCurrencies | null> {
 		// all mainnet addresses
 		if ((VIEM_CHAIN.id as number) === 1) {
 			const url = `/api/v3/simple/token_price/ethereum?contract_addresses=${erc.address}&vs_currencies=usd%2Ceur`;
-			const data = await(await COINGECKO_CLIENT(url)).json();
+			const data = await (await COINGECKO_CLIENT(url)).json();
 			if (data.status) {
 				this.logger.debug(data.status?.error_message || 'Error fetching price from coingecko');
 				return null;
