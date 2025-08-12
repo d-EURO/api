@@ -65,7 +65,13 @@ export class PricesService {
 
 	async getDepsPrice(): Promise<PriceQueryCurrencies> {
 		if (!this.depsPrice) this.depsPrice = await this.fetchFromEcosystemDeps(this.getDeps());
-		return { usd: Number(this.depsPrice.usd.toFixed(4)), eur: Number(this.depsPrice.eur.toFixed(4)) };
+		if (!this.euroPrice) this.euroPrice = await this.fetchEuroPrice();
+
+		return {
+			usd: Number(this.depsPrice.usd.toFixed(4)),
+			eur: Number(this.depsPrice.eur.toFixed(4)),
+			btc: Number((this.depsPrice.eur * this.euroPrice.btc).toFixed(9)),
+		};
 	}
 
 	getCollateral(): ApiPriceERC20Mapping {
@@ -84,8 +90,14 @@ export class PricesService {
 		return c;
 	}
 
-	getEuroPrice(): PriceQueryCurrencies {
-		return this.euroPrice;
+	async getEuroPrice(): Promise<PriceQueryCurrencies> {
+		if (!this.euroPrice) this.euroPrice = await this.fetchEuroPrice();
+
+		return {
+			usd: Number(this.euroPrice.usd.toFixed(4)),
+			eur: Number(this.euroPrice.eur.toFixed(4)),
+			btc: Number(this.euroPrice.btc.toFixed(9)),
+		};
 	}
 
 	async fetchFromEcosystemDeps(erc: ERC20Info): Promise<PriceQueryCurrencies | null> {
@@ -135,13 +147,18 @@ export class PricesService {
 	}
 
 	async fetchEuroPrice(): Promise<PriceQueryCurrencies | null> {
-		const url = `/api/v3/simple/price?ids=usd&vs_currencies=eur`;
-		const data = await (await COINGECKO_CLIENT(url)).json();
+		const url = `/api/v3/simple/price?ids=usd&vs_currencies=eur%2Cbtc`;
+		const data = await(await COINGECKO_CLIENT(url)).json();
 		if (data.status) {
 			this.logger.debug(data.status?.error_message || 'Error fetching price from coingecko');
 			return null;
 		}
-		return { eur: 1, usd: 1 / Number(data.usd.eur) };
+
+		return {
+			eur: 1,
+			usd: 1 / Number(data.usd.eur),
+			btc: 1 / Number(data.usd.eur / data.usd.btc),
+		};
 	}
 
 	async fetchFromZchfSources(): Promise<PriceQueryCurrencies | null> {

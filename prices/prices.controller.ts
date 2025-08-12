@@ -52,7 +52,7 @@ export class PricesController {
 	@ApiResponse({
 		description: 'Returns the price of EUR in USD',
 	})
-	getEuroPrice(): PriceQueryCurrencies {
+	getEuroPrice(): Promise<PriceQueryCurrencies> {
 		return this.pricesService.getEuroPrice();
 	}
 
@@ -60,7 +60,7 @@ export class PricesController {
 	@ApiResponse({
 		description: 'Returns the current price of the DEPS token',
 	})
-	async getDepsPrice(): Promise<PriceQueryCurrencies> {
-		return await this.pricesService.getDepsPrice();
+	getDepsPrice(): Promise<PriceQueryCurrencies> {
+		return this.pricesService.getDepsPrice();
 	}
 }

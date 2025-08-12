@@ -17,6 +17,7 @@ export type ERC20Info = {
 export type PriceQueryCurrencies = {
 	usd?: number;
 	eur?: number;
+	btc?: number;
 };
 
 export type PriceQuery = ERC20Info & {
