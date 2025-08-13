@@ -211,6 +211,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	}
 
 	async doSendSavingUpdates(savingSaved: FrontendCodeSavingsQuery): Promise<void> {
+		if (BigInt(savingSaved.amount) === 0n) return;
 		const messageInfo = SavingUpdateMessage(savingSaved);
 		this.sendMessageAll(messageInfo[0], messageInfo[1]);
 	}
@@ -221,11 +222,13 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	}
 
 	async doSendTradeUpdates(trade: TradeQuery, depsMarketCap: number, totalShares: bigint): Promise<void> {
+		if (BigInt(trade.amount) === 0n) return;
 		const messageInfo = TradeMessage(trade, depsMarketCap, totalShares);
 		this.sendMessageAll(messageInfo[0], messageInfo[1]);
 	}
 
 	async doSendBridgeUpdates(bridge: StablecoinBridgeQuery, stablecoin: string): Promise<void> {
+		if (BigInt(bridge.amount) === 0n) return;
 		const messageInfo = StablecoinBridgeMessage(bridge, stablecoin);
 		this.sendMessageAll(messageInfo[0], messageInfo[1]);
 	}
