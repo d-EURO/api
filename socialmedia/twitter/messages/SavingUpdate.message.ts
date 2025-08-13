@@ -6,7 +6,8 @@ import { formatUnits } from 'viem';
 
 export function SavingUpdateMessage(saving: FrontendCodeSavingsQuery): string[] {
 	const refCode = createRefCode(saving.frontendCode);
-	const usedRef = refCode ? `🪢 used Ref: ${refCode}` : '';
+	const displayRef = refCode === 'Cake Wallet' ? '@cakewallet' : refCode;
+	const usedRef = displayRef ? `🪢 used Ref: ${displayRef}` : '';
 
 	const message = `
 New dEURO Savings!
