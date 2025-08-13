@@ -6,7 +6,8 @@ import { formatUnits } from 'viem';
 
 export function TradeMessage(trade: TradeQuery, marketCap: number, totalShares: bigint): string[] {
 	const refCode = createRefCode(trade.frontendCode);
-	const usedRef = refCode ? `🪢 used Ref: ${refCode}` : '';
+	const displayRef = refCode === 'Cake Wallet' ? '@cakewallet' : refCode;
+	const usedRef = displayRef ? `🪢 used Ref: ${displayRef}` : '';
 
 	const actualShares = Number(formatUnits(totalShares, 18));
 	const sharesBefore = actualShares - Number(formatUnits(BigInt(trade.shares), 18));

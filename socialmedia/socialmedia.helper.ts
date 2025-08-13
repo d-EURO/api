@@ -18,5 +18,12 @@ export function createRefCodeLabelLink(frontendCode: string): string {
 	}
 
 	const refCode = createRefCode(frontendCode);
-	return refCode ? `[${refCode}](https://app.deuro.com?ref=${refCode})` : '';
+	if (!refCode) return '';
+	
+	// Special case for Cake Wallet
+	if (refCode === 'Cake Wallet') {
+		return `[${refCode}](https://cakewallet.com/)`;
+	}
+	
+	return `[${refCode}](https://app.deuro.com?ref=${refCode})`;
 }
