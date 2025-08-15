@@ -29,16 +29,19 @@ export class FrontendCodeService {
 		return frontendCodeFetched?.data?.frontendCodeRegistereds?.items ?? [];
 	}
 
-	async getSavingsSaveds(timestamp: Date): Promise<FrontendCodeSavingsQuery[]> {
+	async getSavingsSaveds(timestamp: Date, minAmount: bigint): Promise<FrontendCodeSavingsQuery[]> {
 		const checkTimestamp = Math.trunc(timestamp.getTime() / 1000);
 
 		const savedFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query GetFrontendCodeSavingsSaved {
-					savingsSaveds(
-						orderBy: "created", orderDirection: "desc"
-						where: { created_gt: "${checkTimestamp}" }
+			query GetFrontendCodeSavingsSaved {
+				savingsSaveds(
+					orderBy: "created", orderDirection: "desc"
+					where: { 
+							created_gt: "${checkTimestamp}"
+							amount_gte: "${minAmount}"
+						}
 					) {
 						items {
 							txHash

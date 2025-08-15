@@ -7,7 +7,7 @@ import { StablecoinEnum } from './bridge.enum';
 
 @Injectable()
 export class BridgeService {
-	async getBridgedStables(stablecoin: StablecoinEnum, timestamp: Date): Promise<StablecoinBridgeQuery[]> {
+	async getBridgedStables(stablecoin: StablecoinEnum, timestamp: Date, minAmount: bigint): Promise<StablecoinBridgeQuery[]> {
 		const checkTimestamp = Math.trunc(timestamp.getTime() / 1000);
 
 		const bridgeFetched = await PONDER_CLIENT.query({
@@ -18,6 +18,7 @@ export class BridgeService {
                         orderBy: "timestamp", orderDirection: "desc"
                         where: {
                             timestamp_gt: "${checkTimestamp}"
+                            amount_gte: "${minAmount}"
                             isMint: true
                         }
                     ) {

@@ -17,6 +17,9 @@ export interface SocialMediaFct {
 	doSendBridgeUpdates(bridge: StablecoinBridgeQuery, stablecoin: string): Promise<void>;
 }
 
+const MIN_SAVING_AMOUNT = 1000;
+const MIN_BRIDGE_AMOUNT = 5000;
+
 @Injectable()
 export class SocialMediaService {
 	private readonly logger = new Logger(this.constructor.name);
@@ -71,7 +74,8 @@ export class SocialMediaService {
 	private async sendSavingUpdates(): Promise<void> {
 		try {
 			const checkDate = new Date(this.socialMediaState.savingUpdates);
-			const requestedSavingsSaveds = await this.frontendCode.getSavingsSaveds(checkDate);
+			const minAmount = BigInt(MIN_SAVING_AMOUNT * 10 ** 18);
+			const requestedSavingsSaveds = await this.frontendCode.getSavingsSaveds(checkDate, minAmount);
 
 			if (requestedSavingsSaveds.length > 0) {
 				this.socialMediaState.savingUpdates = Date.now();
@@ -133,9 +137,10 @@ export class SocialMediaService {
 	private async sendBridgeUpdates(): Promise<void> {
 		try {
 			const checkDate = new Date(this.socialMediaState.bridgeUpdates);
+			const minAmount = BigInt(MIN_BRIDGE_AMOUNT * 10 ** 18);
 
 			for (const stablecoin of Object.values(StablecoinEnum)) {
-				const requestedBridged = await this.bridges.getBridgedStables(stablecoin, checkDate);
+				const requestedBridged = await this.bridges.getBridgedStables(stablecoin, checkDate, minAmount);
 
 				if (requestedBridged.length > 0) {
 					this.socialMediaState.bridgeUpdates = Date.now();
