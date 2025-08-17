@@ -47,8 +47,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly stablecoin: EcosystemStablecoinService
 	) {
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
-		// Start tracking from 1 hour ago to avoid spam on restart but still catch recent mints
-		const startTime: number = Date.now() - 60 * 60 * 1000; // 1 hour ago
+		const now: number = Date.now();
 
 		this.telegramState = {
 			minterApplied: time,
@@ -58,8 +57,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			positions: time,
 			challenges: time,
 			bids: time,
-			mintingUpdates: startTime, // Start from 1 hour ago
-			generalMints: startTime,    // Start from 1 hour ago
+			mintingUpdates: now,
+			generalMints: now,
 		};
 
 		this.telegramGroupState = {

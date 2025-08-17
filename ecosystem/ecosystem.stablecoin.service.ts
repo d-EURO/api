@@ -168,13 +168,11 @@ export class EcosystemStablecoinService {
 					mints(
 						orderBy: "timestamp",
 						orderDirection: "desc",
-						limit: 500
+						limit: 50
 					) {
 						items {
-							id
 							to
 							value
-							blockheight
 							timestamp
 							txHash
 						}
@@ -193,10 +191,10 @@ export class EcosystemStablecoinService {
 		);
 
 		return filteredMints.map((item: any) => ({
-			id: item.id,
+			id: '',
 			to: item.to,
 			value: BigInt(item.value),
-			blockheight: BigInt(item.blockheight),
+			blockheight: BigInt(0),
 			timestamp: BigInt(item.timestamp),
 			txHash: item.txHash
 		}));
