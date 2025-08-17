@@ -47,6 +47,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly stablecoin: EcosystemStablecoinService
 	) {
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
+		const now: number = Date.now();
 
 		this.telegramState = {
 			minterApplied: time,
@@ -56,8 +57,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			positions: time,
 			challenges: time,
 			bids: time,
-			mintingUpdates: time,
-			generalMints: time,
+			mintingUpdates: now, // Initialize to now instead of future
+			generalMints: now,    // Initialize to now instead of future
 		};
 
 		this.telegramGroupState = {
@@ -222,20 +223,22 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		// General mints (including CoW Protocol and other mints without MintingUpdateV2 events)
 		// Only send notifications for mints that weren't already sent via MintingUpdateV2
 		try {
-			const checkDate = new Date(Math.min(
-				this.telegramState.generalMints,
-				this.telegramState.mintingUpdates // Use the earlier timestamp to avoid missing mints
-			));
+			const checkDate = new Date(this.telegramState.generalMints);
 			const recentMints = await this.stablecoin.getRecentMints(checkDate);
 			
 			// Filter for significant mints (> 1000 dEURO) that haven't been notified yet
 			const MIN_MINT_AMOUNT = BigInt(1000 * 10 ** 18);
-			const significantMints = recentMints.filter(mint => 
-				mint.value >= MIN_MINT_AMOUNT && 
-				!notifiedTxHashes.has(mint.txHash || '')
-			);
+			const significantMints = recentMints.filter(mint => {
+				// Skip if no txHash
+				if (!mint.txHash) return false;
+				// Skip if already notified via MintingUpdateV2
+				if (notifiedTxHashes.has(mint.txHash)) return false;
+				// Only include significant amounts
+				return mint.value >= MIN_MINT_AMOUNT;
+			});
 			
 			if (significantMints.length > 0) {
+				// Update timestamp AFTER processing to avoid missing mints
 				this.telegramState.generalMints = Date.now();
 				
 				for (const mint of significantMints) {
