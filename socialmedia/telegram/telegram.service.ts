@@ -3,6 +3,7 @@ import { CONFIG } from 'api.config';
 import { StablecoinBridgeQuery } from 'bridge/bridge.types';
 import { ChallengesService } from 'challenges/challenges.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
+import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { FrontendCodeRegisteredQuery, FrontendCodeSavingsQuery } from 'frontendcode/frontendcode.types';
 import TelegramBot from 'node-telegram-bot-api';
 import { PositionsService } from 'positions/positions.service';
@@ -42,7 +43,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly leadrate: SavingsLeadrateService,
 		private readonly position: PositionsService,
 		private readonly prices: PricesService,
-		private readonly challenge: ChallengesService
+		private readonly challenge: ChallengesService,
+		private readonly stablecoin: EcosystemStablecoinService
 	) {
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
 
@@ -55,6 +57,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			challenges: time,
 			bids: time,
 			mintingUpdates: time,
+			generalMints: time,
 		};
 
 		this.telegramGroupState = {
@@ -206,6 +209,32 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			for (const mintingUpdate of requestedMintingUpdates) {
 				const prices = this.prices.getPricesMapping();
 				this.sendMessageAll(MintingUpdateMessage(mintingUpdate, prices));
+			}
+		}
+
+		// General mints (including CoW Protocol and other mints without MintingUpdateV2 events)
+		const checkDate = new Date(this.telegramState.generalMints);
+		const recentMints = await this.stablecoin.getRecentMints(checkDate);
+		
+		// Filter for significant mints (> 1000 dEURO)
+		const MIN_MINT_AMOUNT = BigInt(1000 * 10 ** 18);
+		const significantMints = recentMints.filter(mint => mint.value >= MIN_MINT_AMOUNT);
+		
+		if (significantMints.length > 0) {
+			this.telegramState.generalMints = Date.now();
+			
+			for (const mint of significantMints) {
+				const amount = Number(mint.value / BigInt(10 ** 18));
+				const explorerUrl = CONFIG.chain.id === 137 
+					? `https://polygonscan.com/tx/${mint.txHash}`
+					: `https://etherscan.io/tx/${mint.txHash}`;
+				
+				const message = `🏦 *dEURO Mint*\n\n` +
+					`Amount: ${amount.toLocaleString('de-CH')} dEURO\n` +
+					`To: \`${mint.to.slice(0, 6)}...${mint.to.slice(-4)}\`\n` +
+					`[View Transaction](${explorerUrl})`;
+				
+				this.sendMessageAll(message);
 			}
 		}
 	}

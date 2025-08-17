@@ -12,6 +12,7 @@ import {
 	ApiEcosystemStablecoinInfo,
 	ApiEcosystemStablecoinKeyValues,
 	EcosystemQueryItem,
+	EcosystemMintQueryItem,
 	MintBurnAddressMapperQueryItem,
 	ServiceEcosystemMintBurnMapping,
 	ServiceEcosystemStablecoin,
@@ -155,5 +156,49 @@ export class EcosystemStablecoinService {
 				burn: item.burn,
 			};
 		}
+	}
+
+	async getRecentMints(since: Date): Promise<EcosystemMintQueryItem[]> {
+		const timestamp = Math.floor(since.getTime() / 1000);
+		
+		const response = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+				query GetRecentMints {
+					mints(
+						orderBy: "timestamp",
+						orderDirection: "desc",
+						limit: 100
+					) {
+						items {
+							id
+							to
+							value
+							blockheight
+							timestamp
+							txHash
+						}
+					}
+				}
+			`
+		});
+
+		if (!response.data || !response.data.mints?.items) {
+			return [];
+		}
+
+		// Filter mints by timestamp
+		const filteredMints = response.data.mints.items.filter((item: any) => 
+			BigInt(item.timestamp) > BigInt(timestamp)
+		);
+
+		return filteredMints.map((item: any) => ({
+			id: item.id,
+			to: item.to,
+			value: BigInt(item.value),
+			blockheight: BigInt(item.blockheight),
+			timestamp: BigInt(item.timestamp),
+			txHash: item.txHash
+		}));
 	}
 }
