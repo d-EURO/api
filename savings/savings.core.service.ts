@@ -89,22 +89,20 @@ export class SavingsCoreService {
 	async getTotalSavingsUsers(): Promise<{ totalUsers: number }> {
 		this.logger.debug('Getting total savings users count');
 		
-		// Always query fresh data to ensure accuracy
-		// Only fetch IDs to minimize data transfer
+		// Query the pre-aggregated stats from Ponder
 		const data = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				{
-					savingsUserLeaderboards(limit: 100000) {
-						items {
-							id
-						}
+					savingsStats(id: "global") {
+						totalUsers
+						lastUpdated
 					}
 				}
 			`,
 		});
 
-		const totalUsers = data?.data?.savingsUserLeaderboards?.items?.length ?? 0;
+		const totalUsers = data?.data?.savingsStats?.totalUsers ?? 0;
 		
 		this.logger.debug(`Total savings users: ${totalUsers}`);
 		return { totalUsers };
