@@ -89,20 +89,13 @@ export class SavingsCoreService {
 	async getTotalSavingsUsers(): Promise<{ totalUsers: number }> {
 		this.logger.debug('Getting total savings users count');
 		
-		// Option 1: If we have cached leaderboard data, use it (most efficient)
-		if (this.fetchedSavingsUserLeaderboard.length > 0) {
-			const totalUsers = this.fetchedSavingsUserLeaderboard.length;
-			this.logger.debug(`Total savings users from cache: ${totalUsers}`);
-			return { totalUsers };
-		}
-		
-		// Option 2: Query only the IDs with high limit (fallback)
-		// This is still more efficient than loading all fields
+		// Always query fresh data to ensure accuracy
+		// Only fetch IDs to minimize data transfer
 		const data = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				{
-					savingsUserLeaderboards(limit: 10000) {
+					savingsUserLeaderboards(limit: 100000) {
 						items {
 							id
 						}
@@ -113,7 +106,7 @@ export class SavingsCoreService {
 
 		const totalUsers = data?.data?.savingsUserLeaderboards?.items?.length ?? 0;
 		
-		this.logger.debug(`Total savings users from query: ${totalUsers}`);
+		this.logger.debug(`Total savings users: ${totalUsers}`);
 		return { totalUsers };
 	}
 
