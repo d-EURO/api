@@ -24,6 +24,7 @@ export class EcosystemStablecoinService {
 	private ecosystemStablecoinKeyValues: ServiceEcosystemStablecoinKeyValues;
 	private ecosystemStablecoin: ServiceEcosystemStablecoin;
 	private ecosystemMintBurnMapping: ServiceEcosystemMintBurnMapping = {};
+	private lastMintCheckTime: number = Date.now();
 
 	constructor(
 		private readonly depsService: EcosystemDepsService,
@@ -121,6 +122,36 @@ export class EcosystemStablecoinService {
 				burn: parseInt(getItem('Stablecoin:BurnCounter')?.amount.toString() ?? '0'),
 			},
 		};
+	}
+
+	async getRecentMints(since: Date): Promise<EcosystemMintQueryItem[]> {
+		this.logger.debug(`Getting mints since ${since.toISOString()}`);
+		const response = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+				query GetRecentMints($timestamp: String!) {
+					mints(where: { timestamp_gt: $timestamp }, orderBy: "timestamp", orderDirection: "desc", limit: 100) {
+						items {
+							id
+							to
+							value
+							blockheight
+							timestamp
+							txHash
+						}
+					}
+				}
+			`,
+			variables: {
+				timestamp: Math.floor(since.getTime() / 1000).toString(),
+			},
+		});
+
+		if (!response.data || !response.data.mints?.items) {
+			return [];
+		}
+
+		return response.data.mints.items as EcosystemMintQueryItem[];
 	}
 
 	async updateEcosystemMintBurnMapping() {

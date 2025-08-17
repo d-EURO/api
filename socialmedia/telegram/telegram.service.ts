@@ -9,6 +9,7 @@ import { PositionsService } from 'positions/positions.service';
 import { PricesService } from 'prices/prices.service';
 import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 import { SocialMediaFct, SocialMediaService } from 'socialmedia/socialmedia.service';
+import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { StorageService } from 'storage/storage.service';
 import { TradeQuery } from 'trades/trade.types';
 import { Groups } from './dtos/groups.dto';
@@ -42,7 +43,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly leadrate: SavingsLeadrateService,
 		private readonly position: PositionsService,
 		private readonly prices: PricesService,
-		private readonly challenge: ChallengesService
+		private readonly challenge: ChallengesService,
+		private readonly stablecoin: EcosystemStablecoinService
 	) {
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
 
@@ -55,6 +57,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			challenges: time,
 			bids: time,
 			mintingUpdates: time,
+			generalMints: Date.now(), // Track all mints including CoW Protocol
 		};
 
 		this.telegramGroupState = {
@@ -195,7 +198,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			}
 		}
 
-		// Minting updates
+		// Minting updates from positions (original)
 		const requestedMintingUpdates = this.position
 			.getMintingUpdatesList()
 			.list.filter((m) => m.created * 1000 > this.telegramState.mintingUpdates && BigInt(m.mintedAdjusted) > 0n);
@@ -206,6 +209,24 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			for (const mintingUpdate of requestedMintingUpdates) {
 				const prices = this.prices.getPricesMapping();
 				this.sendMessageAll(MintingUpdateMessage(mintingUpdate, prices));
+			}
+		}
+
+		// General mints from Transfer events (includes CoW Protocol, bridges, etc.)
+		const recentMints = await this.stablecoin.getRecentMints(new Date(this.telegramState.generalMints));
+		
+		if (recentMints.length > 0) {
+			this.telegramState.generalMints = Date.now();
+			
+			for (const mint of recentMints) {
+				// Create simplified message for general mints
+				const mintAmount = Number(mint.value) / 10 ** 18;
+				const message = `🪙 *New dEURO Mint*\n\n` +
+					`Amount: ${mintAmount.toFixed(2)} dEURO\n` +
+					`Recipient: \`${mint.to.slice(0, 6)}...${mint.to.slice(-4)}\`\n` +
+					`[View Transaction](https://etherscan.io/tx/${mint.txHash})`;
+				
+				this.sendMessageAll(message);
 			}
 		}
 	}

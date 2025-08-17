@@ -15,6 +15,7 @@ export type EcosystemMintQueryItem = {
 	value: bigint;
 	blockheight: bigint;
 	timestamp: bigint;
+	txHash: string;
 };
 
 export type EcosystemBurnQueryItem = {

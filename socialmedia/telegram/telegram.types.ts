@@ -8,6 +8,7 @@ export type TelegramState = {
 	challenges: number;
 	bids: number;
 	mintingUpdates: number;
+	generalMints: number; // Track all mints from Transfer events
 };
 
 export type TelegramSubscriptionState = {
