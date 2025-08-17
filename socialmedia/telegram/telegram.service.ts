@@ -47,7 +47,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly stablecoin: EcosystemStablecoinService
 	) {
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
-		const now: number = Date.now();
+		// Start tracking from 1 hour ago to avoid spam on restart but still catch recent mints
+		const startTime: number = Date.now() - 60 * 60 * 1000; // 1 hour ago
 
 		this.telegramState = {
 			minterApplied: time,
@@ -57,8 +58,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			positions: time,
 			challenges: time,
 			bids: time,
-			mintingUpdates: now, // Initialize to now instead of future
-			generalMints: now,    // Initialize to now instead of future
+			mintingUpdates: startTime, // Start from 1 hour ago
+			generalMints: startTime,    // Start from 1 hour ago
 		};
 
 		this.telegramGroupState = {
@@ -241,7 +242,15 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 				// Update timestamp AFTER processing to avoid missing mints
 				this.telegramState.generalMints = Date.now();
 				
-				for (const mint of significantMints) {
+				// Limit notifications to avoid spam (max 10 per update cycle)
+				const MAX_NOTIFICATIONS = 10;
+				const mintsToNotify = significantMints.slice(0, MAX_NOTIFICATIONS);
+				
+				if (significantMints.length > MAX_NOTIFICATIONS) {
+					this.logger.warn(`Limiting notifications: ${significantMints.length} mints found, sending first ${MAX_NOTIFICATIONS}`);
+				}
+				
+				for (const mint of mintsToNotify) {
 					const amount = Number(mint.value / BigInt(10 ** 18));
 					const explorerUrl = CONFIG.chain.id === 137 
 						? `https://polygonscan.com/tx/${mint.txHash}`
