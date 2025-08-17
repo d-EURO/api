@@ -12,7 +12,6 @@ import {
 	ApiEcosystemStablecoinInfo,
 	ApiEcosystemStablecoinKeyValues,
 	EcosystemQueryItem,
-	EcosystemMintQueryItem,
 	MintBurnAddressMapperQueryItem,
 	ServiceEcosystemMintBurnMapping,
 	ServiceEcosystemStablecoin,
@@ -158,45 +157,18 @@ export class EcosystemStablecoinService {
 		}
 	}
 
-	async getRecentMints(since: Date): Promise<EcosystemMintQueryItem[]> {
+	async getRecentMints(since: Date) {
 		const timestamp = Math.floor(since.getTime() / 1000);
-		
 		const response = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query GetRecentMints {
-					mints(
-						orderBy: "timestamp",
-						orderDirection: "desc",
-						limit: 50
-					) {
-						items {
-							to
-							value
-							timestamp
-							txHash
-						}
-					}
-				}
+				query { mints(orderBy: "timestamp", orderDirection: "desc", limit: 20) {
+					items { to value timestamp }
+				}}
 			`
 		});
-
-		if (!response.data || !response.data.mints?.items) {
-			return [];
-		}
-
-		// Filter mints by timestamp
-		const filteredMints = response.data.mints.items.filter((item: any) => 
-			BigInt(item.timestamp) > BigInt(timestamp)
-		);
-
-		return filteredMints.map((item: any) => ({
-			id: '',
-			to: item.to,
-			value: BigInt(item.value),
-			blockheight: BigInt(0),
-			timestamp: BigInt(item.timestamp),
-			txHash: item.txHash
-		}));
+		return (response.data?.mints?.items || [])
+			.filter((m: any) => BigInt(m.timestamp) > BigInt(timestamp))
+			.map((m: any) => ({ to: m.to, value: BigInt(m.value) }));
 	}
 }

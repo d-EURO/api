@@ -47,7 +47,6 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly stablecoin: EcosystemStablecoinService
 	) {
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
-		const now: number = Date.now();
 
 		this.telegramState = {
 			minterApplied: time,
@@ -57,8 +56,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			positions: time,
 			challenges: time,
 			bids: time,
-			mintingUpdates: now,
-			generalMints: now,
+			mintingUpdates: Date.now(),
 		};
 
 		this.telegramGroupState = {
@@ -204,64 +202,28 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			.getMintingUpdatesList()
 			.list.filter((m) => m.created * 1000 > this.telegramState.mintingUpdates && BigInt(m.mintedAdjusted) > 0n);
 
-		// Track which transactions have been notified via MintingUpdateV2
-		const notifiedTxHashes = new Set<string>();
-
 		if (requestedMintingUpdates.length > 0) {
 			this.telegramState.mintingUpdates = Date.now();
 
 			for (const mintingUpdate of requestedMintingUpdates) {
 				const prices = this.prices.getPricesMapping();
 				this.sendMessageAll(MintingUpdateMessage(mintingUpdate, prices));
-				// Track this transaction as already notified
-				if (mintingUpdate.txHash) {
-					notifiedTxHashes.add(mintingUpdate.txHash);
-				}
 			}
 		}
 
-		// General mints (including CoW Protocol and other mints without MintingUpdateV2 events)
-		// Only send notifications for mints that weren't already sent via MintingUpdateV2
-		try {
-			const checkDate = new Date(this.telegramState.generalMints);
-			const recentMints = await this.stablecoin.getRecentMints(checkDate);
-			
-			// Filter for significant mints (> 1000 dEURO) that haven't been notified yet
-			const MIN_MINT_AMOUNT = BigInt(1000 * 10 ** 18);
-			const significantMints = recentMints.filter(mint => {
-				// Skip if no txHash
-				if (!mint.txHash) return false;
-				// Skip if already notified via MintingUpdateV2
-				if (notifiedTxHashes.has(mint.txHash)) return false;
-				// Only include significant amounts
-				return mint.value >= MIN_MINT_AMOUNT;
-			});
-			
-			if (significantMints.length > 0) {
-				// Update timestamp AFTER processing to avoid missing mints
-				this.telegramState.generalMints = Date.now();
+		// Also check for ALL mints (including CoW Protocol swaps)
+		const recentMints = await this.stablecoin.getRecentMints(new Date(this.telegramState.mintingUpdates));
+		const MIN_MINT_AMOUNT = BigInt(1000 * 10 ** 18);
+		
+		for (const mint of recentMints) {
+			if (mint.value >= MIN_MINT_AMOUNT) {
+				const amount = Number(mint.value / BigInt(10 ** 18));
+				const message = `🏦 *dEURO Mint*\n\n` +
+					`Amount: ${amount.toLocaleString('de-CH')} dEURO\n` +
+					`To: \`${mint.to.slice(0, 6)}...${mint.to.slice(-4)}\``;
 				
-				// Limit notifications to avoid spam (max 10 per update cycle)
-				const MAX_NOTIFICATIONS = 10;
-				const mintsToNotify = significantMints.slice(0, MAX_NOTIFICATIONS);
-				
-				if (significantMints.length > MAX_NOTIFICATIONS) {
-					this.logger.warn(`Limiting notifications: ${significantMints.length} mints found, sending first ${MAX_NOTIFICATIONS}`);
-				}
-				
-				for (const mint of mintsToNotify) {
-					const amount = Number(mint.value / BigInt(10 ** 18));
-					
-					const message = `🏦 *dEURO Mint*\n\n` +
-						`Amount: ${amount.toLocaleString('de-CH')} dEURO\n` +
-						`To: \`${mint.to.slice(0, 6)}...${mint.to.slice(-4)}\`\n` +
-						`Tx: \`${mint.txHash}\``;
-					
-					this.sendMessageAll(message);
-				}
+				this.sendMessageAll(message);
 			}
-		} catch (error) {
-			this.logger.error('Error fetching general mints:', error);
 		}
 	}
 

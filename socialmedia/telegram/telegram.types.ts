@@ -8,7 +8,6 @@ export type TelegramState = {
 	challenges: number;
 	bids: number;
 	mintingUpdates: number;
-	generalMints: number;
 };
 
 export type TelegramSubscriptionState = {
