@@ -198,10 +198,13 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			}
 		}
 
-		// Minting updates
+		// Minting updates (from MintingUpdateV2 events - position-based mints)
 		const requestedMintingUpdates = this.position
 			.getMintingUpdatesList()
 			.list.filter((m) => m.created * 1000 > this.telegramState.mintingUpdates && BigInt(m.mintedAdjusted) > 0n);
+
+		// Track which transactions have been notified via MintingUpdateV2
+		const notifiedTxHashes = new Set<string>();
 
 		if (requestedMintingUpdates.length > 0) {
 			this.telegramState.mintingUpdates = Date.now();
@@ -209,33 +212,48 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			for (const mintingUpdate of requestedMintingUpdates) {
 				const prices = this.prices.getPricesMapping();
 				this.sendMessageAll(MintingUpdateMessage(mintingUpdate, prices));
+				// Track this transaction as already notified
+				if (mintingUpdate.txHash) {
+					notifiedTxHashes.add(mintingUpdate.txHash);
+				}
 			}
 		}
 
 		// General mints (including CoW Protocol and other mints without MintingUpdateV2 events)
-		const checkDate = new Date(this.telegramState.generalMints);
-		const recentMints = await this.stablecoin.getRecentMints(checkDate);
-		
-		// Filter for significant mints (> 1000 dEURO)
-		const MIN_MINT_AMOUNT = BigInt(1000 * 10 ** 18);
-		const significantMints = recentMints.filter(mint => mint.value >= MIN_MINT_AMOUNT);
-		
-		if (significantMints.length > 0) {
-			this.telegramState.generalMints = Date.now();
+		// Only send notifications for mints that weren't already sent via MintingUpdateV2
+		try {
+			const checkDate = new Date(Math.min(
+				this.telegramState.generalMints,
+				this.telegramState.mintingUpdates // Use the earlier timestamp to avoid missing mints
+			));
+			const recentMints = await this.stablecoin.getRecentMints(checkDate);
 			
-			for (const mint of significantMints) {
-				const amount = Number(mint.value / BigInt(10 ** 18));
-				const explorerUrl = CONFIG.chain.id === 137 
-					? `https://polygonscan.com/tx/${mint.txHash}`
-					: `https://etherscan.io/tx/${mint.txHash}`;
+			// Filter for significant mints (> 1000 dEURO) that haven't been notified yet
+			const MIN_MINT_AMOUNT = BigInt(1000 * 10 ** 18);
+			const significantMints = recentMints.filter(mint => 
+				mint.value >= MIN_MINT_AMOUNT && 
+				!notifiedTxHashes.has(mint.txHash || '')
+			);
+			
+			if (significantMints.length > 0) {
+				this.telegramState.generalMints = Date.now();
 				
-				const message = `🏦 *dEURO Mint*\n\n` +
-					`Amount: ${amount.toLocaleString('de-CH')} dEURO\n` +
-					`To: \`${mint.to.slice(0, 6)}...${mint.to.slice(-4)}\`\n` +
-					`[View Transaction](${explorerUrl})`;
-				
-				this.sendMessageAll(message);
+				for (const mint of significantMints) {
+					const amount = Number(mint.value / BigInt(10 ** 18));
+					const explorerUrl = CONFIG.chain.id === 137 
+						? `https://polygonscan.com/tx/${mint.txHash}`
+						: `https://etherscan.io/tx/${mint.txHash}`;
+					
+					const message = `🏦 *dEURO Mint*\n\n` +
+						`Amount: ${amount.toLocaleString('de-CH')} dEURO\n` +
+						`To: \`${mint.to.slice(0, 6)}...${mint.to.slice(-4)}\`\n` +
+						`[View Transaction](${explorerUrl})`;
+					
+					this.sendMessageAll(message);
+				}
 			}
+		} catch (error) {
+			this.logger.error('Error fetching general mints:', error);
 		}
 	}
 

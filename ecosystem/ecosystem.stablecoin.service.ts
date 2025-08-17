@@ -168,7 +168,7 @@ export class EcosystemStablecoinService {
 					mints(
 						orderBy: "timestamp",
 						orderDirection: "desc",
-						limit: 100
+						limit: 500
 					) {
 						items {
 							id
