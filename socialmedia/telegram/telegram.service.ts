@@ -252,14 +252,11 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 				
 				for (const mint of mintsToNotify) {
 					const amount = Number(mint.value / BigInt(10 ** 18));
-					const explorerUrl = CONFIG.chain.id === 137 
-						? `https://polygonscan.com/tx/${mint.txHash}`
-						: `https://etherscan.io/tx/${mint.txHash}`;
 					
 					const message = `🏦 *dEURO Mint*\n\n` +
 						`Amount: ${amount.toLocaleString('de-CH')} dEURO\n` +
 						`To: \`${mint.to.slice(0, 6)}...${mint.to.slice(-4)}\`\n` +
-						`[View Transaction](${explorerUrl})`;
+						`Tx: \`${mint.txHash}\``;
 					
 					this.sendMessageAll(message);
 				}
