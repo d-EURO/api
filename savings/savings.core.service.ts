@@ -90,11 +90,12 @@ export class SavingsCoreService {
 		this.logger.debug('Getting total savings users count');
 		
 		// Query all unique users who have ever interacted with savings
+		// Using a high limit to ensure we get all users
 		const data = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				{
-					savingsUserLeaderboards {
+					savingsUserLeaderboards(limit: 10000) {
 						items {
 							id
 						}
