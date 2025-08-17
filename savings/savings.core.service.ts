@@ -86,6 +86,29 @@ export class SavingsCoreService {
 		return this.fetchedSavingsUserLeaderboard;
 	}
 
+	async getTotalSavingsUsers(): Promise<{ totalUsers: number }> {
+		this.logger.debug('Getting total savings users count');
+		
+		// Query all unique users who have ever interacted with savings
+		const data = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+				{
+					savingsUserLeaderboards {
+						items {
+							id
+						}
+					}
+				}
+			`,
+		});
+
+		const totalUsers = data?.data?.savingsUserLeaderboards?.items?.length ?? 0;
+		
+		this.logger.debug(`Total savings users: ${totalUsers}`);
+		return { totalUsers };
+	}
+
 	async getUserTables(userAddress: Address, limit: number = 15): Promise<ApiSavingsUserTable> {
 		const user: Address = userAddress == zeroAddress ? zeroAddress : (userAddress.toLowerCase() as Address);
 		const savedFetched = await PONDER_CLIENT.query({
