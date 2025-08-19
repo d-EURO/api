@@ -45,7 +45,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 });
 
 const httpLink = createHttpLink({
-	uri: getIndexerUrl(),
+	uri: getIndexerUrl,
 	fetch: (uri: RequestInfo | URL, options?: RequestInit) => {
 		const controller = new AbortController();
 		const timeout = setTimeout(() => {
