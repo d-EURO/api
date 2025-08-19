@@ -1,6 +1,7 @@
 import { Chain, createPublicClient, http } from 'viem';
 import { mainnet, polygon } from 'viem/chains';
 
+import { Logger } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -13,6 +14,7 @@ if (process.env.COINGECKO_API_KEY === undefined) throw new Error('COINGECKO_API_
 export type ConfigType = {
 	app: string;
 	indexer: string;
+	indexerFallback: string;
 	coingeckoApiKey: string;
 	chain: Chain;
 	network: {
@@ -38,6 +40,7 @@ export type ConfigType = {
 export const CONFIG: ConfigType = {
 	app: process.env.CONFIG_APP_URL || 'https://app.deuro.com',
 	indexer: process.env.CONFIG_INDEXER_URL || 'https://ponder.deuro.com/',
+	indexerFallback: process.env.CONFIG_INDEXER_FALLBACK_URL || 'https://dev.ponder.deuro.com/',
 	coingeckoApiKey: process.env.COINGECKO_API_KEY,
 	chain: process.env.CONFIG_CHAIN === 'polygon' ? polygon : mainnet, // @dev: default mainnet
 	network: {
@@ -60,8 +63,9 @@ export const CONFIG: ConfigType = {
 };
 
 // Start up message
-console.log(`Starting API with this config:`);
-console.log(CONFIG);
+const logger = new Logger('ApiConfig');
+logger.log(`Starting API with this config:`);
+logger.log(CONFIG);
 
 // Refer to https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files
 process.env.NTBA_FIX_350 = 'true';
