@@ -3,4 +3,5 @@ export type SocialMediaState = {
 	frontendCodeUpdates: number;
 	tradeUpdates: number;
 	bridgeUpdates: number;
+	mintUpdates: number;
 };

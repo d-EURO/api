@@ -156,19 +156,4 @@ export class EcosystemStablecoinService {
 			};
 		}
 	}
-
-	async getRecentMints(since: Date) {
-		const timestamp = Math.floor(since.getTime() / 1000);
-		const response = await PONDER_CLIENT.query({
-			fetchPolicy: 'no-cache',
-			query: gql`
-				query { mints(orderBy: "timestamp", orderDirection: "desc", limit: 20) {
-					items { to value timestamp }
-				}}
-			`
-		});
-		return (response.data?.mints?.items || [])
-			.filter((m: any) => BigInt(m.timestamp) > BigInt(timestamp))
-			.map((m: any) => ({ to: m.to, value: BigInt(m.value) }));
-	}
 }

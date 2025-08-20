@@ -3,11 +3,10 @@ import { CONFIG } from 'api.config';
 import { StablecoinBridgeQuery } from 'bridge/bridge.types';
 import { ChallengesService } from 'challenges/challenges.service';
 import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
-import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
+import { EcosystemMintQueryItem } from 'ecosystem/ecosystem.stablecoin.types';
 import { FrontendCodeRegisteredQuery, FrontendCodeSavingsQuery } from 'frontendcode/frontendcode.types';
 import TelegramBot from 'node-telegram-bot-api';
 import { PositionsService } from 'positions/positions.service';
-import { PricesService } from 'prices/prices.service';
 import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
 import { SocialMediaFct, SocialMediaService } from 'socialmedia/socialmedia.service';
 import { StorageService } from 'storage/storage.service';
@@ -42,9 +41,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly minter: EcosystemMinterService,
 		private readonly leadrate: SavingsLeadrateService,
 		private readonly position: PositionsService,
-		private readonly prices: PricesService,
-		private readonly challenge: ChallengesService,
-		private readonly stablecoin: EcosystemStablecoinService
+		private readonly challenge: ChallengesService
 	) {
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
 
@@ -56,7 +53,6 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			positions: time,
 			challenges: time,
 			bids: time,
-			mintingUpdates: Date.now(),
 		};
 
 		this.telegramGroupState = {
@@ -196,35 +192,6 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 				this.sendMessageAll(BidTakenMessage(position, challenge, b));
 			}
 		}
-
-		// Minting updates (from MintingUpdateV2 events - position-based mints)
-		const requestedMintingUpdates = this.position
-			.getMintingUpdatesList()
-			.list.filter((m) => m.created * 1000 > this.telegramState.mintingUpdates && BigInt(m.mintedAdjusted) > 0n);
-
-		if (requestedMintingUpdates.length > 0) {
-			this.telegramState.mintingUpdates = Date.now();
-
-			for (const mintingUpdate of requestedMintingUpdates) {
-				const prices = this.prices.getPricesMapping();
-				this.sendMessageAll(MintingUpdateMessage(mintingUpdate, prices));
-			}
-		}
-
-		// Also check for ALL mints (including CoW Protocol swaps)
-		const recentMints = await this.stablecoin.getRecentMints(new Date(this.telegramState.mintingUpdates));
-		const MIN_MINT_AMOUNT = BigInt(1000 * 10 ** 18);
-		
-		for (const mint of recentMints) {
-			if (mint.value >= MIN_MINT_AMOUNT) {
-				const amount = Number(mint.value / BigInt(10 ** 18));
-				const message = `🏦 *dEURO Mint*\n\n` +
-					`Amount: ${amount.toLocaleString('de-CH')} dEURO\n` +
-					`To: \`${mint.to.slice(0, 6)}...${mint.to.slice(-4)}\``;
-				
-				this.sendMessageAll(message);
-			}
-		}
 	}
 
 	async doSendSavingUpdates(savingSaved: FrontendCodeSavingsQuery): Promise<void> {
@@ -247,6 +214,12 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	async doSendBridgeUpdates(bridge: StablecoinBridgeQuery, stablecoin: string): Promise<void> {
 		if (BigInt(bridge.amount) === 0n) return;
 		const messageInfo = StablecoinBridgeMessage(bridge, stablecoin);
+		this.sendMessageAll(messageInfo[0], messageInfo[1]);
+	}
+
+	async doSendMintUpdates(mint: EcosystemMintQueryItem): Promise<void> {
+		if (BigInt(mint.value) === 0n) return;
+		const messageInfo = MintingUpdateMessage(mint);
 		this.sendMessageAll(messageInfo[0], messageInfo[1]);
 	}
 
