@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PONDER_CLIENT } from '../api.apollo.config';
 import { gql } from '@apollo/client/core';
-import { ApiMinterListing, ApiMinterMapping, MinterQuery, MinterQueryObjectArray } from './ecosystem.minter.types';
+import { Injectable, Logger } from '@nestjs/common';
 import { Address } from 'viem';
+import { PONDER_CLIENT } from '../api.apollo.config';
+import { ApiMinterListing, ApiMinterMapping, MinterQuery, MinterQueryObjectArray } from './ecosystem.minter.types';
+import { EcosystemMintQueryItem } from './ecosystem.stablecoin.types';
 
 @Injectable()
 export class EcosystemMinterService {
@@ -83,5 +84,33 @@ export class EcosystemMinterService {
 		this.fetchedMinters = { ...this.fetchedMinters, ...list };
 
 		return list;
+	}
+
+	async getRecentMints(timestamp: Date, minValue: bigint): Promise<EcosystemMintQueryItem[]> {
+		const checkTimestamp = Math.trunc(timestamp.getTime() / 1000);
+
+		const mintsFetched = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+				query {
+					mints(
+					orderBy: "timestamp", orderDirection: "desc"
+					where: {
+							timestamp_gt: "${checkTimestamp}"
+							value_gte: "${minValue}"
+						}
+					) {
+						items {
+							txHash
+							blockheight
+							to
+							value
+							timestamp
+						}
+					}
+				}
+			`,
+		});
+		return mintsFetched?.data?.mints?.items ?? [];
 	}
 }

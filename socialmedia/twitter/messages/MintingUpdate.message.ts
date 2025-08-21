@@ -5,13 +5,13 @@ import { formatUnits } from 'viem';
 
 export function MintingUpdateMessage(mint: EcosystemMintQueryItem): string[] {
 	const message = `
-*New dEURO Mint!*
+New dEURO Mint!
 
-🏦 Lending Amount: *${formatCurrency(formatUnits(BigInt(mint.value), 18))}*
-👤 [Lendner](https://etherscan.io/address/${mint.to}) / [TX](https://etherscan.io/tx/${mint.txHash})
-`;
+🏦 Lending Amount: ${formatCurrency(formatUnits(BigInt(mint.value), 18))}
+🔗 Verifiable on the blockchain
+	`;
 
-	const image = `${CONFIG.telegram.imagesDir}/Lending.mp4`;
+	const image = `${CONFIG.twitter.imagesDir}/Lending.png`;
 
 	return [message, image];
 }

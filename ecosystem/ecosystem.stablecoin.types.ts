@@ -1,5 +1,5 @@
-import { PriceQueryCurrencies } from '../prices/prices.types';
 import { Address } from 'viem';
+import { PriceQueryCurrencies } from '../prices/prices.types';
 
 // --------------------------------------------------------------------------
 // Ponder return types
@@ -10,7 +10,7 @@ export type EcosystemQueryItem = {
 };
 
 export type EcosystemMintQueryItem = {
-	id: string;
+	txHash: string;
 	to: string;
 	value: bigint;
 	blockheight: bigint;

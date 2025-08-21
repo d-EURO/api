@@ -3,6 +3,8 @@ import { StablecoinEnum } from 'bridge/bridge.enum';
 import { BridgeService } from 'bridge/bridge.service';
 import { StablecoinBridgeQuery } from 'bridge/bridge.types';
 import { EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
+import { EcosystemMinterService } from 'ecosystem/ecosystem.minter.service';
+import { EcosystemMintQueryItem } from 'ecosystem/ecosystem.stablecoin.types';
 import { FrontendCodeService } from 'frontendcode/frontendcode.service';
 import { FrontendCodeRegisteredQuery, FrontendCodeSavingsQuery } from 'frontendcode/frontendcode.types';
 import { TradesService } from 'trades/trade.service';
@@ -15,10 +17,12 @@ export interface SocialMediaFct {
 	doSendFrontendCodeUpdates(frontendCodeRegistered: FrontendCodeRegisteredQuery): Promise<void>;
 	doSendTradeUpdates(trade: TradeQuery, depsMarketCap: number, totalShares: bigint): Promise<void>;
 	doSendBridgeUpdates(bridge: StablecoinBridgeQuery, stablecoin: string): Promise<void>;
+	doSendMintUpdates(mint: EcosystemMintQueryItem): Promise<void>;
 }
 
 const MIN_SAVING_AMOUNT = 1000;
 const MIN_BRIDGE_AMOUNT = 5000;
+const MIN_MINTING_AMOUNT = 1000;
 
 @Injectable()
 export class SocialMediaService {
@@ -32,7 +36,8 @@ export class SocialMediaService {
 		private readonly frontendCode: FrontendCodeService,
 		private readonly deps: EcosystemDepsService,
 		private readonly trades: TradesService,
-		private readonly bridges: BridgeService
+		private readonly bridges: BridgeService,
+		private readonly mints: EcosystemMinterService
 	) {
 		this.socialMediaRegister = new Map();
 
@@ -43,6 +48,7 @@ export class SocialMediaService {
 			frontendCodeUpdates: time,
 			tradeUpdates: time,
 			bridgeUpdates: time,
+			mintUpdates: time,
 		};
 	}
 
@@ -59,6 +65,7 @@ export class SocialMediaService {
 		await this.sendFrontendCodeUpdates();
 		await this.sendTradeUpdates();
 		await this.sendBridgeUpdates();
+		await this.sendMintUpdates();
 	}
 
 	private async sendUpdates(): Promise<void> {
@@ -154,6 +161,27 @@ export class SocialMediaService {
 			}
 		} catch (e) {
 			this.logger.error('Error while sending bridge updates:', e);
+		}
+	}
+
+	private async sendMintUpdates(): Promise<void> {
+		try {
+			const checkDate = new Date(this.socialMediaState.mintUpdates);
+			const minAmount = BigInt(MIN_MINTING_AMOUNT * 10 ** 18);
+
+			const requestedMints = await this.mints.getRecentMints(checkDate, minAmount);
+
+			if (requestedMints.length > 0) {
+				this.socialMediaState.mintUpdates = Date.now();
+
+				for (const mint of requestedMints) {
+					for (const value of this.socialMediaRegister.values()) {
+						await value.doSendMintUpdates(mint);
+					}
+				}
+			}
+		} catch (e) {
+			this.logger.error('Error while sending mint updates:', e);
 		}
 	}
 }
