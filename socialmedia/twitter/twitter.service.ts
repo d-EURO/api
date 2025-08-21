@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CONFIG } from 'api.config';
 import { StablecoinBridgeQuery } from 'bridge/bridge.types';
+import { EcosystemMintQueryItem } from 'ecosystem/ecosystem.stablecoin.types';
 import { FrontendCodeRegisteredQuery, FrontendCodeSavingsQuery } from 'frontendcode/frontendcode.types';
 import { readFileSync } from 'fs';
 import { SocialMediaFct, SocialMediaService } from 'socialmedia/socialmedia.service';
@@ -8,6 +9,7 @@ import { TradeQuery } from 'trades/trade.types';
 import { SendTweetV2Params, TwitterApi } from 'twitter-api-v2';
 import { TwitterAccessToken } from './dtos/twitter.dto';
 import { FrontendCodeRegisteredMessage } from './messages/FrontendCodeRegistered.message';
+import { MintingUpdateMessage } from './messages/MintingUpdate.message';
 import { SavingUpdateMessage } from './messages/SavingUpdate.message';
 import { StablecoinBridgeMessage } from './messages/StablecoinBridgeUpdate.message';
 import { TradeMessage } from './messages/Trade.message';
@@ -61,6 +63,12 @@ export class TwitterService implements OnModuleInit, SocialMediaFct {
 		if (BigInt(bridge.amount) === 0n) return;
 		const messageInfo = StablecoinBridgeMessage(bridge, stablecoin);
 		this.sendPost(messageInfo[0], messageInfo[1]);
+	}
+
+	async doSendMintUpdates(mint: EcosystemMintQueryItem): Promise<void> {
+		if (BigInt(mint.value) === 0n) return;
+		const messageInfo = MintingUpdateMessage(mint);
+		await this.sendPost(messageInfo[0], messageInfo[1]);
 	}
 
 	private async sendPost(message: string, media?: string): Promise<string> {
