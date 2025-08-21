@@ -25,6 +25,14 @@ export class SavingsCoreController {
 		return this.savings.getSavingsUserLeaderboard();
 	}
 
+	@Get('info/total-users')
+	@ApiResponse({
+		description: 'returns the total number of unique savings users.',
+	})
+	async getTotalUsers(): Promise<{ totalUsers: number }> {
+		return await this.savings.getTotalSavingsUsers();
+	}
+
 	@Get('user/:address')
 	@ApiResponse({
 		description: 'returns the latest user table history or recent entries from all users',
