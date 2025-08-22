@@ -45,7 +45,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 });
 
 const httpLink = createHttpLink({
-	uri: getIndexerUrl,
+	uri: () => getIndexerUrl(),
 	fetch: (uri: RequestInfo | URL, options?: RequestInit) => {
 		const controller = new AbortController();
 		const timeout = setTimeout(() => {
@@ -56,7 +56,24 @@ const httpLink = createHttpLink({
 			...options,
 			signal: controller.signal,
 		})
-			.catch((error) => {
+			.then((response: Response) => {
+				// Handle 503 status (Ponder sync not complete)
+				if (response.status === 503) {
+					logger.warn(`[Ponder] Received 503 (sync incomplete) from ${uri}`);
+					if (getIndexerUrl() === CONFIG.indexer) {
+						activateFallback();
+						// Retry with fallback URL
+						const fallbackUri = uri.toString().replace(CONFIG.indexer, CONFIG.indexerFallback);
+						logger.log(`[Ponder] Retrying with fallback URL: ${fallbackUri}`);
+						return fetch(fallbackUri, {
+							...options,
+							signal: controller.signal,
+						});
+					}
+				}
+				return response;
+			})
+			.catch((error: Error) => {
 				// Activate fallback on http errors
 				if (getIndexerUrl() === CONFIG.indexer) activateFallback();
 				throw error;
