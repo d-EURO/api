@@ -44,30 +44,57 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 	}
 });
 
-const httpLink = createHttpLink({
-	uri: getIndexerUrl,
-	fetch: (uri: RequestInfo | URL, options?: RequestInit) => {
-		const controller = new AbortController();
-		const timeout = setTimeout(() => {
-			controller.abort();
-		}, 10000); // 10 second timeout
+// Custom link that dynamically determines the URL for each request
+const dynamicHttpLink = new ApolloLink((operation, forward) => {
+	// Get the current URL (either main or fallback)
+	const currentUrl = getIndexerUrl();
+	
+	// Create a new HttpLink for this specific request with the current URL
+	const httpLink = createHttpLink({
+		uri: currentUrl,
+		fetch: (uri: RequestInfo | URL, options?: RequestInit) => {
+			const controller = new AbortController();
+			const timeout = setTimeout(() => {
+				controller.abort();
+			}, 10000); // 10 second timeout
 
-		return fetch(uri, {
-			...options,
-			signal: controller.signal,
-		})
-			.catch((error) => {
-				// Activate fallback on http errors
-				if (getIndexerUrl() === CONFIG.indexer) activateFallback();
-				throw error;
+			return fetch(uri, {
+				...options,
+				signal: controller.signal,
 			})
-			.finally(() => {
-				clearTimeout(timeout);
-			});
-	},
+				.then((response: Response) => {
+					// Handle 503 status (Ponder sync not complete)
+					if (response.status === 503) {
+						logger.warn(`[Ponder] Received 503 (sync incomplete) from ${uri}`);
+						if (currentUrl === CONFIG.indexer) {
+							activateFallback();
+							// Retry with fallback URL
+							const fallbackUri = uri.toString().replace(CONFIG.indexer, CONFIG.indexerFallback);
+							logger.log(`[Ponder] Retrying with fallback URL: ${fallbackUri}`);
+							return fetch(fallbackUri, {
+								...options,
+								signal: controller.signal,
+							});
+						}
+					}
+					return response;
+				})
+				.catch((error: Error) => {
+					// Activate fallback on http errors
+					if (currentUrl === CONFIG.indexer) activateFallback();
+					throw error;
+				})
+				.finally(() => {
+					clearTimeout(timeout);
+				});
+		},
+	});
+
+	// Use the httpLink for this request
+	return httpLink.request(operation, forward);
 });
 
-const link = ApolloLink.from([errorLink, httpLink]);
+const link = ApolloLink.from([errorLink, dynamicHttpLink]);
 
 export const PONDER_CLIENT = new ApolloClient({
 	link,
