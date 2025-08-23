@@ -169,7 +169,7 @@ export class SocialMediaService {
 			const checkDate = new Date(this.socialMediaState.mintUpdates);
 			const minAmount = BigInt(MIN_MINTING_AMOUNT * 10 ** 18);
 
-			const requestedMints = await this.mints.getRecentMints(checkDate, minAmount);
+			const requestedMints = await this.mints.getRecentMintsFromPositions(checkDate, minAmount);
 
 			if (requestedMints.length > 0) {
 				this.socialMediaState.mintUpdates = Date.now();
