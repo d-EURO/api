@@ -111,6 +111,6 @@ export class EcosystemMinterService {
 				}
 			`,
 		});
-		return mintsFetched?.data?.mints?.items ?? [];
+		return mintsFetched?.data?.positionMints?.items ?? [];
 	}
 }
