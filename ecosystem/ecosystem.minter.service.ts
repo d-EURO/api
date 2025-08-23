@@ -86,14 +86,14 @@ export class EcosystemMinterService {
 		return list;
 	}
 
-	async getRecentMints(timestamp: Date, minValue: bigint): Promise<EcosystemMintQueryItem[]> {
+	async getRecentMintsFromPositions(timestamp: Date, minValue: bigint): Promise<EcosystemMintQueryItem[]> {
 		const checkTimestamp = Math.trunc(timestamp.getTime() / 1000);
 
 		const mintsFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query {
-					mints(
+					positionMints(
 					orderBy: "timestamp", orderDirection: "desc"
 					where: {
 							timestamp_gt: "${checkTimestamp}"
