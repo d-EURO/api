@@ -6,23 +6,22 @@ import { CONFIG } from './api.config';
 
 const logger = new Logger('ApiApolloConfig');
 
-// Fallback URL management
 let fallbackUntil: number | null = null;
 
 function getIndexerUrl(): string {
-	if (fallbackUntil && Date.now() < fallbackUntil) return CONFIG.indexerFallback;
-	if (fallbackUntil) fallbackUntil = null; // Reset expired fallback
-	return CONFIG.indexer;
+	return fallbackUntil && Date.now() < fallbackUntil 
+		? CONFIG.indexerFallback 
+		: CONFIG.indexer;
 }
 
 function activateFallback(): void {
 	if (!fallbackUntil) {
-		fallbackUntil = Date.now() + 10 * 60 * 1000; // 10 minutes
+		fallbackUntil = Date.now() + 10 * 60 * 1000;
 		logger.log(`[Ponder] Switching to fallback for 10min: ${CONFIG.indexerFallback}`);
 	}
 }
 
-const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
+const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
 	if (graphQLErrors) {
 		graphQLErrors.forEach((error) => {
 			logger.error(`[GraphQL error in operation: ${operation?.operationName || 'unknown'}]`, {
@@ -32,6 +31,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 			});
 		});
 	}
+	
 	if (networkError) {
 		logger.error(`[Network error in operation: ${operation?.operationName || 'unknown'}]`, {
 			message: networkError.message,
@@ -39,28 +39,35 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 			stack: networkError.stack,
 		});
 
-		// Activate fallback on network errors
-		if (getIndexerUrl() === CONFIG.indexer) activateFallback();
+		if (getIndexerUrl() === CONFIG.indexer) {
+			const is503 =
+				(networkError as any)?.response?.status === 503 ||
+				(networkError as any)?.statusCode === 503 ||
+				(networkError as any)?.result?.status === 503;
+
+			if (is503) {
+				logger.log('[Ponder] 503 Service Unavailable - Ponder is syncing, switching to fallback');
+			} else {
+				logger.log('[Ponder] Network error detected, activating fallback');
+			}
+			activateFallback();
+			return forward(operation);
+		}
 	}
 });
 
 const httpLink = createHttpLink({
-	uri: getIndexerUrl,
+	uri: () => getIndexerUrl(),
 	fetch: (uri: RequestInfo | URL, options?: RequestInit) => {
 		const controller = new AbortController();
 		const timeout = setTimeout(() => {
 			controller.abort();
-		}, 10000); // 10 second timeout
+		}, 10000);
 
 		return fetch(uri, {
 			...options,
 			signal: controller.signal,
 		})
-			.catch((error) => {
-				// Activate fallback on http errors
-				if (getIndexerUrl() === CONFIG.indexer) activateFallback();
-				throw error;
-			})
 			.finally(() => {
 				clearTimeout(timeout);
 			});
