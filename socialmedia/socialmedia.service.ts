@@ -169,31 +169,25 @@ export class SocialMediaService {
 			const checkDate = new Date(this.socialMediaState.mintUpdates);
 			const minAmount = BigInt(MIN_MINTING_AMOUNT * 10 ** 18);
 
+			// mints
 			const requestedMints = await this.mints.getRecentMints(checkDate, minAmount);
 
-			// Get ALL bridge transactions since the same checkDate (not just those above MIN_BRIDGE_AMOUNT)
-			// This ensures we catch all bridges, even small ones that might appear as mints
-			const bridgeTxHashes = new Set<string>();
-			for (const stablecoin of Object.values(StablecoinEnum)) {
-				// Use 0 as minAmount to get ALL bridge transactions
-				const bridges = await this.bridges.getBridgedStables(stablecoin, checkDate, 0n);
-				bridges.forEach(b => bridgeTxHashes.add(b.txHash.toLowerCase()));
-			}
-
-			// Filter out mints that are actually bridge transactions
-			const realMints = requestedMints.filter(mint => 
-				!bridgeTxHashes.has(mint.txHash.toLowerCase())
+			// bridge txs
+			const bridgePromises = Object.values(StablecoinEnum).map((stablecoin) =>
+				this.bridges.getBridgedStables(stablecoin, checkDate, minAmount)
 			);
+			const allBridges = (await Promise.all(bridgePromises)).flat();
+			const bridgeTxHashes = new Set(allBridges.map((b) => b.txHash.toLowerCase()));
+
+			// mints that are not bridge txs
+			const realMints = requestedMints.filter((mint) => !bridgeTxHashes.has(mint.txHash.toLowerCase()));
 
 			if (realMints.length > 0) {
 				this.socialMediaState.mintUpdates = Date.now();
 
 				for (const mint of realMints) {
-					// Double-check: only send if amount is above MIN_MINTING_AMOUNT
-					if (BigInt(mint.value) >= BigInt(MIN_MINTING_AMOUNT * 10 ** 18)) {
-						for (const value of this.socialMediaRegister.values()) {
-							await value.doSendMintUpdates(mint);
-						}
+					for (const value of this.socialMediaRegister.values()) {
+						await value.doSendMintUpdates(mint);
 					}
 				}
 			}
