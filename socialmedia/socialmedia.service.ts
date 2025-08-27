@@ -176,7 +176,10 @@ export class SocialMediaService {
 			const bridgePromises = Object.values(StablecoinEnum).map((stablecoin) =>
 				this.bridges.getBridgedStables(stablecoin, checkDate, minAmount)
 			);
-			const allBridges = (await Promise.all(bridgePromises)).flat();
+			const bridgeResults = await Promise.allSettled(bridgePromises);
+			const allBridges = bridgeResults
+				.filter((result): result is PromiseFulfilledResult<StablecoinBridgeQuery[]> => result.status === 'fulfilled')
+				.flatMap((result) => result.value);
 			const bridgeTxHashes = new Set(allBridges.map((b) => b.txHash.toLowerCase()));
 
 			// mints that are not bridge txs
