@@ -11,6 +11,7 @@ export type ApiEcosystemDepsInfo = {
 		profit: number;
 		loss: number;
 		unrealizedProfit: number;
+		directTransfers: number;
 	};
 	values: {
 		price: number;

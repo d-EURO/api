@@ -72,10 +72,12 @@ export class EcosystemDepsService {
 
 		const d = profitLossPonder.data.dEPSs.items.at(0);
 		const unrealizedProfit = this.getUnrealizedProfit();
+		const directTransfers = await this.getDirectTransfersToEquity();
 		const earningsData: ApiEcosystemDepsInfo['earnings'] = {
 			profit: parseFloat(formatUnits(d.profits, 18)),
 			loss: parseFloat(formatUnits(d.loss, 18)),
 			unrealizedProfit: parseFloat(formatUnits(unrealizedProfit, 18)),
+			directTransfers: parseFloat(formatUnits(directTransfers, 18)),
 		};
 
 		const equityInReserveRaw = balanceReserveRaw - minterReserveRaw;
@@ -108,6 +110,50 @@ export class EcosystemDepsService {
 		}, 0n);
 
 		return unrealizedProfit;
+	}
+
+	private async getDirectTransfersToEquity(): Promise<bigint> {
+		const chainId = VIEM_CONFIG.chain.id;
+		const equityAddress = ADDRESS[chainId].equity.toLowerCase();
+
+		try {
+			const transfersQuery = await PONDER_CLIENT.query({
+				fetchPolicy: 'no-cache',
+				query: gql`
+					query GetDirectTransfers($equityAddress: String!) {
+						stablecoinTransferHistories(
+							where: { to: $equityAddress }
+							orderBy: "timestamp"
+							limit: 10000
+						) {
+							items {
+								amount
+								from
+								to
+							}
+						}
+					}
+				`,
+				variables: {
+					equityAddress,
+				},
+			});
+
+			if (!transfersQuery.data || !transfersQuery.data.stablecoinTransferHistories.items.length) {
+				this.logger.debug('No direct transfers to Equity found.');
+				return 0n;
+			}
+
+			const totalTransfers = transfersQuery.data.stablecoinTransferHistories.items.reduce((acc, transfer) => {
+				return acc + BigInt(transfer.amount);
+			}, 0n);
+
+			this.logger.debug(`Total direct transfers to Equity: ${formatUnits(totalTransfers, 18)} dEURO`);
+			return totalTransfers;
+		} catch (error) {
+			this.logger.error('Error fetching direct transfers to Equity', error);
+			return 0n;
+		}
 	}
 
 	getTotalSupply(): number {
