@@ -28,12 +28,29 @@ export class PricesService {
 	private readonly logger = new Logger(this.constructor.name);
 	private fetchedPrices: PriceQueryObjectArray = {};
 	private euroPrice: PriceQueryCurrencies = {};
+	private euroPriceTimestamp: number = 0;
 	private depsPrice: PriceQueryCurrencies = {};
+
+	private static readonly EURO_PRICE_TTL = 60_000; // 60 seconds
 
 	constructor(
 		private readonly positionsService: PositionsService,
 		private readonly deps: EcosystemDepsService
 	) {}
+
+	private isEuroPriceStale(): boolean {
+		return !this.euroPrice?.usd || Date.now() - this.euroPriceTimestamp > PricesService.EURO_PRICE_TTL;
+	}
+
+	private async refreshEuroPriceIfStale(): Promise<void> {
+		if (this.isEuroPriceStale()) {
+			const fetched = await this.fetchEuroPrice();
+			if (fetched) {
+				this.euroPrice = fetched;
+				this.euroPriceTimestamp = Date.now();
+			}
+		}
+	}
 
 	getPrices(): ApiPriceListing {
 		return Object.values(this.fetchedPrices);
@@ -64,8 +81,8 @@ export class PricesService {
 	}
 
 	async getDepsPrice(): Promise<PriceQueryCurrencies> {
-		if (!this.depsPrice) this.depsPrice = await this.fetchFromEcosystemDeps(this.getDeps());
-		if (!this.euroPrice) this.euroPrice = await this.fetchEuroPrice();
+		if (!this.depsPrice?.usd) this.depsPrice = await this.fetchFromEcosystemDeps(this.getDeps());
+		await this.refreshEuroPriceIfStale();
 
 		return {
 			usd: Number(this.depsPrice.usd.toFixed(4)),
@@ -91,7 +108,7 @@ export class PricesService {
 	}
 
 	async getEuroPrice(): Promise<PriceQueryCurrencies> {
-		if (!this.euroPrice) this.euroPrice = await this.fetchEuroPrice();
+		await this.refreshEuroPriceIfStale();
 
 		return {
 			usd: Number(this.euroPrice.usd.toFixed(4)),
@@ -205,7 +222,10 @@ export class PricesService {
 		this.logger.debug('Updating Prices');
 
 		const euroPrice = await this.fetchEuroPrice();
-		if (euroPrice) this.euroPrice = euroPrice;
+		if (euroPrice) {
+			this.euroPrice = euroPrice;
+			this.euroPriceTimestamp = Date.now();
+		}
 
 		const deps = this.getDeps();
 		const m = this.getMint();
