@@ -30,8 +30,7 @@ import { TelegramGroupState, TelegramState } from './telegram.types';
 @Injectable()
 export class TelegramService implements OnModuleInit, SocialMediaFct {
 	private readonly logger = new Logger(this.constructor.name);
-	private readonly isEnabled: boolean;
-	private readonly bot?: TelegramBot;
+	private readonly bot = new TelegramBot(CONFIG.telegram.botToken, { polling: true });
 	private readonly telegramHandles: string[] = ['/subscribe', '/unsubscribe', '/help'];
 	private readonly telegramState: TelegramState;
 	private telegramGroupState: TelegramGroupState;
@@ -44,11 +43,6 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly position: PositionsService,
 		private readonly challenge: ChallengesService
 	) {
-		this.isEnabled = TelegramService.isValidBotToken(CONFIG.telegram.botToken);
-		if (this.isEnabled) {
-			this.bot = new TelegramBot(CONFIG.telegram.botToken, { polling: true });
-		}
-
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
 
 		this.telegramState = {
@@ -70,11 +64,6 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	}
 
 	onModuleInit() {
-		if (!this.isEnabled) {
-			this.logger.warn('Telegram service disabled: TELEGRAM_BOT_TOKEN is missing or invalid');
-			return;
-		}
-
 		this.socialMediaService.register(this.constructor.name, this);
 
 		void this.readBackupGroups();
@@ -272,12 +261,10 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	}
 
 	private async doSendMessage(group: string | number, message: string): Promise<void> {
-		if (!this.bot) return;
 		await this.bot.sendMessage(group.toString(), message, { parse_mode: 'Markdown', disable_web_page_preview: true });
 	}
 
 	private async doSendVideo(group: string | number, message: string, video: string): Promise<void> {
-		if (!this.bot) return;
 		await this.bot.sendVideo(group.toString(), video, {
 			caption: message,
 			parse_mode: 'Markdown',
@@ -285,7 +272,6 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	}
 
 	private async applyListener() {
-		if (!this.bot) return;
 		this.bot.on('message', async (m) => {
 			switch (m.text) {
 				case '/help':
@@ -328,10 +314,5 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		this.sendMessage(group, `You are not subscribed anymore.`);
 
 		this.writeBackupGroups();
-	}
-
-	private static isValidBotToken(token?: string): boolean {
-		if (!token) return false;
-		return /^\d+:[A-Za-z0-9_-]+$/.test(token);
 	}
 }
