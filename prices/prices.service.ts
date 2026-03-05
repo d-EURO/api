@@ -164,8 +164,8 @@ export class PricesService {
 	}
 
 	async fetchEuroPrice(): Promise<PriceQueryCurrencies | null> {
-		const url = `/api/v3/simple/price?ids=usd&vs_currencies=eur%2Cbtc`;
-		const data = await(await COINGECKO_CLIENT(url)).json();
+		const url = `/api/v3/simple/price?ids=tether&vs_currencies=eur%2Cbtc`;
+		const data = await (await COINGECKO_CLIENT(url)).json();
 		if (data.status) {
 			this.logger.debug(data.status?.error_message || 'Error fetching price from coingecko');
 			return null;
@@ -173,8 +173,8 @@ export class PricesService {
 
 		return {
 			eur: 1,
-			usd: 1 / Number(data.usd.eur),
-			btc: 1 / Number(data.usd.eur / data.usd.btc),
+			usd: 1 / Number(data.tether.eur),
+			btc: 1 / Number(data.tether.eur / data.tether.btc),
 		};
 	}
 
