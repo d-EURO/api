@@ -25,9 +25,21 @@ export class TwitterService implements OnModuleInit, SocialMediaFct {
 	constructor(private readonly socialMediaService: SocialMediaService) {}
 
 	async onModuleInit() {
-		this.socialMediaService.register(this.constructor.name, this);
+		if (!this.tokenFile || !CONFIG.twitter.appKey || !CONFIG.twitter.appSecret) {
+			this.logger.warn('Twitter service disabled: missing Twitter credentials/token config');
+			return;
+		}
 
-		const token = await this.readToken();
+		let token: TwitterAccessToken;
+		try {
+			token = await this.readToken();
+		} catch (e) {
+			this.logger.warn('Twitter service disabled: unable to read token file');
+			this.logger.debug(e);
+			return;
+		}
+
+		this.socialMediaService.register(this.constructor.name, this);
 
 		this.client = new TwitterApi({
 			appKey: CONFIG.twitter.appKey,
