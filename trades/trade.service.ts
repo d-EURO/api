@@ -1,6 +1,8 @@
 import { gql } from '@apollo/client/core';
 import { Injectable } from '@nestjs/common';
 import { PONDER_CLIENT } from 'api.apollo.config';
+import { addressForPonderFilter } from 'utils/address-normalize';
+import { Address } from 'viem';
 import { TradeQuery } from './trade.types';
 
 @Injectable()
@@ -35,13 +37,14 @@ export class TradesService {
 	}
 
 	async getTotalShares(trader: string): Promise<bigint> {
+		const traderNorm = addressForPonderFilter(trader as Address);
 		const tradeFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
                 query GetTraderShares {
                     trades(
                         where: { 
-                            trader: "${trader}"
+                            trader: "${traderNorm}"
                         }
                     ) {
                         items {

@@ -1,8 +1,9 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SavingsCoreService } from './savings.core.service';
 import { ApiSavingsInfo, ApiSavingsUserTable, ApiSavingsUserLeaderboard } from './savings.core.types';
-import { Address, zeroAddress } from 'viem';
+import { isAddress, zeroAddress } from 'viem';
+import { normalizedAddress } from 'utils/address-normalize';
 
 @ApiTags('Savings Controller')
 @Controller('savings/core')
@@ -31,7 +32,12 @@ export class SavingsCoreController {
 	})
 	async getUserTable(@Param('address') address: string): Promise<ApiSavingsUserTable> {
 		const keywords: string[] = ['0', 'all', 'zero', 'zeroAddress', zeroAddress];
-		if (keywords.includes(address)) address = zeroAddress;
-		return await this.savings.getUserTables(address as Address);
+		if (keywords.includes(address)) {
+			return await this.savings.getUserTables(zeroAddress);
+		}
+		if (!isAddress(address)) {
+			throw new BadRequestException('Invalid address');
+		}
+		return await this.savings.getUserTables(normalizedAddress(address));
 	}
 }

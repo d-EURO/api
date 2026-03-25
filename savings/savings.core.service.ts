@@ -5,6 +5,7 @@ import { PONDER_CLIENT } from 'api.apollo.config';
 import { VIEM_CONFIG } from 'api.config';
 import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { Address, formatUnits, zeroAddress } from 'viem';
+import { addressForPonderFilter } from 'utils/address-normalize';
 import { ApiSavingsInfo, ApiSavingsUserLeaderboard, ApiSavingsUserTable } from './savings.core.types';
 import { SavingsLeadrateService } from './savings.leadrate.service';
 
@@ -63,15 +64,16 @@ export class SavingsCoreService {
 
 		const mapped = await Promise.all(
 			items.map(async (item) => {
+				const account = item.id as Address;
 				const unrealizedInterest = await VIEM_CONFIG.readContract({
 					address: ADDRESS[VIEM_CONFIG.chain.id].savingsGateway,
 					abi: SavingsGatewayABI,
 					functionName: 'accruedInterest',
-					args: [item.id],
+					args: [account],
 				});
 
 				return {
-					account: item.id,
+					account,
 					amountSaved: item.amountSaved,
 					unrealizedInterest: unrealizedInterest.toString(),
 					interestReceived: item.interestReceived,
@@ -87,7 +89,7 @@ export class SavingsCoreService {
 	}
 
 	async getUserTables(userAddress: Address, limit: number = 15): Promise<ApiSavingsUserTable> {
-		const user: Address = userAddress == zeroAddress ? zeroAddress : (userAddress.toLowerCase() as Address);
+		const user = addressForPonderFilter(userAddress);
 		const savedFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`

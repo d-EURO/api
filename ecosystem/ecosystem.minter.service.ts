@@ -60,7 +60,7 @@ export class EcosystemMinterService {
 
 		const list: MinterQueryObjectArray = {};
 		for (const m of data.minters.items as MinterQuery[]) {
-			list[m.id.toLowerCase() as Address] = {
+			list[m.id as Address] = {
 				id: m.id,
 				txHash: m.txHash,
 				minter: m.minter,

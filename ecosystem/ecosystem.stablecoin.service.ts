@@ -150,7 +150,7 @@ export class EcosystemStablecoinService {
 		const e = response.data.mintBurnAddressMappers.items as MintBurnAddressMapperQueryItem[];
 
 		for (const item of e) {
-			this.ecosystemMintBurnMapping[item.id] = {
+			this.ecosystemMintBurnMapping[item.id as Address] = {
 				mint: item.mint,
 				burn: item.burn,
 			};

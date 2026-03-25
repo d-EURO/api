@@ -2,7 +2,7 @@ import { gql } from '@apollo/client/core';
 import { ADDRESS, PositionV2ABI, SavingsABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
 import { FIVEDAYS_MS } from 'utils/const-helper';
-import { Address, erc20Abi, getAddress } from 'viem';
+import { Address, erc20Abi } from 'viem';
 import { CONFIG, VIEM_CONFIG } from '../api.config';
 import { PONDER_CLIENT } from '../api.apollo.config';
 import {
@@ -64,7 +64,7 @@ export class PositionsService {
 	getPositionsOwners(): ApiPositionsOwners {
 		const ow: OwnersPositionsObjectArray = {};
 		for (const p of Object.values(this.fetchedPositions)) {
-			const owner = p.owner.toLowerCase();
+			const owner = p.owner as Address;
 			if (!ow[owner]) ow[owner] = [];
 			ow[owner].push(p);
 		}
@@ -199,10 +199,10 @@ export class PositionsService {
 			const entry: PositionQuery = {
 				version: 2,
 
-				position: getAddress(p.position),
-				owner: getAddress(p.owner),
-				deuro: getAddress(p.deuro),
-				collateral: getAddress(p.collateral),
+				position: p.position as Address,
+				owner: p.owner as Address,
+				deuro: p.deuro as Address,
+				collateral: p.collateral as Address,
 				price: p.price,
 
 				created: p.created,
@@ -210,7 +210,7 @@ export class PositionsService {
 				isClone: p.isClone,
 				denied: p.denied,
 				closed: p.closed,
-				original: getAddress(p.original),
+				original: p.original as Address,
 
 				minimumCollateral: p.minimumCollateral,
 				annualInterestPPM: leadrate + p.riskPremiumPPM,
@@ -239,7 +239,7 @@ export class PositionsService {
 				interest: typeof i === 'bigint' ? i.toString() : '0',
 			};
 
-			list[p.position.toLowerCase() as Address] = entry;
+			list[p.position as Address] = entry;
 		}
 
 		const a = Object.keys(list).length;
@@ -313,7 +313,7 @@ export class PositionsService {
 
 		for (let idx = 0; idx < items.length; idx++) {
 			const m = items[idx] as MintingUpdateQuery;
-			const k = m.position.toLowerCase() as Address;
+			const k = m.position as Address;
 
 			if (list[k] === undefined) list[k] = [];
 
@@ -323,10 +323,10 @@ export class PositionsService {
 				id: m.id,
 				txHash: m.txHash,
 				created: parseInt(m.created as any),
-				position: getAddress(m.position),
-				owner: getAddress(m.owner),
+				position: m.position as Address,
+				owner: m.owner as Address,
 				isClone: m.isClone,
-				collateral: getAddress(m.collateral),
+				collateral: m.collateral as Address,
 				collateralName: m.collateralName,
 				collateralSymbol: m.collateralSymbol,
 				collateralDecimals: m.collateralDecimals,
