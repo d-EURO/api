@@ -54,7 +54,7 @@ export class EcosystemDepsService {
 			fetchPolicy: 'no-cache',
 			query: gql`
 				query GetDEPS {
-					dEPSs(orderBy: "id", limit: 1000) {
+					depss(orderBy: "id", limit: 1000) {
 						items {
 							id
 							profits
@@ -65,12 +65,12 @@ export class EcosystemDepsService {
 			`,
 		});
 
-		if (!profitLossPonder.data || !profitLossPonder.data.dEPSs.items.length) {
+		if (!profitLossPonder.data || !profitLossPonder.data.depss.items.length) {
 			this.logger.warn('No profitLossPonder data found.');
 			return;
 		}
 
-		const d = profitLossPonder.data.dEPSs.items.at(0);
+		const d = profitLossPonder.data.depss.items.at(0);
 		const unrealizedProfit = this.getUnrealizedProfit();
 		const earningsData: ApiEcosystemDepsInfo['earnings'] = {
 			profit: parseFloat(formatUnits(d.profits, 18)),
