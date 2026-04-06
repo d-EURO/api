@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_TAGS: dfxswiss/deuro-api:beta
+  DOCKER_TAGS: deurocom/api:beta
   DEPLOY_SERVICE: deuro-api
 
 jobs:
