@@ -12,7 +12,7 @@ env:
 jobs:
   build-and-deploy:
     name: Build and deploy to DEV
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,9 +23,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -35,11 +32,11 @@ jobs:
           context: .
           push: true
           tags: ${{ env.DOCKER_TAGS }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
 
       - name: Install cloudflared
         run: |
-          curl -fsSL https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-linux-arm64 -o /usr/local/bin/cloudflared
           chmod +x /usr/local/bin/cloudflared
 
       - name: Deploy to server

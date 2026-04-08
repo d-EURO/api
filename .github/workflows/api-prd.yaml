@@ -7,17 +7,12 @@ on:
 
 env:
   DOCKER_TAGS: dfxswiss/deuro-api:latest
-  AZURE_RESOURCE_GROUP: rg-dfx-api-prd
-  AZURE_CONTAINER_APP: ca-dfx-dea-prd
-  DEPLOY_INFO: ${{ github.ref_name }}-${{ github.sha }}
+  DEPLOY_SERVICE: deuro-api
 
 jobs:
   build-and-deploy:
     name: Build, test and deploy to PRD
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,19 +32,20 @@ jobs:
           context: .
           push: true
           tags: ${{ env.DOCKER_TAGS }}
+          platforms: linux/arm64
 
-      - name: Log in to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.DFX_PRD_CREDENTIALS }}
-
-      - name: Update Azure Container App
-        uses: azure/CLI@v2
-        with:
-          inlineScript: |
-            az containerapp update --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AZURE_CONTAINER_APP }} --image ${{ env.DOCKER_TAGS }} --set-env-vars DEPLOY_INFO=${{ env.DEPLOY_INFO }}
-
-      - name: Logout from Azure
+      - name: Install cloudflared
         run: |
-          az logout
-        if: always()
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-linux-arm64 -o /usr/local/bin/cloudflared
+          chmod +x /usr/local/bin/cloudflared
+
+      - name: Deploy to server
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_PRD_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.DEPLOY_PRD_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key \
+            -o ProxyCommand="cloudflared access ssh --hostname ${{ secrets.DEPLOY_PRD_HOST }}" \
+            ${{ secrets.DEPLOY_PRD_USER }}@${{ secrets.DEPLOY_PRD_HOST }} \
+            "${{ env.DEPLOY_SERVICE }}"
