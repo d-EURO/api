@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client/core';
-import { ADDRESS, SavingsGatewayABI } from '@deuro/eurocoin';
+import { SavingsGatewayV2ABI, SavingsV3ABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
 import { PONDER_CLIENT } from 'api.apollo.config';
-import { VIEM_CONFIG } from 'api.config';
+import { ADDR, isDeployed, VIEM_CONFIG } from 'api.config';
 import { EcosystemStablecoinService } from 'ecosystem/ecosystem.stablecoin.service';
 import { Address, formatUnits, zeroAddress } from 'viem';
 import { ApiSavingsInfo, ApiSavingsUserLeaderboard, ApiSavingsUserTable } from './savings.core.types';
@@ -22,7 +22,7 @@ export class SavingsCoreService {
 		const totalSavedRaw = this.fc.getEcosystemStablecoinKeyValues()?.['Savings:TotalSaved']?.amount || 0n;
 		const totalInterestRaw = this.fc.getEcosystemStablecoinKeyValues()?.['Savings:TotalInterestCollected']?.amount || 0n;
 		const totalWithdrawnRaw = this.fc.getEcosystemStablecoinKeyValues()?.['Savings:TotalWithdrawn']?.amount || 0n;
-		const rate = this.lead.getInfo().rate;
+		const info = this.lead.getInfo();
 
 		const totalSaved: number = parseFloat(formatUnits(totalSavedRaw, 18));
 		const totalInterest: number = parseFloat(formatUnits(totalInterestRaw, 18));
@@ -36,7 +36,9 @@ export class SavingsCoreService {
 			totalWithdrawn,
 			totalBalance: totalSaved - totalWithdrawn,
 			totalInterest,
-			rate,
+			rate: info.v3.rate,
+			rateV2: info.v2.rate,
+			rateV3: info.v3.rate,
 			ratioOfSupply,
 		};
 	}
@@ -63,17 +65,30 @@ export class SavingsCoreService {
 
 		const mapped = await Promise.all(
 			items.map(async (item) => {
-				const unrealizedInterest = await VIEM_CONFIG.readContract({
-					address: ADDRESS[VIEM_CONFIG.chain.id].savingsGateway,
-					abi: SavingsGatewayABI,
-					functionName: 'accruedInterest',
-					args: [item.id],
-				});
+				const results = await Promise.allSettled([
+					VIEM_CONFIG.readContract({
+						address: ADDR.savingsGateway,
+						abi: SavingsGatewayV2ABI,
+						functionName: 'accruedInterest',
+						args: [item.id],
+					}),
+					isDeployed(ADDR.savings)
+						? VIEM_CONFIG.readContract({
+								address: ADDR.savings,
+								abi: SavingsV3ABI,
+								functionName: 'accruedInterest',
+								args: [item.id],
+									})
+						: Promise.resolve(0n),
+				]);
+
+				const v2 = results[0].status === 'fulfilled' ? results[0].value : 0n;
+				const v3 = results[1].status === 'fulfilled' ? results[1].value : 0n;
 
 				return {
 					account: item.id,
 					amountSaved: item.amountSaved,
-					unrealizedInterest: unrealizedInterest.toString(),
+					unrealizedInterest: (BigInt(v2) + BigInt(v3)).toString(),
 					interestReceived: item.interestReceived,
 				};
 			})

@@ -421,12 +421,11 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@deuro/eurocoin@^1.0.13":
-  version "1.0.13"
-  resolved "https://registry.yarnpkg.com/@deuro/eurocoin/-/eurocoin-1.0.13.tgz#05e9c6ff13d4bfcaa8ad14aa377b2815709cfc80"
-  integrity sha512-NrAHpgLrlx662BgTcgkxBXNvNPl+bUeQPaVGwOsDrJXyVsJJVfpBwPcqZ+CaOVUEZfwDePYTWZe2e82bVqRkTQ==
+"@deuro/eurocoin@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@deuro/eurocoin/-/eurocoin-2.1.0.tgz#20a4fcaf64862ffe11e21c4cc486025d7395f4a1"
+  integrity sha512-Yx2XGEmNT7kshKmT9cgtryo7LkB76Bk3FmcAuxvWHUmAnQZAEGwBU0Ay1/SKzZWCMzGivsQRn5jx7KPz5t62AA==
   dependencies:
-    "@flashbots/ethers-provider-bundle" "^1.0.0"
     hardhat-abi-exporter "^2.10.0"
     hardhat-contract-sizer "^2.5.1"
     prettier "^3.3.3"
@@ -644,11 +643,6 @@
     "@ethersproject/logger" "^5.7.0"
     "@ethersproject/properties" "^5.7.0"
     "@ethersproject/strings" "^5.7.0"
-
-"@flashbots/ethers-provider-bundle@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@flashbots/ethers-provider-bundle/-/ethers-provider-bundle-1.0.0.tgz#555c6208c668d1818820143b067d38f2a63a8556"
-  integrity sha512-KXOSA2RFFq91KN7H6nskbBaV+yd3QKI9jj8r1CEsD00sXBV3uSoQ3wG6u7qkjxp2EfvWy31pynWfZZVoWyNQ3Q==
 
 "@graphql-typed-document-node/core@^3.1.1":
   version "3.2.0"

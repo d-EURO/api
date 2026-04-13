@@ -5,6 +5,7 @@ import {
 	ApiLeadrateInfo,
 	ApiLeadrateProposed,
 	ApiLeadrateRate,
+	ApiLeadrateVersionInfo,
 	LeadrateProposed,
 	LeadrateRateObjectArray,
 	LeadrateRateProposedObjectArray,
@@ -46,14 +47,30 @@ export class SavingsLeadrateService {
 	}
 
 	getInfo(): ApiLeadrateInfo {
-		const r = this.getRates();
-		const p = this.getProposals();
-		const isProposal = r.rate != p.nextRate;
-		const isPending = p.nextchange * 1000 >= Date.now();
 		return {
-			rate: r.rate,
-			nextRate: isProposal ? p.nextRate : undefined,
-			nextchange: isProposal ? p.nextchange : undefined,
+			v2: this.getVersionInfo('v2'),
+			v3: this.getVersionInfo('v3'),
+		};
+	}
+
+	private getVersionInfo(source: string): ApiLeadrateVersionInfo {
+		const rates = Object.values(this.fetchedRates)
+			.filter((r) => r.source === source)
+			.sort((a, b) => b.blockheight - a.blockheight);
+		const proposals = Object.values(this.fetchedProposals)
+			.filter((p) => p.source === source)
+			.sort((a, b) => b.blockheight - a.blockheight);
+
+		const rate = rates.length > 0 ? rates[0].approvedRate : 0;
+		const latestProposal = proposals.length > 0 ? proposals[0] : null;
+
+		const isProposal = latestProposal != null && rate != latestProposal.nextRate;
+		const isPending = latestProposal != null && latestProposal.nextChange * 1000 >= Date.now();
+
+		return {
+			rate,
+			nextRate: isProposal ? latestProposal!.nextRate : undefined,
+			nextchange: isProposal ? latestProposal!.nextChange : undefined,
 			isProposal,
 			isPending,
 		};
@@ -72,6 +89,7 @@ export class SavingsLeadrateService {
 							blockheight
 							txHash
 							approvedRate
+							source
 						}
 					}
 				}
@@ -91,6 +109,7 @@ export class SavingsLeadrateService {
 				blockheight: parseInt(r.blockheight as any),
 				txHash: r.txHash,
 				approvedRate: r.approvedRate,
+				source: r.source,
 			} as LeadrateRateQuery;
 		}
 
@@ -117,6 +136,7 @@ export class SavingsLeadrateService {
 							proposer
 							nextRate
 							nextChange
+							source
 						}
 					}
 				}
@@ -138,6 +158,7 @@ export class SavingsLeadrateService {
 				proposer: r.proposer as Address,
 				nextRate: r.nextRate,
 				nextChange: r.nextChange,
+				source: r.source,
 			} as LeadrateProposed;
 		}
 
