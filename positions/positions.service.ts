@@ -1,9 +1,9 @@
 import { gql } from '@apollo/client/core';
-import { ADDRESS, PositionV2ABI, SavingsV2ABI, SavingsV3ABI } from '@deuro/eurocoin';
+import { PositionV2ABI, SavingsV2ABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
 import { FIVEDAYS_MS } from 'utils/const-helper';
 import { Address, erc20Abi, getAddress } from 'viem';
-import { ADDR, CONFIG, isDeployed, isV3Hub, VIEM_CONFIG } from '../api.config';
+import { ADDR, isV3Hub, VIEM_CONFIG } from '../api.config';
 import { PONDER_CLIENT } from '../api.apollo.config';
 import {
 	ApiMintingUpdateListing,
@@ -144,20 +144,6 @@ export class PositionsService {
 			functionName: 'currentRatePPM',
 		});
 
-		// V3 leadrate is best-effort — not available on all chains
-		let v3Leadrate = 0;
-		if (isDeployed(ADDR.savings)) {
-			try {
-				v3Leadrate = await VIEM_CONFIG.readContract({
-					address: ADDR.savings,
-					abi: SavingsV3ABI,
-					functionName: 'currentRatePPM',
-						});
-			} catch (e) {
-				this.logger.error(`Failed to fetch V3 leadrate: ${e}`);
-			}
-		}
-
 		for (const p of items) {
 			// Forces the collateral balance to be overwritten with the latest blockchain state, instead of the ponder state.
 			// This ensures that collateral transfers can be made without using the smart contract or application directly,
@@ -206,57 +192,57 @@ export class PositionsService {
 		const virtualPriceData = await Promise.allSettled(virtualPriceDataPromises);
 		const interestData = await Promise.allSettled(interestPromises);
 
-		for (let idx = 0; idx < items.length; idx++) {
-			const p = items[idx] as PositionQuery;
-			const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
-			const v = (virtualPriceData[idx] as PromiseFulfilledResult<bigint>).value;
-			const i = (interestData[idx] as PromiseFulfilledResult<bigint>).value;
+			for (let idx = 0; idx < items.length; idx++) {
+				const p = items[idx] as PositionQuery;
+				const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
+				const v = (virtualPriceData[idx] as PromiseFulfilledResult<bigint>).value;
+				const i = (interestData[idx] as PromiseFulfilledResult<bigint>).value;
 
-			const leadrate = isV3Hub(p.mintingHubAddress) ? v3Leadrate : v2Leadrate;
+				const annualInterestPPM = isV3Hub(p.mintingHubAddress) ? p.fixedAnnualRatePPM : v2Leadrate + p.riskPremiumPPM;
 
-			const entry: PositionQuery = {
-				version: isV3Hub(p.mintingHubAddress) ? 3 : 2,
+				const entry: PositionQuery = {
+					version: isV3Hub(p.mintingHubAddress) ? 3 : 2,
 
-				position: getAddress(p.position),
-				owner: getAddress(p.owner),
-				deuro: getAddress(p.deuro),
-				collateral: getAddress(p.collateral),
-				mintingHubAddress: getAddress(p.mintingHubAddress),
-				price: p.price,
+					position: getAddress(p.position),
+					owner: getAddress(p.owner),
+					deuro: getAddress(p.deuro),
+					collateral: getAddress(p.collateral),
+					mintingHubAddress: getAddress(p.mintingHubAddress),
+					price: p.price,
 
-				created: p.created,
-				isOriginal: p.isOriginal,
-				isClone: p.isClone,
-				denied: p.denied,
-				closed: p.closed,
-				original: getAddress(p.original),
+					created: p.created,
+					isOriginal: p.isOriginal,
+					isClone: p.isClone,
+					denied: p.denied,
+					closed: p.closed,
+					original: getAddress(p.original),
 
-				minimumCollateral: p.minimumCollateral,
-				annualInterestPPM: leadrate + p.riskPremiumPPM,
-				riskPremiumPPM: p.riskPremiumPPM,
-				reserveContribution: p.reserveContribution,
-				start: p.start,
-				cooldown: p.cooldown,
-				expiration: p.expiration,
-				challengePeriod: p.challengePeriod,
+					minimumCollateral: p.minimumCollateral,
+					annualInterestPPM,
+					riskPremiumPPM: p.riskPremiumPPM,
+					reserveContribution: p.reserveContribution,
+					start: p.start,
+					cooldown: p.cooldown,
+					expiration: p.expiration,
+					challengePeriod: p.challengePeriod,
 
-				deuroName: p.deuroName,
-				deuroSymbol: p.deuroSymbol,
-				deuroDecimals: p.deuroDecimals,
+					deuroName: p.deuroName,
+					deuroSymbol: p.deuroSymbol,
+					deuroDecimals: p.deuroDecimals,
 
-				collateralName: p.collateralName,
-				collateralSymbol: p.collateralSymbol,
-				collateralDecimals: p.collateralDecimals,
-				collateralBalance: typeof b === 'bigint' ? b.toString() : p.collateralBalance,
+					collateralName: p.collateralName,
+					collateralSymbol: p.collateralSymbol,
+					collateralDecimals: p.collateralDecimals,
+					collateralBalance: typeof b === 'bigint' ? b.toString() : p.collateralBalance,
 
-				limitForClones: p.limitForClones,
-				availableForClones: p.availableForClones,
-				availableForMinting: p.availableForMinting,
-				principal: p.principal,
-				fixedAnnualRatePPM: p.fixedAnnualRatePPM,
-				virtualPrice: typeof v === 'bigint' ? v.toString() : p.virtualPrice,
-				interest: typeof i === 'bigint' ? i.toString() : '0',
-			};
+					limitForClones: p.limitForClones,
+					availableForClones: p.availableForClones,
+					availableForMinting: p.availableForMinting,
+					principal: p.principal,
+					fixedAnnualRatePPM: p.fixedAnnualRatePPM,
+					virtualPrice: typeof v === 'bigint' ? v.toString() : p.virtualPrice,
+					interest: typeof i === 'bigint' ? i.toString() : '0',
+				};
 
 			list[p.position.toLowerCase() as Address] = entry;
 		}
