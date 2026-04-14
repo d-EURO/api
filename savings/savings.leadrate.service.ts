@@ -20,27 +20,25 @@ export class SavingsLeadrateService {
 	private fetchedProposals: LeadrateRateProposedObjectArray = {};
 
 	getRates(): ApiLeadrateRate {
-		const l = Object.values(this.fetchedRates);
-		const h = l.sort((a, b) => b.blockheight - a.blockheight);
-		const n = h.length === 0;
+		const l = Object.values(this.fetchedRates).sort((a, b) => b.blockheight - a.blockheight);
+		const n = l.length === 0;
 		return {
-			created: n ? 0 : h[0].created,
-			blockheight: n ? 0 : h[0].blockheight,
-			rate: n ? 0 : h[0].approvedRate,
+			created: n ? 0 : l[0].created,
+			blockheight: n ? 0 : l[0].blockheight,
+			rate: n ? 0 : l[0].approvedRate,
 			num: l.length,
 			list: l,
 		};
 	}
 
 	getProposals(): ApiLeadrateProposed {
-		const l = Object.values(this.fetchedProposals);
-		const h = l.sort((a, b) => b.blockheight - a.blockheight);
-		const n = h.length === 0;
+		const l = Object.values(this.fetchedProposals).sort((a, b) => b.blockheight - a.blockheight);
+		const n = l.length === 0;
 		return {
-			created: n ? 0 : h[0]?.created || 0,
-			blockheight: n ? 0 : h[0]?.blockheight || 0,
-			nextRate: n ? 0 : h[0]?.nextRate,
-			nextchange: n ? 0 : h[0]?.nextChange,
+			created: n ? 0 : l[0]?.created || 0,
+			blockheight: n ? 0 : l[0]?.blockheight || 0,
+			nextRate: n ? 0 : l[0]?.nextRate,
+			nextchange: n ? 0 : l[0]?.nextChange,
 			num: l.length,
 			list: l,
 		};
@@ -54,12 +52,8 @@ export class SavingsLeadrateService {
 	}
 
 	private getVersionInfo(source: string): ApiLeadrateVersionInfo {
-		const rates = Object.values(this.fetchedRates)
-			.filter((r) => r.source === source)
-			.sort((a, b) => b.blockheight - a.blockheight);
-		const proposals = Object.values(this.fetchedProposals)
-			.filter((p) => p.source === source)
-			.sort((a, b) => b.blockheight - a.blockheight);
+		const rates = this.getRatesBySource(source);
+		const proposals = this.getProposalsBySource(source);
 
 		const rate = rates.length > 0 ? rates[0].approvedRate : 0;
 		const latestProposal = proposals.length > 0 ? proposals[0] : null;
@@ -74,6 +68,18 @@ export class SavingsLeadrateService {
 			isProposal,
 			isPending,
 		};
+	}
+
+	private getRatesBySource(source: string): LeadrateRateQuery[] {
+		return Object.values(this.fetchedRates)
+			.filter((r) => r.source === source)
+			.sort((a, b) => b.blockheight - a.blockheight);
+	}
+
+	private getProposalsBySource(source: string): LeadrateProposed[] {
+		return Object.values(this.fetchedProposals)
+			.filter((p) => p.source === source)
+			.sort((a, b) => b.blockheight - a.blockheight);
 	}
 
 	async updateLeadrateRates() {
