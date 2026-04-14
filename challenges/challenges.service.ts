@@ -28,7 +28,7 @@ import {
 	ChallengesQueryStatus,
 } from './challenges.types';
 import { Address } from 'viem';
-import { ADDRESS, MintingHubGatewayV2ABI, MintingHubV3ABI } from '@deuro/eurocoin';
+import { MintingHubGatewayV2ABI, MintingHubV3ABI } from '@deuro/eurocoin';
 import { isV3Hub } from '../api.config';
 
 @Injectable()

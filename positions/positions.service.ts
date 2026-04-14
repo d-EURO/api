@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client/core';
-import { PositionV2ABI, SavingsV2ABI } from '@deuro/eurocoin';
+import { PositionV2ABI, SavingsGatewayV2ABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
 import { FIVEDAYS_MS } from 'utils/const-helper';
 import { Address, erc20Abi, getAddress } from 'viem';
@@ -140,7 +140,7 @@ export class PositionsService {
 		// V2 leadrate must succeed — failure aborts the update so stale-but-correct data is served
 		const v2Leadrate = await VIEM_CONFIG.readContract({
 			address: ADDR.savingsGateway,
-			abi: SavingsV2ABI,
+			abi: SavingsGatewayV2ABI,
 			functionName: 'currentRatePPM',
 		});
 
