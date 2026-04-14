@@ -192,57 +192,57 @@ export class PositionsService {
 		const virtualPriceData = await Promise.allSettled(virtualPriceDataPromises);
 		const interestData = await Promise.allSettled(interestPromises);
 
-			for (let idx = 0; idx < items.length; idx++) {
-				const p = items[idx] as PositionQuery;
-				const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
-				const v = (virtualPriceData[idx] as PromiseFulfilledResult<bigint>).value;
-				const i = (interestData[idx] as PromiseFulfilledResult<bigint>).value;
+		for (let idx = 0; idx < items.length; idx++) {
+			const p = items[idx] as PositionQuery;
+			const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
+			const v = (virtualPriceData[idx] as PromiseFulfilledResult<bigint>).value;
+			const i = (interestData[idx] as PromiseFulfilledResult<bigint>).value;
 
-				const annualInterestPPM = isV3Hub(p.mintingHubAddress) ? p.fixedAnnualRatePPM : v2Leadrate + p.riskPremiumPPM;
+			const annualInterestPPM = isV3Hub(p.mintingHubAddress) ? p.fixedAnnualRatePPM : v2Leadrate + p.riskPremiumPPM;
 
-				const entry: PositionQuery = {
-					version: isV3Hub(p.mintingHubAddress) ? 3 : 2,
+			const entry: PositionQuery = {
+				version: isV3Hub(p.mintingHubAddress) ? 3 : 2,
 
-					position: getAddress(p.position),
-					owner: getAddress(p.owner),
-					deuro: getAddress(p.deuro),
-					collateral: getAddress(p.collateral),
-					mintingHubAddress: getAddress(p.mintingHubAddress),
-					price: p.price,
+				position: getAddress(p.position),
+				owner: getAddress(p.owner),
+				deuro: getAddress(p.deuro),
+				collateral: getAddress(p.collateral),
+				mintingHubAddress: getAddress(p.mintingHubAddress),
+				price: p.price,
 
-					created: p.created,
-					isOriginal: p.isOriginal,
-					isClone: p.isClone,
-					denied: p.denied,
-					closed: p.closed,
-					original: getAddress(p.original),
+				created: p.created,
+				isOriginal: p.isOriginal,
+				isClone: p.isClone,
+				denied: p.denied,
+				closed: p.closed,
+				original: getAddress(p.original),
 
-					minimumCollateral: p.minimumCollateral,
-					annualInterestPPM,
-					riskPremiumPPM: p.riskPremiumPPM,
-					reserveContribution: p.reserveContribution,
-					start: p.start,
-					cooldown: p.cooldown,
-					expiration: p.expiration,
-					challengePeriod: p.challengePeriod,
+				minimumCollateral: p.minimumCollateral,
+				annualInterestPPM,
+				riskPremiumPPM: p.riskPremiumPPM,
+				reserveContribution: p.reserveContribution,
+				start: p.start,
+				cooldown: p.cooldown,
+				expiration: p.expiration,
+				challengePeriod: p.challengePeriod,
 
-					deuroName: p.deuroName,
-					deuroSymbol: p.deuroSymbol,
-					deuroDecimals: p.deuroDecimals,
+				deuroName: p.deuroName,
+				deuroSymbol: p.deuroSymbol,
+				deuroDecimals: p.deuroDecimals,
 
-					collateralName: p.collateralName,
-					collateralSymbol: p.collateralSymbol,
-					collateralDecimals: p.collateralDecimals,
-					collateralBalance: typeof b === 'bigint' ? b.toString() : p.collateralBalance,
+				collateralName: p.collateralName,
+				collateralSymbol: p.collateralSymbol,
+				collateralDecimals: p.collateralDecimals,
+				collateralBalance: typeof b === 'bigint' ? b.toString() : p.collateralBalance,
 
-					limitForClones: p.limitForClones,
-					availableForClones: p.availableForClones,
-					availableForMinting: p.availableForMinting,
-					principal: p.principal,
-					fixedAnnualRatePPM: p.fixedAnnualRatePPM,
-					virtualPrice: typeof v === 'bigint' ? v.toString() : p.virtualPrice,
-					interest: typeof i === 'bigint' ? i.toString() : '0',
-				};
+				limitForClones: p.limitForClones,
+				availableForClones: p.availableForClones,
+				availableForMinting: p.availableForMinting,
+				principal: p.principal,
+				fixedAnnualRatePPM: p.fixedAnnualRatePPM,
+				virtualPrice: typeof v === 'bigint' ? v.toString() : p.virtualPrice,
+				interest: typeof i === 'bigint' ? i.toString() : '0',
+			};
 
 			list[p.position.toLowerCase() as Address] = entry;
 		}
