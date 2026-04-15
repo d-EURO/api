@@ -40,6 +40,26 @@ export type SavingsWithdrawQuery = {
 	total: string;
 	balance: string;
 };
+
+export type SavingsVaultDepositQuery = {
+	id: string;
+	vault: Address;
+	owner: Address;
+	assets: string;
+	blockheight: number;
+	timestamp: number;
+	txHash: string;
+};
+
+export type SavingsVaultWithdrawQuery = {
+	id: string;
+	vault: Address;
+	owner: Address;
+	assets: string;
+	blockheight: number;
+	timestamp: number;
+	txHash: string;
+};
 // --------------------------------------------------------------------------
 // Service
 
@@ -60,6 +80,8 @@ export type ApiSavingsUserTable = {
 	save: SavingsSavedQuery[];
 	interest: SavingsInterestQuery[];
 	withdraw: SavingsWithdrawQuery[];
+	vaultSave: SavingsVaultDepositQuery[];
+	vaultWithdraw: SavingsVaultWithdrawQuery[];
 };
 
 export type ApiSavingsUserLeaderboard = {

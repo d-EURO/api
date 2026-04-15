@@ -141,6 +141,8 @@ export class SavingsCoreService {
 
 	async getUserTables(userAddress: Address, limit: number = 15): Promise<ApiSavingsUserTable> {
 		const user: Address = userAddress == zeroAddress ? zeroAddress : (userAddress.toLowerCase() as Address);
+		const userWhere = user == zeroAddress ? '' : `where: { account: "${user}" }`;
+		const ownerWhere = user == zeroAddress ? '' : `where: { owner: "${user}" }`;
 		const savedFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
@@ -148,7 +150,7 @@ export class SavingsCoreService {
 					savingsSaveds(
 						orderBy: "blockheight"
 						orderDirection: "desc"
-						${user == zeroAddress ? '' : `where: { account: "${user}" }`}
+						${userWhere}
 						limit: ${limit}
 					) {
 						items {
@@ -174,7 +176,7 @@ export class SavingsCoreService {
 					savingsWithdrawns(
 						orderBy: "blockheight"
 						orderDirection: "desc"
-						${user == zeroAddress ? '' : `where: { account: "${user}" }`}
+						${userWhere}
 						limit: ${limit}
 					) {
 						items {
@@ -200,7 +202,7 @@ export class SavingsCoreService {
 					savingsInterests(
 						orderBy: "blockheight"
 						orderDirection: "desc"
-						${user == zeroAddress ? '' : `where: { account: "${user}" }`}
+						${userWhere}
 						limit: ${limit}
 					) {
 						items {
@@ -219,10 +221,60 @@ export class SavingsCoreService {
 			`,
 		});
 
+		const vaultDepositsFetched = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+				query GetSavingsVaultDeposit {
+					savingsVaultDeposits(
+						orderBy: "blockheight"
+						orderDirection: "desc"
+						${ownerWhere}
+						limit: ${limit}
+					) {
+						items {
+							id
+							vault
+							owner
+							assets
+							blockheight
+							timestamp
+							txHash
+						}
+					}
+				}
+			`,
+		});
+
+		const vaultWithdrawsFetched = await PONDER_CLIENT.query({
+			fetchPolicy: 'no-cache',
+			query: gql`
+				query GetSavingsVaultWithdraw {
+					savingsVaultWithdraws(
+						orderBy: "blockheight"
+						orderDirection: "desc"
+						${ownerWhere}
+						limit: ${limit}
+					) {
+						items {
+							id
+							vault
+							owner
+							assets
+							blockheight
+							timestamp
+							txHash
+						}
+					}
+				}
+			`,
+		});
+
 		return {
 			save: savedFetched?.data?.savingsSaveds?.items ?? [],
 			interest: interestFetched?.data?.savingsInterests?.items ?? [],
 			withdraw: withdrawnFetched?.data?.savingsWithdrawns?.items ?? [],
+			vaultSave: vaultDepositsFetched?.data?.savingsVaultDeposits?.items ?? [],
+			vaultWithdraw: vaultWithdrawsFetched?.data?.savingsVaultWithdraws?.items ?? [],
 		};
 	}
 }
