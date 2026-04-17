@@ -13,17 +13,19 @@ export function delay(ms: number): Promise<void> {
 }
 
 export function createRefCodeLabelLink(frontendCode: string): string {
+	if (!frontendCode) return '';
+
 	if (frontendCode.toLowerCase() === DEURO_WALLET_FRONTEND_CODE.toLowerCase()) {
 		return `dEURO Wallet`;
 	}
 
 	const refCode = createRefCode(frontendCode);
 	if (!refCode) return '';
-	
+
 	// Special case for Cake Wallet
 	if (refCode === 'Cake Wallet') {
 		return `[${refCode}](https://cakewallet.com/)`;
 	}
-	
+
 	return `[${refCode}](https://app.deuro.com?ref=${refCode})`;
 }
