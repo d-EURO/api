@@ -76,6 +76,7 @@ export class ApiService {
 				await timeTask('updateBidV2s', () => this.challenges.updateBidV2s()).catch(() => {}),
 				await timeTask('updateChallengesPrices', () => this.challenges.updateChallengesPrices()).catch(() => {}),
 				await timeTask('updateSavingsUserLeaderboard', () => this.savings.updateSavingsUserLeaderboard()).catch(() => {}),
+				await timeTask('updateSavingsBalances', () => this.savings.updateSavingsBalances()).catch(() => {}),
 			];
 
 			await Promise.all(promises);

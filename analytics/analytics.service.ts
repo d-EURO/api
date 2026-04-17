@@ -153,6 +153,7 @@ export class AnalyticsService {
 		const equityAdjusted: number = expo.general.equityInReserve;
 		const otherContributions: number =
 			equityAdjusted - minterProposalFees - investFees - redeemFees - positionProposalFees - otherProfitClaims;
+		const savingsInfo = this.save.getInfo();
 
 		return {
 			minterProposalFees,
@@ -162,7 +163,7 @@ export class AnalyticsService {
 			otherProfitClaims,
 			otherContributions,
 
-			savingsInterestCosts: this.save.getInfo().totalInterest,
+			savingsInterestCosts: savingsInfo.totalInterest,
 			otherLossClaims: this.deps.getEcosystemDepsInfo().earnings.loss,
 		};
 	}

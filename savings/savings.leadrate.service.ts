@@ -5,6 +5,7 @@ import {
 	ApiLeadrateInfo,
 	ApiLeadrateProposed,
 	ApiLeadrateRate,
+	ApiLeadrateVersionInfo,
 	LeadrateProposed,
 	LeadrateRateObjectArray,
 	LeadrateRateProposedObjectArray,
@@ -19,44 +20,66 @@ export class SavingsLeadrateService {
 	private fetchedProposals: LeadrateRateProposedObjectArray = {};
 
 	getRates(): ApiLeadrateRate {
-		const l = Object.values(this.fetchedRates);
-		const h = l.sort((a, b) => b.blockheight - a.blockheight);
-		const n = h.length === 0;
+		const l = Object.values(this.fetchedRates).sort((a, b) => b.blockheight - a.blockheight);
+		const n = l.length === 0;
 		return {
-			created: n ? 0 : h[0].created,
-			blockheight: n ? 0 : h[0].blockheight,
-			rate: n ? 0 : h[0].approvedRate,
+			created: n ? 0 : l[0].created,
+			blockheight: n ? 0 : l[0].blockheight,
+			rate: n ? 0 : l[0].approvedRate,
 			num: l.length,
 			list: l,
 		};
 	}
 
 	getProposals(): ApiLeadrateProposed {
-		const l = Object.values(this.fetchedProposals);
-		const h = l.sort((a, b) => b.blockheight - a.blockheight);
-		const n = h.length === 0;
+		const l = Object.values(this.fetchedProposals).sort((a, b) => b.blockheight - a.blockheight);
+		const n = l.length === 0;
 		return {
-			created: n ? 0 : h[0]?.created || 0,
-			blockheight: n ? 0 : h[0]?.blockheight || 0,
-			nextRate: n ? 0 : h[0]?.nextRate,
-			nextchange: n ? 0 : h[0]?.nextChange,
+			created: n ? 0 : l[0]?.created || 0,
+			blockheight: n ? 0 : l[0]?.blockheight || 0,
+			nextRate: n ? 0 : l[0]?.nextRate,
+			nextchange: n ? 0 : l[0]?.nextChange,
 			num: l.length,
 			list: l,
 		};
 	}
 
 	getInfo(): ApiLeadrateInfo {
-		const r = this.getRates();
-		const p = this.getProposals();
-		const isProposal = r.rate != p.nextRate;
-		const isPending = p.nextchange * 1000 >= Date.now();
 		return {
-			rate: r.rate,
-			nextRate: isProposal ? p.nextRate : undefined,
-			nextchange: isProposal ? p.nextchange : undefined,
+			v2: this.getVersionInfo('v2'),
+			v3: this.getVersionInfo('v3'),
+		};
+	}
+
+	private getVersionInfo(source: string): ApiLeadrateVersionInfo {
+		const rates = this.getRatesBySource(source);
+		const proposals = this.getProposalsBySource(source);
+
+		const rate = rates.length > 0 ? rates[0].approvedRate : 0;
+		const latestProposal = proposals.length > 0 ? proposals[0] : null;
+
+		const isProposal = latestProposal != null && rate != latestProposal.nextRate;
+		const isPending = latestProposal != null && latestProposal.nextChange * 1000 >= Date.now();
+
+		return {
+			rate,
+			nextRate: isProposal ? latestProposal!.nextRate : undefined,
+			nextchange: isProposal ? latestProposal!.nextChange : undefined,
 			isProposal,
 			isPending,
 		};
+	}
+
+	private getRatesBySource(source: string): LeadrateRateQuery[] {
+		return Object.values(this.fetchedRates)
+			.filter((r) => r.source === source)
+			.sort((a, b) => b.blockheight - a.blockheight);
+	}
+
+	private getProposalsBySource(source: string): LeadrateProposed[] {
+		return Object.values(this.fetchedProposals)
+			.filter((p) => p.source === source)
+			.sort((a, b) => b.blockheight - a.blockheight);
 	}
 
 	async updateLeadrateRates() {
@@ -72,6 +95,7 @@ export class SavingsLeadrateService {
 							blockheight
 							txHash
 							approvedRate
+							source
 						}
 					}
 				}
@@ -91,6 +115,7 @@ export class SavingsLeadrateService {
 				blockheight: parseInt(r.blockheight as any),
 				txHash: r.txHash,
 				approvedRate: r.approvedRate,
+				source: r.source,
 			} as LeadrateRateQuery;
 		}
 
@@ -117,6 +142,7 @@ export class SavingsLeadrateService {
 							proposer
 							nextRate
 							nextChange
+							source
 						}
 					}
 				}
@@ -138,6 +164,7 @@ export class SavingsLeadrateService {
 				proposer: r.proposer as Address,
 				nextRate: r.nextRate,
 				nextChange: r.nextChange,
+				source: r.source,
 			} as LeadrateProposed;
 		}
 

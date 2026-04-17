@@ -1,4 +1,5 @@
-import { Chain, createPublicClient, http } from 'viem';
+import { Address, Chain, createPublicClient, http, zeroAddress } from 'viem';
+import { ADDRESS } from '@deuro/eurocoin';
 import { mainnet, polygon } from 'viem/chains';
 
 import { Logger } from '@nestjs/common';
@@ -89,3 +90,14 @@ export const COINGECKO_CLIENT = (query: string) => {
 	const uri: string = `https://pro-api.coingecko.com${query}`;
 	return fetch(`${uri}${hasParams ? '&' : '?'}x_cg_pro_api_key=${CONFIG.coingeckoApiKey}`);
 };
+
+// Contract addresses for the active chain
+export const ADDR = ADDRESS[CONFIG.chain.id];
+
+export function isDeployed(addr: string | undefined): addr is Address {
+	return !!addr && addr !== zeroAddress;
+}
+
+export function isV3Hub(hubAddress: Address): boolean {
+	return isDeployed(ADDR.mintingHub) && hubAddress.toLowerCase() === ADDR.mintingHub.toLowerCase();
+}
