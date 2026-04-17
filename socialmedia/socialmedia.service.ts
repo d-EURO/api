@@ -74,7 +74,7 @@ export class SocialMediaService {
 				await value.doSendUpdates();
 			}
 		} catch (e) {
-			this.logger.error('Error while sending updates:', e);
+			this.logger.error(`Error while sending updates: ${e?.message ?? e}`, e?.stack);
 		}
 	}
 
@@ -94,7 +94,7 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error('Error while sending saving updates:', e);
+			this.logger.error(`Error while sending saving updates: ${e?.message ?? e}`, e?.stack);
 		}
 	}
 
@@ -113,7 +113,7 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error('Error while sending frontend code updates:', e);
+			this.logger.error(`Error while sending frontend code updates: ${e?.message ?? e}`, e?.stack);
 		}
 	}
 
@@ -137,7 +137,7 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error('Error while sending trade updates:', e);
+			this.logger.error(`Error while sending trade updates: ${e?.message ?? e}`, e?.stack);
 		}
 	}
 
@@ -160,7 +160,7 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error('Error while sending bridge updates:', e);
+			this.logger.error(`Error while sending bridge updates: ${e?.message ?? e}`, e?.stack);
 		}
 	}
 
@@ -181,7 +181,7 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error('Error while sending mint updates:', e);
+			this.logger.error(`Error while sending mint updates: ${e?.message ?? e}`, e?.stack);
 		}
 	}
 }
