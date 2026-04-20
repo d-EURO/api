@@ -36,14 +36,15 @@ export class FrontendCodeService {
 			fetchPolicy: 'no-cache',
 			query: gql`
 			query GetFrontendCodeSavingsSaved {
-				savingsSaveds(
-					orderBy: "created", orderDirection: "desc"
-					where: { 
-							created_gt: "${checkTimestamp}"
-							amount_gte: "${minAmount}"
-						}
-					) {
-						items {
+					savingsSaveds(
+						orderBy: "created", orderDirection: "desc"
+						where: { 
+								created_gt: "${checkTimestamp}"
+								amount_gte: "${minAmount}"
+								frontendCode_not: null
+							}
+						) {
+							items {
 							txHash
 							account
 							amount
