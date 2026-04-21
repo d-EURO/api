@@ -7,6 +7,7 @@ export type ChallengesQueryItem = {
 
 	id: ChallengesId;
 	position: Address;
+	mintingHubAddress: Address;
 	number: bigint;
 
 	challenger: Address;
@@ -27,6 +28,7 @@ export type BidsQueryItem = {
 
 	id: BidsId;
 	position: Address;
+	mintingHubAddress: Address;
 	number: bigint;
 	numberBid: bigint;
 

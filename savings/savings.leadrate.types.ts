@@ -7,6 +7,7 @@ export type LeadrateRateQuery = {
 	blockheight: number;
 	txHash: string;
 	approvedRate: number;
+	source: string;
 };
 
 export type LeadrateProposed = {
@@ -17,6 +18,7 @@ export type LeadrateProposed = {
 	proposer: Address;
 	nextRate: number;
 	nextChange: number;
+	source: string;
 };
 
 // --------------------------------------------------------------------------
@@ -31,12 +33,17 @@ export type LeadrateRateProposedObjectArray = {
 
 // --------------------------------------------------------------------------
 // Api
-export type ApiLeadrateInfo = {
+export type ApiLeadrateVersionInfo = {
 	rate: number;
-	nextRate: number;
-	nextchange: number;
+	nextRate?: number;
+	nextchange?: number;
 	isProposal: boolean;
 	isPending: boolean;
+};
+
+export type ApiLeadrateInfo = {
+	v2: ApiLeadrateVersionInfo;
+	v3: ApiLeadrateVersionInfo;
 };
 
 export type ApiLeadrateRate = {

@@ -1,9 +1,9 @@
 import { gql } from '@apollo/client/core';
-import { ADDRESS, PositionV2ABI, SavingsABI } from '@deuro/eurocoin';
+import { PositionV2ABI, SavingsGatewayV2ABI } from '@deuro/eurocoin';
 import { Injectable, Logger } from '@nestjs/common';
 import { FIVEDAYS_MS } from 'utils/const-helper';
 import { Address, erc20Abi, getAddress } from 'viem';
-import { CONFIG, VIEM_CONFIG } from '../api.config';
+import { ADDR, isV3Hub, VIEM_CONFIG } from '../api.config';
 import { PONDER_CLIENT } from '../api.apollo.config';
 import {
 	ApiMintingUpdateListing,
@@ -119,6 +119,7 @@ export class PositionsService {
 
 							fixedAnnualRatePPM
 							principal
+							mintingHubAddress
 						}
 					}
 				}
@@ -136,9 +137,10 @@ export class PositionsService {
 		const virtualPriceDataPromises: Promise<bigint>[] = [];
 		const interestPromises: Promise<bigint>[] = [];
 
-		const leadrate = await VIEM_CONFIG.readContract({
-			address: ADDRESS[CONFIG.chain.id].savingsGateway,
-			abi: SavingsABI,
+		// V2 leadrate must succeed — failure aborts the update so stale-but-correct data is served
+		const v2Leadrate = await VIEM_CONFIG.readContract({
+			address: ADDR.savingsGateway,
+			abi: SavingsGatewayV2ABI,
 			functionName: 'currentRatePPM',
 		});
 
@@ -196,13 +198,16 @@ export class PositionsService {
 			const v = (virtualPriceData[idx] as PromiseFulfilledResult<bigint>).value;
 			const i = (interestData[idx] as PromiseFulfilledResult<bigint>).value;
 
+			const annualInterestPPM = isV3Hub(p.mintingHubAddress) ? p.fixedAnnualRatePPM : v2Leadrate + p.riskPremiumPPM;
+
 			const entry: PositionQuery = {
-				version: 2,
+				version: isV3Hub(p.mintingHubAddress) ? 3 : 2,
 
 				position: getAddress(p.position),
 				owner: getAddress(p.owner),
 				deuro: getAddress(p.deuro),
 				collateral: getAddress(p.collateral),
+				mintingHubAddress: getAddress(p.mintingHubAddress),
 				price: p.price,
 
 				created: p.created,
@@ -213,7 +218,7 @@ export class PositionsService {
 				original: getAddress(p.original),
 
 				minimumCollateral: p.minimumCollateral,
-				annualInterestPPM: leadrate + p.riskPremiumPPM,
+				annualInterestPPM,
 				riskPremiumPPM: p.riskPremiumPPM,
 				reserveContribution: p.reserveContribution,
 				start: p.start,
@@ -297,6 +302,7 @@ export class PositionsService {
 							feeTimeframe
 							feePPM
 							feePaid
+							mintingHubAddress
 						}
 					}
 				}
@@ -318,7 +324,7 @@ export class PositionsService {
 			if (list[k] === undefined) list[k] = [];
 
 			const entry: MintingUpdateQuery = {
-				version: 2,
+				version: isV3Hub(m.mintingHubAddress) ? 3 : 2,
 
 				id: m.id,
 				txHash: m.txHash,
@@ -343,6 +349,7 @@ export class PositionsService {
 				feeTimeframe: m.feeTimeframe,
 				feePPM: m.feePPM,
 				feePaid: m.feePaid,
+				mintingHubAddress: getAddress(m.mintingHubAddress),
 			};
 
 			list[k].push(entry);

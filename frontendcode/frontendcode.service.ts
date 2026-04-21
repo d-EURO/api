@@ -41,6 +41,7 @@ export class FrontendCodeService {
 					where: { 
 							created_gt: "${checkTimestamp}"
 							amount_gte: "${minAmount}"
+							frontendCode_not: null
 						}
 					) {
 						items {
