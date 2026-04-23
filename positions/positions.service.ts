@@ -36,14 +36,14 @@ export class PositionsService {
 	private compareParentPositions(a: PositionQuery, b: PositionQuery): number {
 		if (a.version !== b.version) return b.version - a.version;
 
-		const availableA = BigInt(a.availableForClones);
-		const availableB = BigInt(b.availableForClones);
-		if (availableA !== availableB) return availableA < availableB ? 1 : -1;
-
 		if (a.expiration !== b.expiration) return b.expiration - a.expiration;
 
 		const priceDiff = BigInt(b.price) - BigInt(a.price);
 		if (priceDiff !== 0n) return priceDiff > 0n ? 1 : -1;
+
+		const availableA = BigInt(a.availableForClones);
+		const availableB = BigInt(b.availableForClones);
+		if (availableA !== availableB) return availableA < availableB ? 1 : -1;
 
 		return a.position.localeCompare(b.position);
 	}
