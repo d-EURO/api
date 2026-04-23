@@ -5,7 +5,9 @@ import { FIVEDAYS_MS } from 'utils/const-helper';
 import { Address, erc20Abi, getAddress } from 'viem';
 import { ADDR, isV3Hub, VIEM_CONFIG } from '../api.config';
 import { PONDER_CLIENT } from '../api.apollo.config';
+import { ChallengesService } from '../challenges/challenges.service';
 import {
+	ApiBestCloneable,
 	ApiMintingUpdateListing,
 	ApiMintingUpdateMapping,
 	ApiPositionsListing,
@@ -25,7 +27,43 @@ export class PositionsService {
 	private fetchedPositions: PositionsQueryObjectArray = {};
 	private fetchedMintingUpdates: MintingUpdateQueryObjectArray = {};
 
-	constructor() {}
+	constructor(private readonly challengesService: ChallengesService) {}
+
+	private normalizeOptionalAddress(address?: Address): Address | undefined {
+		return address ? (address.toLowerCase() as Address) : undefined;
+	}
+
+	private compareParentPositions(a: PositionQuery, b: PositionQuery): number {
+		if (a.version !== b.version) return b.version - a.version;
+
+		const availableA = BigInt(a.availableForClones);
+		const availableB = BigInt(b.availableForClones);
+		if (availableA !== availableB) return availableA < availableB ? 1 : -1;
+
+		if (a.expiration !== b.expiration) return b.expiration - a.expiration;
+
+		const priceDiff = BigInt(b.price) - BigInt(a.price);
+		if (priceDiff !== 0n) return priceDiff > 0n ? 1 : -1;
+
+		return a.position.localeCompare(b.position);
+	}
+
+	private isCloneableParentCandidate(
+		position: PositionQuery,
+		now: number,
+		collateral: Address,
+		challengedPositions: Set<Address>,
+		mintingHubAddress?: Address,
+	): boolean {
+		if (mintingHubAddress && position.mintingHubAddress.toLowerCase() !== mintingHubAddress) return false;
+		if (position.closed || position.denied) return false;
+		if (challengedPositions.has(position.position.toLowerCase() as Address)) return false;
+		if (position.expiration <= now || position.cooldown >= now) return false;
+		if (position.collateral.toLowerCase() !== collateral.toLowerCase()) return false;
+		if (BigInt(position.collateralBalance) < BigInt(position.minimumCollateral)) return false;
+		if (BigInt(position.availableForClones) <= 0n) return false;
+		return true;
+	}
 
 	getPositionsList(): ApiPositionsListing {
 		const pos = Object.values(this.fetchedPositions) as PositionQuery[];
@@ -73,6 +111,20 @@ export class PositionsService {
 			owners: Object.keys(ow) as Address[],
 			map: ow,
 		};
+	}
+
+	getBestCloneableParent(collateral: Address, mintingHubAddress?: Address): ApiBestCloneable {
+		const now = Math.floor(Date.now() / 1000);
+		const collateralLower = collateral.toLowerCase() as Address;
+		const candidates = Object.values(this.fetchedPositions) as PositionQuery[];
+		const hubFilter = this.normalizeOptionalAddress(mintingHubAddress);
+		const challengedPositions = this.challengesService.getActiveChallengedPositions();
+
+		const cloneable = candidates
+			.filter((position) => this.isCloneableParentCandidate(position, now, collateralLower, challengedPositions, hubFilter))
+			.sort((a, b) => this.compareParentPositions(a, b));
+
+		return { position: cloneable[0] ?? null };
 	}
 
 	async updatePositonV2s() {
