@@ -1,12 +1,14 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { PositionsService } from './positions.service';
 import {
+	ApiBestCloneable,
 	ApiMintingUpdateListing,
 	ApiMintingUpdateMapping,
 	ApiPositionsListing,
 	ApiPositionsMapping,
 	ApiPositionsOwners,
 } from './positions.types';
+import { Address } from 'viem';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Positions Controller')
@@ -68,5 +70,19 @@ export class PositionsController {
 	})
 	geMintingtMapping(): ApiMintingUpdateMapping {
 		return this.positionsService.getMintingUpdatesMapping();
+	}
+
+	@Get('best-cloneable')
+	@ApiResponse({
+		description: 'Returns the best cloneable parent position for the given collateral. Optionally filter by minting hub.',
+	})
+	getBestCloneable(
+		@Query('collateral') collateral: string,
+		@Query('mintingHubAddress') mintingHubAddress?: string,
+	): ApiBestCloneable {
+		return this.positionsService.getBestCloneableParent(
+			(collateral ?? '').toLowerCase() as Address,
+			mintingHubAddress ? (mintingHubAddress.toLowerCase() as Address) : undefined,
+		);
 	}
 }

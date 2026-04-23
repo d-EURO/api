@@ -119,3 +119,7 @@ export type ApiMintingUpdateMapping = {
 	positions: Address[];
 	map: MintingUpdateQueryObjectArray;
 };
+
+export type ApiBestCloneable = {
+	position: PositionQuery | null;
+};

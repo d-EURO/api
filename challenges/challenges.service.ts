@@ -88,6 +88,17 @@ export class ChallengesService {
 		};
 	}
 
+	/** Lowercased addresses of positions under an active challenge — used by other services to exclude them. */
+	getActiveChallengedPositions(): Set<Address> {
+		const active = new Set<Address>();
+		for (const challenge of Object.values(this.fetchedChallengesMapping)) {
+			if (challenge.status === ChallengesQueryStatus.Active) {
+				active.add(challenge.position.toLowerCase() as Address);
+			}
+		}
+		return active;
+	}
+
 	// challenges prices
 	getChallengesPrices(): ApiChallengesPrices {
 		const pr = this.fetchedPrices;
