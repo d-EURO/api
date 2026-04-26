@@ -31,6 +31,9 @@ import { StablecoinBridgeMessage } from './messages/StablecoinBridgeUpdate.messa
 import { TradeMessage } from './messages/Trade.message';
 import { TelegramGroupState, TelegramState } from './telegram.types';
 
+// Stay under telegram per-chat rate limit (~30 msg/s) when bursting position-lifecycle alerts.
+const TELEGRAM_THROTTLE_MS = 100;
+
 @Injectable()
 export class TelegramService implements OnModuleInit, SocialMediaFct {
 	private readonly logger = new Logger(this.constructor.name);
@@ -192,7 +195,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		if (miniLifetimePositions.length > 0) {
 			this.telegramState.positionsMiniLifetime = Date.now();
 			for (const p of miniLifetimePositions) {
-				this.sendMessageAll(PositionMiniLifetimeMessage(p));
+				await this.sendMessageAll(PositionMiniLifetimeMessage(p));
+				await this.sleep(TELEGRAM_THROTTLE_MS);
 			}
 		}
 
@@ -207,7 +211,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		if (expiringSoonPositions.length > 0) {
 			this.telegramState.positionsExpiringSoon = Date.now();
 			for (const p of expiringSoonPositions) {
-				this.sendMessageAll(PositionExpiringSoonMessage(p));
+				await this.sendMessageAll(PositionExpiringSoonMessage(p));
+				await this.sleep(TELEGRAM_THROTTLE_MS);
 			}
 		}
 
@@ -225,7 +230,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		if (expiredPositions.length > 0) {
 			this.telegramState.positionsExpired = Date.now();
 			for (const p of expiredPositions) {
-				this.sendMessageAll(PositionExpiredMessage(p));
+				await this.sendMessageAll(PositionExpiredMessage(p));
+				await this.sleep(TELEGRAM_THROTTLE_MS);
 			}
 		} else {
 			// @dev: fixes issue if ponder indexes and stateDate didnt change,
@@ -251,7 +257,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		if (phase2Positions.length > 0) {
 			this.telegramState.positionsPhase2 = Date.now();
 			for (const p of phase2Positions) {
-				this.sendMessageAll(PositionPhase2Message(p));
+				await this.sendMessageAll(PositionPhase2Message(p));
+				await this.sleep(TELEGRAM_THROTTLE_MS);
 			}
 		} else {
 			// Self-heal stale state (same pattern as positionsExpired)
@@ -410,5 +417,9 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		this.sendMessage(group, `You are not subscribed anymore.`);
 
 		this.writeBackupGroups();
+	}
+
+	private sleep(ms: number): Promise<void> {
+		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 }
