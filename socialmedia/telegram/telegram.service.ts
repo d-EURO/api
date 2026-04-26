@@ -209,8 +209,9 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			}
 		}
 
-		// Positions expired
+		// Positions expired (only those with outstanding principal — clean exits are not actionable)
 		const expiredPositions = openPositions.filter((p) => {
+			if (BigInt(p.principal || '0') === 0n) return false;
 			const stateDate = new Date(this.telegramState.positionsExpired).getTime();
 			const isExpired = p.expiration * 1000 < Date.now();
 			const isNew = isExpired && stateDate < p.expiration * 1000;
@@ -232,14 +233,15 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 
 		// Forced-sale phase 2 entry — actionable arbitrage window (1× → 0× liq-price)
 		// where a defender can call buyExpiredCollateral before the equity reserve covers the loss.
+		// No upper bound: post-decay (price = 0) is still actionable — anyone can take collateral
+		// for free and trigger coverLoss; the operator should still be alerted.
 		const phase2Positions = openPositions.filter((p) => {
 			if (BigInt(p.principal || '0') === 0n) return false;
 			const stateDate = this.telegramState.positionsPhase2;
 			const phase2EntryMs = (p.expiration + p.challengePeriod) * 1000;
-			const phase2EndMs = (p.expiration + p.challengePeriod * 2) * 1000;
-			const inPhase2 = phase2EntryMs < Date.now() && Date.now() < phase2EndMs;
-			const isNew = inPhase2 && stateDate < phase2EntryMs;
-			return inPhase2 && isNew;
+			const inDecayWindow = phase2EntryMs < Date.now();
+			const isNew = inDecayWindow && stateDate < phase2EntryMs;
+			return inDecayWindow && isNew;
 		});
 		if (phase2Positions.length > 0) {
 			this.telegramState.positionsPhase2 = Date.now();
