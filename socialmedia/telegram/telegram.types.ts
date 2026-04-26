@@ -5,6 +5,8 @@ export type TelegramState = {
 	leadrateProposal: number;
 	leadrateChanged: number;
 	positions: number;
+	positionsExpiringSoon: number;
+	positionsExpired: number;
 	challenges: number;
 	bids: number;
 };

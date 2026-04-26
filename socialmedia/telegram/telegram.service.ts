@@ -21,6 +21,8 @@ import { LeadrateProposalMessage } from './messages/LeadrateProposal.message';
 import { MinterProposalMessage } from './messages/MinterProposal.message';
 import { MinterProposalVetoedMessage } from './messages/MinterProposalVetoed.message';
 import { MintingUpdateMessage } from './messages/MintingUpdate.message';
+import { PositionExpiredMessage } from './messages/PositionExpired.message';
+import { PositionExpiringSoonMessage } from './messages/PositionExpiringSoon.message';
 import { PositionProposalMessage } from './messages/PositionProposal.message';
 import { SavingUpdateMessage } from './messages/SavingUpdate.message';
 import { StablecoinBridgeMessage } from './messages/StablecoinBridgeUpdate.message';
@@ -51,6 +53,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			leadrateProposal: time,
 			leadrateChanged: time,
 			positions: time,
+			positionsExpiringSoon: time,
+			positionsExpired: time,
 			challenges: time,
 			bids: time,
 		};
@@ -161,6 +165,43 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			this.telegramState.positions = Date.now();
 			for (const p of requestedPosition) {
 				this.sendMessageAll(PositionProposalMessage(p));
+			}
+		}
+
+		// Positions expiring soon (within 24 hours)
+		const openPositions = Object.values(this.position.getPositionsOpen().map);
+		const expiringSoonPositions = openPositions.filter((p) => {
+			const stateDate = new Date(this.telegramState.positionsExpiringSoon).getTime();
+			const warningDays = 1 * 24 * 60 * 60 * 1000;
+			const isSoon = p.expiration * 1000 < Date.now() + warningDays;
+			const isNew = isSoon && stateDate + warningDays < p.expiration * 1000;
+			return isSoon && isNew;
+		});
+		if (expiringSoonPositions.length > 0) {
+			this.telegramState.positionsExpiringSoon = Date.now();
+			for (const p of expiringSoonPositions) {
+				this.sendMessageAll(PositionExpiringSoonMessage(p));
+			}
+		}
+
+		// Positions expired
+		const expiredPositions = openPositions.filter((p) => {
+			const stateDate = new Date(this.telegramState.positionsExpired).getTime();
+			const isExpired = p.expiration * 1000 < Date.now();
+			const isNew = isExpired && stateDate < p.expiration * 1000;
+			return isExpired && isNew;
+		});
+		if (expiredPositions.length > 0) {
+			this.telegramState.positionsExpired = Date.now();
+			for (const p of expiredPositions) {
+				this.sendMessageAll(PositionExpiredMessage(p));
+			}
+		} else {
+			// @dev: fixes issue if ponder indexes and stateDate didnt change,
+			// it might happen that an old state will trigger this due to re-indexing
+			// reset to last 1h
+			if (Date.now() - this.telegramState.positionsExpired > 60 * 60 * 1000) {
+				this.telegramState.positionsExpired = Date.now() - 5 * 60 * 1000; // reduce 5min to allow latest expiration
 			}
 		}
 
