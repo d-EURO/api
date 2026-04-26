@@ -46,6 +46,10 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly challenge: ChallengesService
 	) {
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
+		// @dev: expiration-related state must use service-startup time, not the +365d future
+		// default. Expirations are absolute timestamps; a future-init would skip alerts for
+		// any position whose expiration falls before that future date (i.e. all of them).
+		const startUpTime: number = Date.now();
 
 		this.telegramState = {
 			minterApplied: time,
@@ -53,8 +57,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			leadrateProposal: time,
 			leadrateChanged: time,
 			positions: time,
-			positionsExpiringSoon: time,
-			positionsExpired: time,
+			positionsExpiringSoon: startUpTime,
+			positionsExpired: startUpTime,
 			challenges: time,
 			bids: time,
 		};
