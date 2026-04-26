@@ -1,5 +1,5 @@
 import { PositionQuery } from 'positions/positions.types';
-import { formatCurrency } from 'utils/format';
+import { formatCurrency, safeMarkdown } from 'utils/format';
 import { AppUrl, ExplorerAddressUrl } from 'utils/func-helper';
 import { formatUnits } from 'viem';
 
@@ -8,6 +8,8 @@ export function PositionExpiringSoonMessage(position: PositionQuery): string {
 	const min: number = parseInt(formatUnits(BigInt(position.minimumCollateral), position.collateralDecimals - 2)) / 100;
 	const price: number = parseInt(formatUnits(BigInt(position.price), 36 - position.collateralDecimals - 2)) / 100;
 	const date = new Date(position.expiration * 1000);
+	const collateralName = safeMarkdown(position.collateralName);
+	const collateralSymbol = safeMarkdown(position.collateralSymbol);
 
 	return `
 *Position will expire soon*
@@ -21,10 +23,10 @@ Auction Duration: ${Math.floor(position.challengePeriod / 60 / 60)} hours
 Expiration: ${formatCurrency((position.expiration * 1000 - Date.now()) / 1000 / 60 / 60 / 24)} days
 At: ${date.toUTCString()}
 
-Collateral: ${position.collateralName} (${position.collateralSymbol})
+Collateral: ${collateralName} (${collateralSymbol})
 At: ${position.collateral}
-Balance: ${formatCurrency(bal, 2, 2)} ${position.collateralSymbol}
-Bal. min.: ${formatCurrency(min, 2, 2)} ${position.collateralSymbol}
+Balance: ${formatCurrency(bal, 2, 2)} ${collateralSymbol}
+Bal. min.: ${formatCurrency(min, 2, 2)} ${collateralSymbol}
 Price: ${formatCurrency(price, 2, 2)} dEURO
 
 [Overview Position](${AppUrl(`/monitoring/${position.position}`)})

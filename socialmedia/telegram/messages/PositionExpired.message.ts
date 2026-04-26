@@ -1,5 +1,5 @@
 import { PositionQuery } from 'positions/positions.types';
-import { formatCurrency } from 'utils/format';
+import { formatCurrency, safeMarkdown } from 'utils/format';
 import { AppUrl, ExplorerAddressUrl } from 'utils/func-helper';
 import { formatUnits } from 'viem';
 
@@ -8,6 +8,8 @@ export function PositionExpiredMessage(position: PositionQuery): string {
 	const min: number = parseInt(formatUnits(BigInt(position.minimumCollateral), position.collateralDecimals - 2)) / 100;
 	const price: number = parseInt(formatUnits(BigInt(position.price), 36 - position.collateralDecimals - 2)) / 100;
 	const duration: number = position.challengePeriod * 1000;
+	const collateralName = safeMarkdown(position.collateralName);
+	const collateralSymbol = safeMarkdown(position.collateralSymbol);
 
 	const begin = new Date(position.expiration * 1000);
 	const mid = new Date(position.expiration * 1000 + 1 * duration);
@@ -23,23 +25,23 @@ Principal: ${formatCurrency(formatUnits(BigInt(position.principal), 18), 2, 2)} 
 Retained Reserve: ${formatCurrency(position.reserveContribution / 10000, 1, 1)}%
 Auction Duration: ${Math.floor(position.challengePeriod / 60 / 60)} hours
 
-Collateral: ${position.collateralName} (${position.collateralSymbol})
+Collateral: ${collateralName} (${collateralSymbol})
 At: ${position.collateral}
-Balance: ${formatCurrency(bal, 2, 2)} ${position.collateralSymbol}
-Bal. min.: ${formatCurrency(min, 2, 2)} ${position.collateralSymbol}
+Balance: ${formatCurrency(bal, 2, 2)} ${collateralSymbol}
+Bal. min.: ${formatCurrency(min, 2, 2)} ${collateralSymbol}
 `;
 
 	const body = `
 *ForceSell is available*
 
 Declines (10x -> 1x Price): ${begin.toUTCString()}
-Price (10x): ${formatCurrency(price * 10, 2, 2)} dEURO per 1 ${position.collateralSymbol}
+Price (10x): ${formatCurrency(price * 10, 2, 2)} dEURO per 1 ${collateralSymbol}
 
 Continues (1x -> 0x Price): ${mid.toUTCString()}
-Price (1x): ${formatCurrency(price, 2, 2)} dEURO per 1 ${position.collateralSymbol}
+Price (1x): ${formatCurrency(price, 2, 2)} dEURO per 1 ${collateralSymbol}
 
 Zero: ${zero.toUTCString()}
-Price (0x): 0.00 dEURO per 1 ${position.collateralSymbol}
+Price (0x): 0.00 dEURO per 1 ${collateralSymbol}
 `;
 
 	const footer = `

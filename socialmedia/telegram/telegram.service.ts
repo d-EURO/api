@@ -210,12 +210,15 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		}
 
 		// Positions expired (only those with outstanding principal — clean exits are not actionable)
+		// Skip if already in phase 2: the phase-2 watcher fires in the same cycle with more
+		// actionable info (decay status), no need to double-alert.
 		const expiredPositions = openPositions.filter((p) => {
 			if (BigInt(p.principal || '0') === 0n) return false;
 			const stateDate = new Date(this.telegramState.positionsExpired).getTime();
 			const isExpired = p.expiration * 1000 < Date.now();
+			const alreadyInPhase2 = (p.expiration + p.challengePeriod) * 1000 <= Date.now();
 			const isNew = isExpired && stateDate < p.expiration * 1000;
-			return isExpired && isNew;
+			return isExpired && isNew && !alreadyInPhase2;
 		});
 		if (expiredPositions.length > 0) {
 			this.telegramState.positionsExpired = Date.now();
