@@ -239,7 +239,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			if (BigInt(p.principal || '0') === 0n) return false;
 			const stateDate = this.telegramState.positionsPhase2;
 			const phase2EntryMs = (p.expiration + p.challengePeriod) * 1000;
-			const inDecayWindow = phase2EntryMs < Date.now();
+			const inDecayWindow = phase2EntryMs <= Date.now(); // inclusive — match monitoring's `timePassed >= cP`
 			const isNew = inDecayWindow && stateDate < phase2EntryMs;
 			return inDecayWindow && isNew;
 		});
