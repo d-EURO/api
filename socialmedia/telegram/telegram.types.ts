@@ -1,14 +1,13 @@
-// @dev: timestamps of last trigger emits
+// @dev: timestamps of last trigger emits. Position-lifecycle events use per-address
+// dedup persisted in TelegramGroupState (alerted* arrays) instead of a single timestamp,
+// because a single timestamp cannot correctly handle: service restart with already-
+// actionable positions, telegram outage, ponder reorg/back-fill, or partial delivery.
 export type TelegramState = {
 	minterApplied: number;
 	minterVetoed: number;
 	leadrateProposal: number;
 	leadrateChanged: number;
 	positions: number;
-	positionsMiniLifetime: number;
-	positionsExpiringSoon: number;
-	positionsExpired: number;
-	positionsPhase2: number;
 	challenges: number;
 	bids: number;
 };
@@ -25,4 +24,8 @@ export type TelegramGroupState = {
 	createdAt: number;
 	updatedAt: number;
 	groups: string[];
+	alertedMiniLifetime: string[];
+	alertedExpiringSoon: string[];
+	alertedExpired: string[];
+	alertedPhase2: string[];
 };
