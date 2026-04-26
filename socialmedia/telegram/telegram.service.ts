@@ -23,6 +23,8 @@ import { MinterProposalVetoedMessage } from './messages/MinterProposalVetoed.mes
 import { MintingUpdateMessage } from './messages/MintingUpdate.message';
 import { PositionExpiredMessage } from './messages/PositionExpired.message';
 import { PositionExpiringSoonMessage } from './messages/PositionExpiringSoon.message';
+import { PositionMiniLifetimeMessage } from './messages/PositionMiniLifetime.message';
+import { PositionPhase2Message } from './messages/PositionPhase2.message';
 import { PositionProposalMessage } from './messages/PositionProposal.message';
 import { SavingUpdateMessage } from './messages/SavingUpdate.message';
 import { StablecoinBridgeMessage } from './messages/StablecoinBridgeUpdate.message';
@@ -57,8 +59,10 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			leadrateProposal: time,
 			leadrateChanged: time,
 			positions: time,
+			positionsMiniLifetime: startUpTime,
 			positionsExpiringSoon: startUpTime,
 			positionsExpired: startUpTime,
+			positionsPhase2: startUpTime,
 			challenges: time,
 			bids: time,
 		};
@@ -172,8 +176,25 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			}
 		}
 
-		// Positions expiring soon (within 24 hours)
+		// Mini-lifetime clones — created since last alert with sub-day lifetime.
+		// Matches the WFPS forced-sale attack vector (36-second clone).
 		const openPositions = Object.values(this.position.getPositionsOpen().map);
+		const miniLifetimeThreshold = 24 * 60 * 60; // 1 day, in seconds (position timestamps are seconds)
+		const miniLifetimePositions = openPositions.filter((p) => {
+			const stateDate = this.telegramState.positionsMiniLifetime;
+			const lifetime = p.expiration - p.created;
+			const isMini = lifetime < miniLifetimeThreshold;
+			const isNew = isMini && p.created * 1000 > stateDate;
+			return isMini && isNew;
+		});
+		if (miniLifetimePositions.length > 0) {
+			this.telegramState.positionsMiniLifetime = Date.now();
+			for (const p of miniLifetimePositions) {
+				this.sendMessageAll(PositionMiniLifetimeMessage(p));
+			}
+		}
+
+		// Positions expiring soon (within 24 hours)
 		const expiringSoonPositions = openPositions.filter((p) => {
 			const stateDate = new Date(this.telegramState.positionsExpiringSoon).getTime();
 			const warningDays = 1 * 24 * 60 * 60 * 1000;
@@ -206,6 +227,29 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			// reset to last 1h
 			if (Date.now() - this.telegramState.positionsExpired > 60 * 60 * 1000) {
 				this.telegramState.positionsExpired = Date.now() - 5 * 60 * 1000; // reduce 5min to allow latest expiration
+			}
+		}
+
+		// Forced-sale phase 2 entry — actionable arbitrage window (1× → 0× liq-price)
+		// where a defender can call buyExpiredCollateral before the equity reserve covers the loss.
+		const phase2Positions = openPositions.filter((p) => {
+			if (BigInt(p.principal || '0') === 0n) return false;
+			const stateDate = this.telegramState.positionsPhase2;
+			const phase2EntryMs = (p.expiration + p.challengePeriod) * 1000;
+			const phase2EndMs = (p.expiration + p.challengePeriod * 2) * 1000;
+			const inPhase2 = phase2EntryMs < Date.now() && Date.now() < phase2EndMs;
+			const isNew = inPhase2 && stateDate < phase2EntryMs;
+			return inPhase2 && isNew;
+		});
+		if (phase2Positions.length > 0) {
+			this.telegramState.positionsPhase2 = Date.now();
+			for (const p of phase2Positions) {
+				this.sendMessageAll(PositionPhase2Message(p));
+			}
+		} else {
+			// Self-heal stale state (same pattern as positionsExpired)
+			if (Date.now() - this.telegramState.positionsPhase2 > 60 * 60 * 1000) {
+				this.telegramState.positionsPhase2 = Date.now() - 5 * 60 * 1000;
 			}
 		}
 
