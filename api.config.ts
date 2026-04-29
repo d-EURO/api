@@ -65,10 +65,38 @@ export const CONFIG: ConfigType = {
 		: null,
 };
 
+const SENSITIVE_KEYS = new Set<string>([
+	'coingeckoApiKey',
+	'network.mainnet',
+	'network.testnet',
+	'telegram.botToken',
+	'twitter.appKey',
+	'twitter.appSecret',
+	'twitter.accessToken',
+	'twitter.accessSecret',
+]);
+
+function redactConfig<T>(config: T): T {
+	return walkRedact(config, '') as T;
+}
+
+function walkRedact(value: unknown, path: string): unknown {
+	if (value && typeof value === 'object' && !Array.isArray(value)) {
+		return Object.fromEntries(
+			Object.entries(value as Record<string, unknown>).map(([key, val]) => {
+				const childPath = path ? `${path}.${key}` : key;
+				if (SENSITIVE_KEYS.has(childPath) && val) return [key, '***'];
+				return [key, walkRedact(val, childPath)];
+			})
+		);
+	}
+	return value;
+}
+
 export function logConfig() {
 	const logger = new Logger('ApiConfig');
 	logger.log(`Starting API with this config:`);
-	logger.log(JSON.stringify(CONFIG));
+	logger.log(JSON.stringify(redactConfig(CONFIG)));
 }
 
 // Refer to https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files
