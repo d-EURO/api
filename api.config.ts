@@ -63,10 +63,25 @@ export const CONFIG: ConfigType = {
 	},
 };
 
+function redactConfig(config: ConfigType): ConfigType {
+	return {
+		...config,
+		coingeckoApiKey: '***',
+		network: { mainnet: '***', polygon: '***' },
+		telegram: { ...config.telegram, botToken: '***' },
+		twitter: {
+			...config.twitter,
+			clientSecret: '***',
+			appKey: '***',
+			appSecret: '***',
+		},
+	};
+}
+
 export function logConfig() {
 	const logger = new Logger('ApiConfig');
 	logger.log(`Starting API with this config:`);
-	logger.log(JSON.stringify(CONFIG));
+	logger.log(JSON.stringify(redactConfig(CONFIG)));
 }
 
 // Refer to https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files
