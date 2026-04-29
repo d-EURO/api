@@ -63,19 +63,31 @@ export const CONFIG: ConfigType = {
 	},
 };
 
-function redactConfig(config: ConfigType): ConfigType {
-	return {
-		...config,
-		coingeckoApiKey: '***',
-		network: { mainnet: '***', polygon: '***' },
-		telegram: { ...config.telegram, botToken: '***' },
-		twitter: {
-			...config.twitter,
-			clientSecret: '***',
-			appKey: '***',
-			appSecret: '***',
-		},
-	};
+const SENSITIVE_KEYS = new Set<string>([
+	'coingeckoApiKey',
+	'network.mainnet',
+	'network.polygon',
+	'telegram.botToken',
+	'twitter.clientSecret',
+	'twitter.appKey',
+	'twitter.appSecret',
+]);
+
+function redactConfig<T>(config: T): T {
+	return walkRedact(config, '') as T;
+}
+
+function walkRedact(value: unknown, path: string): unknown {
+	if (value && typeof value === 'object' && !Array.isArray(value)) {
+		return Object.fromEntries(
+			Object.entries(value as Record<string, unknown>).map(([key, val]) => {
+				const childPath = path ? `${path}.${key}` : key;
+				if (SENSITIVE_KEYS.has(childPath) && val) return [key, '***'];
+				return [key, walkRedact(val, childPath)];
+			})
+		);
+	}
+	return value;
 }
 
 export function logConfig() {
