@@ -1,0 +1,38 @@
+import { PositionQuery } from 'positions/positions.types';
+import { formatCurrency, safeMarkdown } from 'utils/format';
+import { AppUrl, ExplorerAddressUrl } from 'utils/func-helper';
+import { formatUnits } from 'viem';
+
+export function PositionExpiringSoonMessage(position: PositionQuery): string {
+	const bal: number = parseInt(formatUnits(BigInt(position.collateralBalance), position.collateralDecimals - 2)) / 100;
+	const min: number = parseInt(formatUnits(BigInt(position.minimumCollateral), position.collateralDecimals - 2)) / 100;
+	const price: number = parseInt(formatUnits(BigInt(position.price), 36 - position.collateralDecimals - 2)) / 100;
+	const date = new Date(position.expiration * 1000);
+	const collateralName = safeMarkdown(position.collateralName);
+	const collateralSymbol = safeMarkdown(position.collateralSymbol);
+
+	return `
+*Position will expire soon*
+
+Position: ${position.position} (v${position.version})
+Owner: ${position.owner}
+
+Principal: ${formatCurrency(formatUnits(BigInt(position.principal), 18), 2, 2)} dEURO
+Retained Reserve: ${formatCurrency(position.reserveContribution / 10000, 1, 1)}%
+Auction Duration: ${Math.floor(position.challengePeriod / 60 / 60)} hours
+Expiration: ${formatCurrency((position.expiration * 1000 - Date.now()) / 1000 / 60 / 60 / 24)} days
+At: ${date.toUTCString()}
+
+Collateral: ${collateralName} (${collateralSymbol})
+At: ${position.collateral}
+Balance: ${formatCurrency(bal, 2, 2)} ${collateralSymbol}
+Bal. min.: ${formatCurrency(min, 2, 2)} ${collateralSymbol}
+Price: ${formatCurrency(price, 2, 2)} dEURO
+
+[Overview Position](${AppUrl(`/monitoring/${position.position}`)})
+
+[Explorer Position](${ExplorerAddressUrl(position.position)})
+[Explorer Owner](${ExplorerAddressUrl(position.owner)})
+[Explorer Collateral](${ExplorerAddressUrl(position.collateral)})
+                        `;
+}

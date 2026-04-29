@@ -21,11 +21,18 @@ import { LeadrateProposalMessage } from './messages/LeadrateProposal.message';
 import { MinterProposalMessage } from './messages/MinterProposal.message';
 import { MinterProposalVetoedMessage } from './messages/MinterProposalVetoed.message';
 import { MintingUpdateMessage } from './messages/MintingUpdate.message';
+import { PositionExpiredMessage } from './messages/PositionExpired.message';
+import { PositionExpiringSoonMessage } from './messages/PositionExpiringSoon.message';
+import { PositionMiniLifetimeMessage } from './messages/PositionMiniLifetime.message';
+import { PositionPhase2Message } from './messages/PositionPhase2.message';
 import { PositionProposalMessage } from './messages/PositionProposal.message';
 import { SavingUpdateMessage } from './messages/SavingUpdate.message';
 import { StablecoinBridgeMessage } from './messages/StablecoinBridgeUpdate.message';
 import { TradeMessage } from './messages/Trade.message';
 import { TelegramGroupState, TelegramState } from './telegram.types';
+
+// Stay under telegram per-chat rate limit (~30 msg/s) when bursting position-lifecycle alerts.
+const TELEGRAM_THROTTLE_MS = 100;
 
 @Injectable()
 export class TelegramService implements OnModuleInit, SocialMediaFct {
@@ -60,6 +67,10 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			createdAt: time,
 			updatedAt: time,
 			groups: [],
+			alertedMiniLifetime: [],
+			alertedExpiringSoon: [],
+			alertedExpired: [],
+			alertedPhase2: [],
 		};
 	}
 
@@ -164,6 +175,79 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			}
 		}
 
+		// Position-lifecycle alerts use per-address dedup (alerted* arrays in
+		// telegramGroupState, persisted via writeBackupGroups). Compared to a single
+		// stateDate timestamp this correctly handles: service restart with already-
+		// actionable positions, telegram outage (positions stay un-listed until delivered),
+		// ponder reorg/back-fill, and partial group delivery.
+		const openPositions = Object.values(this.position.getPositionsOpen().map);
+		const miniLifetimeThreshold = 24 * 60 * 60; // 1 day, in seconds (position timestamps are seconds)
+		const warningWindowMs = 24 * 60 * 60 * 1000;
+
+		// Mini-lifetime clones — sub-day (expiration - created) lifetime, the WFPS attack pattern.
+		const miniLifetimePositions = openPositions.filter((p) => {
+			if (this.telegramGroupState.alertedMiniLifetime.includes(p.position.toLowerCase())) return false;
+			return p.expiration - p.created < miniLifetimeThreshold;
+		});
+		for (const p of miniLifetimePositions) {
+			const delivered = await this.sendMessageAll(PositionMiniLifetimeMessage(p));
+			if (delivered) {
+				this.telegramGroupState.alertedMiniLifetime.push(p.position.toLowerCase());
+				await this.writeBackupGroups();
+			}
+			await this.sleep(TELEGRAM_THROTTLE_MS);
+		}
+
+		// Positions expiring within the next warning window.
+		const expiringSoonPositions = openPositions.filter((p) => {
+			if (this.telegramGroupState.alertedExpiringSoon.includes(p.position.toLowerCase())) return false;
+			return p.expiration * 1000 < Date.now() + warningWindowMs;
+		});
+		for (const p of expiringSoonPositions) {
+			const delivered = await this.sendMessageAll(PositionExpiringSoonMessage(p));
+			if (delivered) {
+				this.telegramGroupState.alertedExpiringSoon.push(p.position.toLowerCase());
+				await this.writeBackupGroups();
+			}
+			await this.sleep(TELEGRAM_THROTTLE_MS);
+		}
+
+		// Positions expired with outstanding principal — clean exits are not actionable.
+		// Skip if already in phase 2: the phase-2 watcher fires for it instead.
+		const expiredPositions = openPositions.filter((p) => {
+			if (this.telegramGroupState.alertedExpired.includes(p.position.toLowerCase())) return false;
+			if (BigInt(p.principal || '0') === 0n) return false;
+			const isExpired = p.expiration * 1000 < Date.now();
+			const alreadyInPhase2 = (p.expiration + p.challengePeriod) * 1000 <= Date.now();
+			return isExpired && !alreadyInPhase2;
+		});
+		for (const p of expiredPositions) {
+			const delivered = await this.sendMessageAll(PositionExpiredMessage(p));
+			if (delivered) {
+				this.telegramGroupState.alertedExpired.push(p.position.toLowerCase());
+				await this.writeBackupGroups();
+			}
+			await this.sleep(TELEGRAM_THROTTLE_MS);
+		}
+
+		// Forced-sale phase 2 — actionable arbitrage window (1× → 0× liq-price). No upper
+		// bound: post-decay (price = 0) is still actionable, anyone can take collateral for
+		// free and trigger coverLoss; the operator should still be alerted.
+		const phase2Positions = openPositions.filter((p) => {
+			if (this.telegramGroupState.alertedPhase2.includes(p.position.toLowerCase())) return false;
+			if (BigInt(p.principal || '0') === 0n) return false;
+			const phase2EntryMs = (p.expiration + p.challengePeriod) * 1000;
+			return phase2EntryMs <= Date.now(); // inclusive — match monitoring's `timePassed >= cP`
+		});
+		for (const p of phase2Positions) {
+			const delivered = await this.sendMessageAll(PositionPhase2Message(p));
+			if (delivered) {
+				this.telegramGroupState.alertedPhase2.push(p.position.toLowerCase());
+				await this.writeBackupGroups();
+			}
+			await this.sleep(TELEGRAM_THROTTLE_MS);
+		}
+
 		// Challenges started
 		const challengesStarted = Object.values(this.challenge.getChallengesMapping().map).filter(
 			(c) => parseInt(c.created.toString()) * 1000 > this.telegramState.challenges
@@ -223,17 +307,27 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		this.sendMessageAll(messageInfo[0], messageInfo[1]);
 	}
 
-	private async sendMessageAll(message: string, video?: string) {
-		if (this.telegramGroupState.groups.length == 0) return;
+	/**
+	 * Send to all groups. Returns true iff delivery succeeded to at least one group
+	 * (or there are no groups configured — nothing to deliver to). Callers that need
+	 * delivery confirmation (e.g. for per-address alert dedup) should check the return
+	 * value before marking the alert as sent.
+	 */
+	private async sendMessageAll(message: string, video?: string): Promise<boolean> {
+		if (this.telegramGroupState.groups.length == 0) return true;
+		let anyDelivered = false;
 		for (const group of this.telegramGroupState.groups) {
-			await this.sendMessage(group, message, video);
+			const ok = await this.sendMessage(group, message, video);
+			if (ok) anyDelivered = true;
 		}
+		return anyDelivered;
 	}
 
-	private async sendMessage(group: string | number, message: string, video?: string) {
+	private async sendMessage(group: string | number, message: string, video?: string): Promise<boolean> {
 		try {
 			this.logger.log(`Sending message to group id: ${group}`);
 			video ? await this.doSendVideo(group, message, video) : await this.doSendMessage(group, message);
+			return true;
 		} catch (error) {
 			const msg = {
 				notFound: 'chat not found',
@@ -257,6 +351,7 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			} else {
 				this.logger.warn(error);
 			}
+			return false;
 		}
 	}
 
@@ -314,5 +409,9 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		this.sendMessage(group, `You are not subscribed anymore.`);
 
 		this.writeBackupGroups();
+	}
+
+	private sleep(ms: number): Promise<void> {
+		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 }
