@@ -373,6 +373,10 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 					this.sendHelpMessage(m);
 					break;
 
+				// Telegram's default first-contact button maps to /start, so accepting it as
+				// a subscribe alias gives users a one-click onboarding path. /subscribe stays
+				// as an explicit alias for users that already know the command.
+				case '/start':
 				case '/subscribe':
 					this.sendSubscribeMessage(m);
 					break;
