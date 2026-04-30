@@ -38,7 +38,7 @@ const TELEGRAM_THROTTLE_MS = 100;
 export class TelegramService implements OnModuleInit, SocialMediaFct {
 	private readonly logger = new Logger(this.constructor.name);
 	private readonly bot = new TelegramBot(CONFIG.telegram.botToken, { polling: true });
-	private readonly telegramHandles: string[] = ['/subscribe', '/unsubscribe', '/help'];
+	private readonly telegramHandles: string[] = ['/start', '/subscribe', '/unsubscribe', '/help'];
 	private readonly telegramState: TelegramState;
 	private telegramGroupState: TelegramGroupState;
 
@@ -395,10 +395,13 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	private async sendSubscribeMessage(msg: TelegramBot.Message): Promise<void> {
 		const group = msg.chat.id.toString();
 		const isSubscribed = this.telegramGroupState.groups.find((g) => g === group);
-		if (isSubscribed) return;
+		if (isSubscribed) {
+			this.sendMessage(group, `You are already subscribed.`);
+			return;
+		}
 
 		this.telegramGroupState.groups.push(group);
-		this.sendMessage(group, `You are now subscribed.`);
+		this.sendMessage(group, `You are now subscribed. Use /unsubscribe to stop.`);
 
 		this.writeBackupGroups();
 	}
@@ -406,7 +409,10 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	private async sendUnsubscribeMessage(msg: TelegramBot.Message): Promise<void> {
 		const group = msg.chat.id.toString();
 		const isSubscribed = this.telegramGroupState.groups.find((g) => g === group);
-		if (!isSubscribed) return;
+		if (!isSubscribed) {
+			this.sendMessage(group, `You are not subscribed.`);
+			return;
+		}
 
 		const newGroups = this.telegramGroupState.groups.filter((g) => g != group);
 		this.telegramGroupState.groups = newGroups;
