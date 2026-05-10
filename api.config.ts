@@ -13,7 +13,7 @@ if (process.env.RPC_URL_POLYGON === undefined) throw new Error('RPC_URL_POLYGON 
 // must be set; otherwise the upstream CoinGecko calls are anonymous and fail
 // under load.
 if (!process.env.COINGECKO_API_KEY && !process.env.COINGECKO_BASE_URL) {
-	throw new Error('COINGECKO_API_KEY or COINGECKO_BASE_URL must be set');
+	throw new Error('CoinGecko is not configured: set COINGECKO_BASE_URL or COINGECKO_API_KEY');
 }
 
 // Config type
