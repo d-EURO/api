@@ -130,9 +130,17 @@ export const COINGECKO_CLIENT = (query: string) => {
 	if (CONFIG.coingeckoBaseUrl) {
 		return fetch(`${CONFIG.coingeckoBaseUrl}${query}`);
 	}
+	// Bootstrap above guarantees one of the two is set, so reaching this
+	// branch means coingeckoApiKey is defined. Hard-fail anyway instead of
+	// using a `?? ''` default — sending an empty auth header would silently
+	// turn into 401 at the upstream and look like a CoinGecko outage rather
+	// than the misconfiguration it actually is.
+	if (!CONFIG.coingeckoApiKey) {
+		throw new Error('CoinGecko is not configured: set COINGECKO_BASE_URL or COINGECKO_API_KEY');
+	}
 	const uri: string = `https://pro-api.coingecko.com${query}`;
 	return fetch(uri, {
-		headers: { 'x-cg-pro-api-key': CONFIG.coingeckoApiKey ?? '' },
+		headers: { 'x-cg-pro-api-key': CONFIG.coingeckoApiKey },
 	});
 };
 
