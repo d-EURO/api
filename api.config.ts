@@ -9,11 +9,13 @@ dotenv.config();
 // Verify environment
 if (process.env.RPC_URL_MAINNET === undefined) throw new Error('RPC_URL_MAINNET not available');
 if (process.env.RPC_URL_POLYGON === undefined) throw new Error('RPC_URL_POLYGON not available');
-// Either a key for direct Pro access OR a base URL for a fronting pricing proxy
-// must be set; otherwise the upstream CoinGecko calls are anonymous and fail
-// under load.
-if (!process.env.COINGECKO_API_KEY && !process.env.COINGECKO_BASE_URL) {
-	throw new Error('COINGECKO_API_KEY or COINGECKO_BASE_URL must be set');
+// COINGECKO_BASE_URL is the origin the api calls — typically the in-cluster
+// pricing-proxy (https://github.com/DFXswiss/pricing-proxy), but any
+// CoinGecko-compatible host works. COINGECKO_API_KEY is optional and is
+// only attached as `x-cg-pro-api-key` on every request when set (proxy mode
+// leaves it unset because the proxy injects its own key).
+if (!process.env.COINGECKO_BASE_URL) {
+	throw new Error('COINGECKO_BASE_URL is not set');
 }
 
 // Config type
@@ -21,8 +23,8 @@ export type ConfigType = {
 	app: string;
 	indexer: string;
 	indexerFallback: string;
+	coingeckoBaseUrl: string;
 	coingeckoApiKey: string | undefined;
-	coingeckoBaseUrl: string | undefined;
 	chain: Chain;
 	network: {
 		mainnet: string;
@@ -48,8 +50,8 @@ export const CONFIG: ConfigType = {
 	app: process.env.CONFIG_APP_URL || 'https://app.deuro.com',
 	indexer: process.env.CONFIG_INDEXER_URL || 'https://ponder.deuro.com/',
 	indexerFallback: process.env.CONFIG_INDEXER_FALLBACK_URL || 'https://dev.ponder.deuro.com/',
+	coingeckoBaseUrl: process.env.COINGECKO_BASE_URL,
 	coingeckoApiKey: process.env.COINGECKO_API_KEY || undefined,
-	coingeckoBaseUrl: process.env.COINGECKO_BASE_URL || undefined,
 	chain: process.env.CONFIG_CHAIN === 'polygon' ? polygon : mainnet, // @dev: default mainnet
 	network: {
 		mainnet: process.env.RPC_URL_MAINNET,
@@ -120,20 +122,18 @@ export const VIEM_CONFIG = createPublicClient({
 
 // COINGECKO CLIENT
 //
-// Resolution priority:
-//  1. COINGECKO_BASE_URL set → trust the caller (typically a pricing proxy that
-//     injects the upstream key itself); send no auth.
-//  2. COINGECKO_API_KEY set → Pro tier: pro-api.coingecko.com with the
-//     `x-cg-pro-api-key` header. The earlier query-string form is supported by
-//     CoinGecko but cache-poisons proxies that key on the URL.
+// Calls go to whatever `COINGECKO_BASE_URL` points at. When the optional
+// `COINGECKO_API_KEY` is set, it is attached as the `x-cg-pro-api-key`
+// header — orthogonal to the base URL, never a fallback. The recommended
+// deployment is the in-cluster pricing-proxy
+// (https://github.com/DFXswiss/pricing-proxy), which injects its own key
+// and leaves COINGECKO_API_KEY unset on every consumer.
 export const COINGECKO_CLIENT = (query: string) => {
-	if (CONFIG.coingeckoBaseUrl) {
-		return fetch(`${CONFIG.coingeckoBaseUrl}${query}`);
+	const headers: Record<string, string> = { accept: 'application/json' };
+	if (CONFIG.coingeckoApiKey) {
+		headers['x-cg-pro-api-key'] = CONFIG.coingeckoApiKey;
 	}
-	const uri: string = `https://pro-api.coingecko.com${query}`;
-	return fetch(uri, {
-		headers: { 'x-cg-pro-api-key': CONFIG.coingeckoApiKey ?? '' },
-	});
+	return fetch(`${CONFIG.coingeckoBaseUrl}${query}`, { headers });
 };
 
 // Contract addresses for the active chain
