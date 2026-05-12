@@ -9,14 +9,22 @@ dotenv.config();
 // Verify environment
 if (process.env.RPC_URL_MAINNET === undefined) throw new Error('RPC_URL_MAINNET not available');
 if (process.env.RPC_URL_POLYGON === undefined) throw new Error('RPC_URL_POLYGON not available');
-if (process.env.COINGECKO_API_KEY === undefined) throw new Error('COINGECKO_API_KEY not available');
+// COINGECKO_BASE_URL is the origin the api calls — typically the in-cluster
+// pricing-proxy (https://github.com/DFXswiss/pricing-proxy), but any
+// CoinGecko-compatible host works. COINGECKO_API_KEY is optional and is
+// only attached as `x-cg-pro-api-key` on every request when set (proxy mode
+// leaves it unset because the proxy injects its own key).
+if (!process.env.COINGECKO_BASE_URL) {
+	throw new Error('COINGECKO_BASE_URL is not set');
+}
 
 // Config type
 export type ConfigType = {
 	app: string;
 	indexer: string;
 	indexerFallback: string;
-	coingeckoApiKey: string;
+	coingeckoBaseUrl: string;
+	coingeckoApiKey: string | undefined;
 	chain: Chain;
 	network: {
 		mainnet: string;
@@ -42,7 +50,8 @@ export const CONFIG: ConfigType = {
 	app: process.env.CONFIG_APP_URL || 'https://app.deuro.com',
 	indexer: process.env.CONFIG_INDEXER_URL || 'https://ponder.deuro.com/',
 	indexerFallback: process.env.CONFIG_INDEXER_FALLBACK_URL || 'https://dev.ponder.deuro.com/',
-	coingeckoApiKey: process.env.COINGECKO_API_KEY,
+	coingeckoBaseUrl: process.env.COINGECKO_BASE_URL,
+	coingeckoApiKey: process.env.COINGECKO_API_KEY || undefined,
 	chain: process.env.CONFIG_CHAIN === 'polygon' ? polygon : mainnet, // @dev: default mainnet
 	network: {
 		mainnet: process.env.RPC_URL_MAINNET,
@@ -112,10 +121,19 @@ export const VIEM_CONFIG = createPublicClient({
 });
 
 // COINGECKO CLIENT
+//
+// Calls go to whatever `COINGECKO_BASE_URL` points at. When the optional
+// `COINGECKO_API_KEY` is set, it is attached as the `x-cg-pro-api-key`
+// header — orthogonal to the base URL, never a fallback. The recommended
+// deployment is the in-cluster pricing-proxy
+// (https://github.com/DFXswiss/pricing-proxy), which injects its own key
+// and leaves COINGECKO_API_KEY unset on every consumer.
 export const COINGECKO_CLIENT = (query: string) => {
-	const hasParams = query.includes('?');
-	const uri: string = `https://pro-api.coingecko.com${query}`;
-	return fetch(`${uri}${hasParams ? '&' : '?'}x_cg_pro_api_key=${CONFIG.coingeckoApiKey}`);
+	const headers: Record<string, string> = { accept: 'application/json' };
+	if (CONFIG.coingeckoApiKey) {
+		headers['x-cg-pro-api-key'] = CONFIG.coingeckoApiKey;
+	}
+	return fetch(`${CONFIG.coingeckoBaseUrl}${query}`, { headers });
 };
 
 // Contract addresses for the active chain
