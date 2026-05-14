@@ -259,6 +259,9 @@ export class PricesService {
 
 				if (!price) {
 					pricesQueryUpdateCountFailed += 1;
+					// bump timestamp on failure so we honour the 5-minute retry window
+					// instead of refetching on every block tick when a token has no price source
+					pricesQuery[addr] = { ...oldEntry, timestamp: Date.now() };
 				} else {
 					pricesQuery[addr] = {
 						...erc,
