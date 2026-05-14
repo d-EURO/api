@@ -221,11 +221,7 @@ export class PricesService {
 	async updatePrices() {
 		this.logger.debug('Updating Prices');
 
-		const euroPrice = await this.fetchEuroPrice();
-		if (euroPrice) {
-			this.euroPrice = euroPrice;
-			this.euroPriceTimestamp = Date.now();
-		}
+		await this.refreshEuroPriceIfStale();
 
 		const deps = this.getDeps();
 		const m = this.getMint();
