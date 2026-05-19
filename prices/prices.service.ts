@@ -132,13 +132,9 @@ export class PricesService {
 	async fetchSourcesCoingecko(erc: ERC20Info): Promise<PriceQueryCurrencies | null> {
 		// all mainnet addresses
 		if ((VIEM_CHAIN.id as number) === 1) {
-			const url = `/api/v3/simple/token_price/ethereum?contract_addresses=${erc.address}&vs_currencies=usd%2Ceur`;
-			const data = await (await COINGECKO_CLIENT(url)).json();
-			if (data.status) {
-				this.logger.debug(data.status?.error_message || 'Error fetching price from coingecko');
-				return null;
-			}
-			return Object.values(data)[0] as { usd: number; eur: number };
+			const batch = await this.fetchSourcesCoingeckoBatch([erc]);
+			const price = batch[erc.address.toLowerCase()];
+			return price === undefined ? null : price;
 		} else {
 			// all other chain addresses (test deployments)
 			const calc = (value: number) => {
@@ -163,6 +159,40 @@ export class PricesService {
 		}
 	}
 
+	// CoinGecko allows comma-separated contract_addresses to price up to
+	// 100 ERC-20s in a single mainnet request. Caller is responsible for
+	// chunking. Returned keys are lowercase addresses; missing addresses are
+	// absent from the result.
+	async fetchSourcesCoingeckoBatch(ercs: ERC20Info[]): Promise<{ [lowercaseAddr: string]: PriceQueryCurrencies }> {
+		if (ercs.length === 0) return {};
+		if ((VIEM_CHAIN.id as number) !== 1) {
+			// testnet path: fall back to per-token soft mapping
+			const out: { [lowercaseAddr: string]: PriceQueryCurrencies } = {};
+			for (const erc of ercs) {
+				const price = await this.fetchSourcesCoingecko(erc);
+				if (price) out[erc.address.toLowerCase()] = price;
+			}
+			return out;
+		}
+
+		const joined = ercs.map((e) => e.address).join(',');
+		const url = `/api/v3/simple/token_price/ethereum?contract_addresses=${joined}&vs_currencies=usd%2Ceur`;
+		const data = await (await COINGECKO_CLIENT(url)).json();
+		if (data.status) {
+			this.logger.debug(data.status?.error_message || 'Error fetching prices from coingecko');
+			return {};
+		}
+
+		// CoinGecko returns lowercased keys; build a deterministic map.
+		const out: { [lowercaseAddr: string]: PriceQueryCurrencies } = {};
+		for (const erc of ercs) {
+			const key = erc.address.toLowerCase();
+			const entry = data[key] as { usd?: number; eur?: number } | undefined;
+			if (entry && typeof entry.usd === 'number') out[key] = entry;
+		}
+		return out;
+	}
+
 	async fetchEuroPrice(): Promise<PriceQueryCurrencies | null> {
 		const url = `/api/v3/simple/price?ids=tether&vs_currencies=eur%2Cbtc`;
 		const data = await (await COINGECKO_CLIENT(url)).json();
@@ -178,13 +208,13 @@ export class PricesService {
 		};
 	}
 
-	async fetchFromZchfSources(): Promise<PriceQueryCurrencies | null> {
-		const { FPS, ZCHF } = ZchfEcosystem;
-		const priceZchf = await this.fetchSourcesCoingecko({ address: ZCHF, name: 'ZCHF', symbol: 'ZCHF', decimals: 18 });
-		if (!priceZchf) return null;
-
+	// Derive the FPS/WFPS unit price from a known ZCHF spot price by
+	// multiplying with the on-chain FPS.price(). Split out of the old
+	// `fetchFromZchfSources` so updatePrices can pass in a single ZCHF
+	// price fetched once per cycle (was previously a second CoinGecko call).
+	async fetchFpsUsdFromZchf(zchfPriceUsd: number): Promise<number | null> {
 		const priceWfps = await VIEM_CONFIG.readContract({
-			address: FPS,
+			address: ZchfEcosystem.FPS,
 			abi: [
 				{
 					inputs: [],
@@ -198,24 +228,7 @@ export class PricesService {
 			args: [],
 		});
 		if (!priceWfps) return null;
-
-		return { usd: priceZchf.usd * parseFloat(formatUnits(priceWfps, 18)) };
-	}
-
-	async fetchPrice(erc: ERC20Info): Promise<PriceQueryCurrencies | null> {
-		if (
-			erc.address.toLowerCase() === ADDRESS[VIEM_CHAIN.id].equity.toLowerCase() ||
-			erc.address.toLowerCase() === ADDRESS[VIEM_CHAIN.id].DEPSwrapper.toLowerCase()
-		) {
-			return this.fetchFromEcosystemDeps(erc);
-		} else if (
-			erc.address.toLowerCase() === ZchfEcosystem.WFPS.toLowerCase() ||
-			erc.address.toLowerCase() === ZchfEcosystem.FPS.toLowerCase()
-		) {
-			return this.fetchFromZchfSources();
-		} else {
-			return this.fetchSourcesCoingecko(erc);
-		}
+		return zchfPriceUsd * parseFloat(formatUnits(priceWfps, 18));
 	}
 
 	async updatePrices() {
@@ -230,11 +243,66 @@ export class PricesService {
 		if (!m || Object.values(c).length == 0) return;
 		const a = [deps, m, ...Object.values(c)];
 
+		const now = Date.now();
+		const STALE_MS = 300_000;
+		const equityLower = ADDRESS[VIEM_CHAIN.id].equity.toLowerCase();
+		const wrapperLower = ADDRESS[VIEM_CHAIN.id].DEPSwrapper.toLowerCase();
+		const fpsLower = ZchfEcosystem.FPS.toLowerCase();
+		const wfpsLower = ZchfEcosystem.WFPS.toLowerCase();
+		const zchfLower = ZchfEcosystem.ZCHF.toLowerCase();
+
+		// Classify every token that needs a refresh by price source. The for-loop
+		// below used to call `fetchPrice` per token, which produced N+1 CoinGecko
+		// calls per cycle (one HTTP request per collateral). We now collect all
+		// CoinGecko-priced addresses first and resolve them in a single batch
+		// request below. ZCHF appears at most once even when it's both a
+		// collateral and the basis for the FPS/WFPS derivative price.
+		const cgBatch = new Map<string, ERC20Info>();
+		let needZchfForFps = false;
+
+		for (const erc of a) {
+			const addr = erc.address.toLowerCase();
+			const oldEntry = this.fetchedPrices[addr as Address];
+			const isStale = !oldEntry || oldEntry.timestamp + STALE_MS < now;
+			if (!isStale) continue;
+
+			if (addr === equityLower || addr === wrapperLower) continue; // DEPS path, no CoinGecko
+			if (addr === fpsLower || addr === wfpsLower) {
+				needZchfForFps = true;
+				continue;
+			}
+			cgBatch.set(addr, erc);
+		}
+
+		if (needZchfForFps && !cgBatch.has(zchfLower)) {
+			// FPS/WFPS pricing needs the ZCHF spot, but ZCHF itself isn't a
+			// collateral this cycle. Add it as a transient batch entry; we keep
+			// track of it so we don't write it into pricesQuery below.
+			cgBatch.set(zchfLower, { address: ZchfEcosystem.ZCHF, name: 'ZCHF', symbol: 'ZCHF', decimals: 18 });
+		}
+
+		const cgPrices = await this.fetchSourcesCoingeckoBatch(Array.from(cgBatch.values()));
+		const zchfBatched = cgPrices[zchfLower];
+		const fpsUsd =
+			needZchfForFps && zchfBatched && typeof zchfBatched.usd === 'number' ? await this.fetchFpsUsdFromZchf(zchfBatched.usd) : null;
+
 		const pricesQuery: PriceQueryObjectArray = {};
 		let pricesQueryNewCount: number = 0;
 		let pricesQueryNewCountFailed: number = 0;
 		let pricesQueryUpdateCount: number = 0;
 		let pricesQueryUpdateCountFailed: number = 0;
+
+		const resolvePrice = async (erc: ERC20Info): Promise<PriceQueryCurrencies | null> => {
+			const addr = erc.address.toLowerCase();
+			if (addr === equityLower || addr === wrapperLower) {
+				return this.fetchFromEcosystemDeps(erc);
+			}
+			if (addr === fpsLower || addr === wfpsLower) {
+				return fpsUsd === null ? null : { usd: fpsUsd };
+			}
+			const batched = cgPrices[addr];
+			return batched === undefined ? null : batched;
+		};
 
 		for (const erc of a) {
 			const addr = erc.address.toLowerCase() as Address;
@@ -243,29 +311,29 @@ export class PricesService {
 			if (!oldEntry) {
 				pricesQueryNewCount += 1;
 				this.logger.debug(`Price for ${erc.name} not available, trying to fetch...`);
-				const price = await this.fetchPrice(erc);
+				const price = await resolvePrice(erc);
 				if (!price) pricesQueryNewCountFailed += 1;
 
 				pricesQuery[addr] = {
 					...erc,
-					timestamp: price === null ? 0 : Date.now(),
+					timestamp: price === null ? 0 : now,
 					price: price === null ? { usd: 1 } : price,
 				};
-			} else if (oldEntry.timestamp + 300_000 < Date.now()) {
-				// needs to update => try to fetch
+			} else if (oldEntry.timestamp + STALE_MS < now) {
+				// needs to update => try to resolve
 				pricesQueryUpdateCount += 1;
 				this.logger.debug(`Price for ${erc.name} out of date, trying to fetch...`);
-				const price = await this.fetchPrice(erc);
+				const price = await resolvePrice(erc);
 
 				if (!price) {
 					pricesQueryUpdateCountFailed += 1;
 					// bump timestamp on failure so we honour the 5-minute retry window
 					// instead of refetching on every block tick when a token has no price source
-					pricesQuery[addr] = { ...oldEntry, timestamp: Date.now() };
+					pricesQuery[addr] = { ...oldEntry, timestamp: now };
 				} else {
 					pricesQuery[addr] = {
 						...erc,
-						timestamp: Date.now(),
+						timestamp: now,
 						price,
 					};
 				}
