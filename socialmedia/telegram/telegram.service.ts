@@ -8,6 +8,7 @@ import { FrontendCodeRegisteredQuery, FrontendCodeSavingsQuery } from 'frontendc
 import TelegramBot from 'node-telegram-bot-api';
 import { PositionsService } from 'positions/positions.service';
 import { SavingsLeadrateService } from 'savings/savings.leadrate.service';
+import { resolveMediaPath } from 'socialmedia/socialmedia.helper';
 import { SocialMediaFct, SocialMediaService } from 'socialmedia/socialmedia.service';
 import { StorageService } from 'storage/storage.service';
 import { TradeQuery } from 'trades/trade.types';
@@ -326,7 +327,14 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	private async sendMessage(group: string | number, message: string, video?: string): Promise<boolean> {
 		try {
 			this.logger.log(`Sending message to group id: ${group}`);
-			video ? await this.doSendVideo(group, message, video) : await this.doSendMessage(group, message);
+			// Notification assets are best-effort — when the file is missing fall back to a
+			// text-only message rather than letting node-telegram-bot-api reinterpret a missing
+			// local path as a URL (which produces "URL host is empty" 400s on every send).
+			const videoPath = resolveMediaPath(video);
+			if (video && !videoPath) {
+				this.logger.debug(`Telegram video asset missing: ${video} — sending text-only`);
+			}
+			videoPath ? await this.doSendVideo(group, message, videoPath) : await this.doSendMessage(group, message);
 			return true;
 		} catch (error) {
 			const msg = {

@@ -3,7 +3,8 @@ import { CONFIG } from 'api.config';
 import { StablecoinBridgeQuery } from 'bridge/bridge.types';
 import { EcosystemMintQueryItem } from 'ecosystem/ecosystem.stablecoin.types';
 import { FrontendCodeRegisteredQuery, FrontendCodeSavingsQuery } from 'frontendcode/frontendcode.types';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
+import { resolveMediaPath } from 'socialmedia/socialmedia.helper';
 import { SocialMediaFct, SocialMediaService } from 'socialmedia/socialmedia.service';
 import { TradeQuery } from 'trades/trade.types';
 import { SendTweetV2Params, TwitterApi } from 'twitter-api-v2';
@@ -25,9 +26,16 @@ export class TwitterService implements OnModuleInit, SocialMediaFct {
 	constructor(private readonly socialMediaService: SocialMediaService) {}
 
 	async onModuleInit() {
-		this.socialMediaService.register(this.constructor.name, this);
+		// Token bootstrap is a manual one-off (3-legged OAuth against @dEURO_com).
+		// Without a valid token every uploadMedia/tweet call fails — skip registration
+		// so the service stays quiet instead of erroring on every notification.
+		const token = this.readToken();
+		if (!token) {
+			this.logger.warn(`Twitter access tokens missing — service disabled. Populate ${this.tokenFile} via the OAuth bootstrap.`);
+			return;
+		}
 
-		const token = await this.readToken();
+		this.socialMediaService.register(this.constructor.name, this);
 
 		this.client = new TwitterApi({
 			appKey: CONFIG.twitter.appKey,
@@ -71,30 +79,47 @@ export class TwitterService implements OnModuleInit, SocialMediaFct {
 		await this.sendPost(messageInfo[0], messageInfo[1]);
 	}
 
-	private async sendPost(message: string, media?: string): Promise<string> {
+	private async sendPost(message: string, media?: string): Promise<string | undefined> {
 		try {
 			const tweetParams: Partial<SendTweetV2Params> = {
 				text: message,
 			};
 
-			if (media) {
-				const mediaId = await this.client.v1.uploadMedia(media).catch((e) => this.logger.error('uploadMedia failed', e));
+			// Notification assets are best-effort — when the file is missing post text-only
+			// rather than dropping the whole tweet.
+			const mediaPath = resolveMediaPath(media);
+			if (mediaPath) {
+				const mediaId = await this.client.v1
+					.uploadMedia(mediaPath)
+					.catch((e) => this.logger.error(`uploadMedia failed: ${e?.message ?? e}`));
 				if (mediaId) tweetParams.media = { media_ids: [mediaId] };
+			} else if (media) {
+				this.logger.debug(`Twitter media asset missing: ${media} — posting text-only`);
 			}
 
-			const result = await this.client.v2.tweet(tweetParams).catch((e) => this.logger.error('tweet failed', e));
-			if (!result) throw new Error('sendPost failed');
-			if (result.errors) throw new Error(`sendPost failed: ${JSON.stringify(result.errors)}`);
-
-			if (result.data) {
-				return result.data.id;
+			const result = await this.client.v2.tweet(tweetParams).catch((e) => this.logger.error(`tweet failed: ${e?.message ?? e}`));
+			if (!result) return undefined;
+			if (result.errors) {
+				this.logger.error(`tweet returned errors: ${JSON.stringify(result.errors)}`);
+				return undefined;
 			}
+
+			return result.data?.id;
 		} catch (e) {
-			this.logger.error('sendPost failed', e);
+			this.logger.error(`sendPost failed: ${e?.message ?? e}`);
+			return undefined;
 		}
 	}
 
-	private async readToken(): Promise<TwitterAccessToken> {
-		return JSON.parse(readFileSync(this.tokenFile, 'utf-8')) as TwitterAccessToken;
+	private readToken(): TwitterAccessToken | undefined {
+		if (!this.tokenFile || !existsSync(this.tokenFile)) return undefined;
+		try {
+			const parsed = JSON.parse(readFileSync(this.tokenFile, 'utf-8')) as Partial<TwitterAccessToken>;
+			if (!parsed?.access_token || !parsed?.access_secret) return undefined;
+			return parsed as TwitterAccessToken;
+		} catch (e) {
+			this.logger.warn(`Failed to parse ${this.tokenFile}: ${e?.message ?? e}`);
+			return undefined;
+		}
 	}
 }
