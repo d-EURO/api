@@ -6,53 +6,47 @@ import { CONFIG } from './api.config';
 
 const logger = new Logger('ApiApolloConfig');
 
+const FALLBACK_WINDOW_MS = 10 * 60 * 1000;
 let fallbackUntil: number | null = null;
 
 function getIndexerUrl(): string {
-	return fallbackUntil && Date.now() < fallbackUntil 
-		? CONFIG.indexerFallback 
-		: CONFIG.indexer;
+	return fallbackUntil && Date.now() < fallbackUntil ? CONFIG.indexerFallback : CONFIG.indexer;
 }
 
 function activateFallback(): void {
-	if (!fallbackUntil) {
-		fallbackUntil = Date.now() + 10 * 60 * 1000;
+	// Re-arm when the previous window has expired so a sustained outage
+	// keeps the fallback engaged instead of silently flipping back to primary.
+	if ((!fallbackUntil || Date.now() >= fallbackUntil) && CONFIG.indexerFallback) {
+		fallbackUntil = Date.now() + FALLBACK_WINDOW_MS;
 		logger.log(`[Ponder] Switching to fallback for 10min: ${CONFIG.indexerFallback}`);
 	}
 }
 
 const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+	const opName = operation?.operationName || 'unknown';
+
 	if (graphQLErrors) {
 		graphQLErrors.forEach((error) => {
-			logger.error(`[GraphQL error in operation: ${operation?.operationName || 'unknown'}]`, {
-				message: error.message,
-				locations: error.locations,
-				path: error.path,
-			});
+			logger.error(`[GraphQL error in operation: ${opName}] ${error.message}`);
 		});
 	}
-	
+
 	if (networkError) {
-		logger.error(`[Network error in operation: ${operation?.operationName || 'unknown'}]`, {
-			message: networkError.message,
-			name: networkError.name,
-			stack: networkError.stack,
-		});
+		const hasFallback = !!CONFIG.indexerFallback;
+		const onFallback = getIndexerUrl() !== CONFIG.indexer;
+		const willRecover = hasFallback && !onFallback;
+		const msg = `[Network error in operation: ${opName}] ${networkError.message}`;
 
-		if (getIndexerUrl() === CONFIG.indexer) {
-			const is503 =
-				(networkError as any)?.response?.status === 503 ||
-				(networkError as any)?.statusCode === 503 ||
-				(networkError as any)?.result?.status === 503;
-
-			if (is503) {
-				logger.log('[Ponder] 503 Service Unavailable - Ponder is syncing, switching to fallback');
-			} else {
-				logger.log('[Ponder] Network error detected, activating fallback');
-			}
+		if (willRecover) {
+			// Primary failed, fallback hasn't been engaged this window — log
+			// at warn so transparent retries don't inflate error-rate panels.
+			logger.warn(msg);
 			activateFallback();
 			return forward(operation);
 		}
+
+		// No fallback configured, or already on fallback — nothing more to try.
+		logger.error(msg);
 	}
 });
 
@@ -67,10 +61,9 @@ const httpLink = createHttpLink({
 		return fetch(uri, {
 			...options,
 			signal: controller.signal,
-		})
-			.finally(() => {
-				clearTimeout(timeout);
-			});
+		}).finally(() => {
+			clearTimeout(timeout);
+		});
 	},
 });
 
