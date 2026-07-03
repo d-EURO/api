@@ -9,18 +9,27 @@ const logger = new Logger('ApiApolloConfig');
 const FALLBACK_WINDOW_MS = 10 * 60 * 1000;
 let fallbackUntil: number | null = null;
 
+function isFallbackActive(): boolean {
+	return fallbackUntil !== null && Date.now() < fallbackUntil;
+}
+
 function getIndexerUrl(): string {
-	return fallbackUntil && Date.now() < fallbackUntil ? CONFIG.indexerFallback : CONFIG.indexer;
+	return isFallbackActive() ? CONFIG.indexerFallback : CONFIG.indexer;
 }
 
 function activateFallback(): void {
-	// Re-arm when the previous window has expired so a sustained outage
-	// keeps the fallback engaged instead of silently flipping back to primary.
-	if ((!fallbackUntil || Date.now() >= fallbackUntil) && CONFIG.indexerFallback) {
+	if (!isFallbackActive() && CONFIG.indexerFallback) {
 		fallbackUntil = Date.now() + FALLBACK_WINDOW_MS;
-		logger.log(`[Ponder] Switching to fallback for 10min: ${CONFIG.indexerFallback}`);
+		logger.warn(`[Ponder] Switching to fallback for ${FALLBACK_WINDOW_MS / 60000}min: ${CONFIG.indexerFallback}`);
 	}
 }
+
+// Stamps each attempt with its target URL so errors are attributed to the URL
+// the request was actually sent to, not the routing state at error time.
+const routingLink = new ApolloLink((operation, forward) => {
+	operation.setContext({ targetUrl: getIndexerUrl() });
+	return forward(operation);
+});
 
 const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
 	const opName = operation?.operationName || 'unknown';
@@ -32,26 +41,24 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 	}
 
 	if (networkError) {
-		const hasFallback = !!CONFIG.indexerFallback;
-		const onFallback = getIndexerUrl() !== CONFIG.indexer;
-		const willRecover = hasFallback && !onFallback;
 		const msg = `[Network error in operation: ${opName}] ${networkError.message}`;
+		const sentToFallback = !!CONFIG.indexerFallback && operation.getContext().targetUrl === CONFIG.indexerFallback;
 
-		if (willRecover) {
-			// Primary failed, fallback hasn't been engaged this window — log
-			// at warn so transparent retries don't inflate error-rate panels.
+		if (CONFIG.indexerFallback && !sentToFallback) {
+			// Primary failed and a fallback exists — log at warn so transparent
+			// retries don't inflate error-rate panels.
 			logger.warn(msg);
 			activateFallback();
 			return forward(operation);
 		}
 
-		// No fallback configured, or already on fallback — nothing more to try.
+		// No fallback configured, or the fallback itself failed — nothing more to try.
 		logger.error(msg);
 	}
 });
 
 const httpLink = createHttpLink({
-	uri: () => getIndexerUrl(),
+	uri: (operation) => operation.getContext().targetUrl ?? getIndexerUrl(),
 	fetch: (uri: RequestInfo | URL, options?: RequestInit) => {
 		const controller = new AbortController();
 		const timeout = setTimeout(() => {
@@ -67,7 +74,7 @@ const httpLink = createHttpLink({
 	},
 });
 
-const link = ApolloLink.from([errorLink, httpLink]);
+const link = ApolloLink.from([errorLink, routingLink, httpLink]);
 
 export const PONDER_CLIENT = new ApolloClient({
 	link,
