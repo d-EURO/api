@@ -200,6 +200,10 @@ export class PricesService {
 			this.logger.debug(data.status?.error_message || 'Error fetching price from coingecko');
 			return null;
 		}
+		if (!data.tether || typeof data.tether.eur !== 'number' || typeof data.tether.btc !== 'number') {
+			this.logger.debug('Unexpected coingecko response shape fetching euro price');
+			return null;
+		}
 
 		return {
 			eur: 1,
