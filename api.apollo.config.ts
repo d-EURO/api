@@ -29,7 +29,7 @@ function activateFallback(): void {
 // re-derived from the URL at error time — a bare URL comparison can't tell
 // primary from fallback once an operator points the fallback at the same
 // host as the primary (the standard way to disable cross-environment
-// failover; see CONFIG_INDEXER_FALLBACK_URL in the prd/dev compose files).
+// failover; see CONFIG_INDEXER_FALLBACK_URL in this repo's own deploy config).
 const routingLink = new ApolloLink((operation, forward) => {
 	operation.setContext({ targetUrl: getIndexerUrl(), usedFallback: isFallbackActive() });
 	return forward(operation);
