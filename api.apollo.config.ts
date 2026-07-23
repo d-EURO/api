@@ -24,10 +24,14 @@ function activateFallback(): void {
 	}
 }
 
-// Stamps each attempt with its target URL so errors are attributed to the URL
-// the request was actually sent to, not the routing state at error time.
+// Stamps each attempt with the URL it was sent to and whether that was the
+// fallback, so errors are attributed to the routing state at SEND time, not
+// re-derived from the URL at error time — a bare URL comparison can't tell
+// primary from fallback once an operator points the fallback at the same
+// host as the primary (the standard way to disable cross-environment
+// failover; see CONFIG_INDEXER_FALLBACK_URL in this repo's own deploy config).
 const routingLink = new ApolloLink((operation, forward) => {
-	operation.setContext({ targetUrl: getIndexerUrl() });
+	operation.setContext({ targetUrl: getIndexerUrl(), usedFallback: isFallbackActive() });
 	return forward(operation);
 });
 
@@ -42,7 +46,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 
 	if (networkError) {
 		const msg = `[Network error in operation: ${opName}] ${networkError.message}`;
-		const sentToFallback = !!CONFIG.indexerFallback && operation.getContext().targetUrl === CONFIG.indexerFallback;
+		const sentToFallback = !!operation.getContext().usedFallback;
 
 		if (CONFIG.indexerFallback && !sentToFallback) {
 			// Primary failed and a fallback exists — log at warn so transparent
