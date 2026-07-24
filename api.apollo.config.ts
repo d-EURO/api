@@ -1,5 +1,6 @@
 import { ApolloClient, ApolloLink, createHttpLink, InMemoryCache } from '@apollo/client/core';
 import { onError } from '@apollo/client/link/error';
+import { RetryLink } from '@apollo/client/link/retry';
 import { Logger } from '@nestjs/common';
 import fetch from 'cross-fetch';
 import { CONFIG } from './api.config';
@@ -57,6 +58,14 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 	}
 });
 
+// Retries transport-level failures (e.g. a stale keep-alive socket closing
+// mid-response) before they reach errorLink, so a one-off blip self-heals
+// instead of tripping the fallback/error path.
+const retryLink = new RetryLink({
+	delay: { initial: 200, max: 2000, jitter: true },
+	attempts: { max: 3, retryIf: (error) => !!error },
+});
+
 const httpLink = createHttpLink({
 	uri: (operation) => operation.getContext().targetUrl ?? getIndexerUrl(),
 	fetch: (uri: RequestInfo | URL, options?: RequestInit) => {
@@ -74,7 +83,7 @@ const httpLink = createHttpLink({
 	},
 });
 
-const link = ApolloLink.from([errorLink, routingLink, httpLink]);
+const link = ApolloLink.from([errorLink, routingLink, retryLink, httpLink]);
 
 export const PONDER_CLIENT = new ApolloClient({
 	link,
