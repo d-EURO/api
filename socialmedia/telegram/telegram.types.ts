@@ -19,6 +19,16 @@ export type TelegramSubscriptionState = {
 	tradeUpdates: number;
 };
 
+// @dev: in-memory state of an ongoing telegram polling outage, used to report it once
+// per distinct failure instead of once per retry
+export type TelegramPollingOutage = {
+	since: number;
+	lastAt: number;
+	lastReportAt: number;
+	attempts: number;
+	signatures: Set<string>;
+};
+
 export type TelegramGroupState = {
 	apiVersion: string;
 	createdAt: number;
