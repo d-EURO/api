@@ -41,6 +41,8 @@ const POLLING_RECOVERY_GRACE_MS = 30_000;
 const POLLING_REPORT_INTERVAL_MS = 300_000;
 // Telegram errors wrap the upstream response body, which is not always short.
 const MAX_POLLING_ERROR_LENGTH = 200;
+// Beyond this many distinct failures one outage reports on its interval only.
+const MAX_POLLING_SIGNATURES = 20;
 
 @Injectable()
 export class TelegramService implements OnModuleInit, SocialMediaFct {
@@ -378,13 +380,15 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 
 	// Telegram's gateway answers 502/504 during its own restarts, so a short outage would
 	// otherwise produce several identical lines per second. Report one line per distinct
-	// failure and one on recovery, both at warn so an outage never appears to stay open.
-	private onPollingError(error: Error & { code?: string }): void {
+	// failure, repeat an outage that never clears every POLLING_REPORT_INTERVAL_MS, and close
+	// it with one line — all at warn, so an outage never appears to stay open.
+	private onPollingError(error: Error): void {
 		const message = (error?.message ?? String(error)).slice(0, MAX_POLLING_ERROR_LENGTH);
-		// Digits carry the volatile parts of a telegram error — the countdown in
-		// "retry after 5" and the rotating gateway address in a connect failure — so they are
-		// masked out of the signature to keep one repeating failure on one line.
-		const signature = `${error?.code ?? 'UNKNOWN'}: ${message.replace(/\d+/g, '#')}`;
+		// The library prefixes its own error code onto the message, so the message alone
+		// identifies the failure. Digits carry the volatile parts — the countdown in
+		// "retry after 5", the rotating gateway address in a connect failure — and are masked
+		// out to keep a repeating failure on one line.
+		const signature = message.replace(/\d+/g, '#');
 		const now = Date.now();
 
 		if (!this.pollingOutage) {
@@ -394,7 +398,9 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		this.pollingOutage.attempts++;
 		this.pollingOutage.lastAt = now;
 
-		const isNewFailure = !this.pollingOutage.signatures.has(signature);
+		// Past the cap only the periodic report remains, which bounds the log volume and the
+		// set itself if a message carries a token that survives digit masking.
+		const isNewFailure = !this.pollingOutage.signatures.has(signature) && this.pollingOutage.signatures.size < MAX_POLLING_SIGNATURES;
 		if (isNewFailure) this.pollingOutage.signatures.add(signature);
 
 		if (isNewFailure || now - this.pollingOutage.lastReportAt >= POLLING_REPORT_INTERVAL_MS) {
@@ -414,7 +420,11 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		this.pollingOutage = null;
 		this.pollingRecoveryTimer = null;
 
-		this.logger.warn(`Telegram polling recovered after ${Math.round((lastAt - since) / 1000)}s and ${attempts} failed attempts`);
+		// A single failure needs no closing line. Silence only proves that no further error
+		// arrived — the poll itself is not probed here, so the line does not claim more.
+		if (attempts <= 1) return;
+
+		this.logger.warn(`Telegram polling errors stopped after ${Math.round((lastAt - since) / 1000)}s and ${attempts} attempts`);
 	}
 
 	private async doSendMessage(group: string | number, message: string): Promise<void> {
