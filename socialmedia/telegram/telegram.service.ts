@@ -30,10 +30,19 @@ import { PositionProposalMessage } from './messages/PositionProposal.message';
 import { SavingUpdateMessage } from './messages/SavingUpdate.message';
 import { StablecoinBridgeMessage } from './messages/StablecoinBridgeUpdate.message';
 import { TradeMessage } from './messages/Trade.message';
-import { TelegramGroupState, TelegramState } from './telegram.types';
+import { TelegramGroupState, TelegramPollingOutage, TelegramState } from './telegram.types';
 
 // Stay under telegram per-chat rate limit (~30 msg/s) when bursting position-lifecycle alerts.
 const TELEGRAM_THROTTLE_MS = 100;
+
+// Consider polling healthy again once no further error arrived for this long.
+const POLLING_RECOVERY_GRACE_MS = 30_000;
+// Repeat an ongoing outage at this interval so a permanent failure never goes silent.
+const POLLING_REPORT_INTERVAL_MS = 300_000;
+// Telegram errors wrap the upstream response body, which is not always short.
+const MAX_POLLING_ERROR_LENGTH = 200;
+// Beyond this many distinct failures one outage reports on its interval only.
+const MAX_POLLING_SIGNATURES = 20;
 
 @Injectable()
 export class TelegramService implements OnModuleInit, SocialMediaFct {
@@ -42,6 +51,8 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 	private readonly telegramHandles: string[] = ['/start', '/subscribe', '/unsubscribe', '/help'];
 	private readonly telegramState: TelegramState;
 	private telegramGroupState: TelegramGroupState;
+	private pollingOutage: TelegramPollingOutage | null = null;
+	private pollingRecoveryTimer: NodeJS.Timeout | null = null;
 
 	constructor(
 		private readonly socialMediaService: SocialMediaService,
@@ -51,6 +62,10 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 		private readonly position: PositionsService,
 		private readonly challenge: ChallengesService
 	) {
+		// Without a 'polling_error' listener node-telegram-bot-api writes its own unformatted
+		// console error for every failed poll, and it retries on a fixed interval with no backoff.
+		this.bot.on('polling_error', (error) => this.onPollingError(error));
+
 		const time: number = Date.now() + 365 * 24 * 60 * 60 * 1000;
 
 		this.telegramState = {
@@ -361,6 +376,55 @@ export class TelegramService implements OnModuleInit, SocialMediaFct {
 			}
 			return false;
 		}
+	}
+
+	// Telegram's gateway answers 502/504 during its own restarts, so a short outage would
+	// otherwise produce several identical lines per second. Report one line per distinct
+	// failure, repeat an outage that never clears every POLLING_REPORT_INTERVAL_MS, and close
+	// it with one line — all at warn, so an outage never appears to stay open.
+	private onPollingError(error: Error): void {
+		const message = (error?.message ?? String(error)).slice(0, MAX_POLLING_ERROR_LENGTH);
+		// The library prefixes its own error code onto the message, so the message alone
+		// identifies the failure. Digits carry the volatile parts — the countdown in
+		// "retry after 5", the rotating gateway address in a connect failure — and are masked
+		// out to keep a repeating failure on one line.
+		const signature = message.replace(/\d+/g, '#');
+		const now = Date.now();
+
+		if (!this.pollingOutage) {
+			this.pollingOutage = { since: now, lastAt: now, lastReportAt: 0, attempts: 0, signatures: new Set() };
+		}
+
+		this.pollingOutage.attempts++;
+		this.pollingOutage.lastAt = now;
+
+		// Past the cap only the periodic report remains, which bounds the log volume and the
+		// set itself if a message carries a token that survives digit masking.
+		const isNewFailure = !this.pollingOutage.signatures.has(signature) && this.pollingOutage.signatures.size < MAX_POLLING_SIGNATURES;
+		if (isNewFailure) this.pollingOutage.signatures.add(signature);
+
+		if (isNewFailure || now - this.pollingOutage.lastReportAt >= POLLING_REPORT_INTERVAL_MS) {
+			this.pollingOutage.lastReportAt = now;
+			this.logger.warn(`Telegram polling failing (attempt ${this.pollingOutage.attempts}): ${message}`);
+		}
+
+		if (this.pollingRecoveryTimer) clearTimeout(this.pollingRecoveryTimer);
+		this.pollingRecoveryTimer = setTimeout(() => this.onPollingRecovered(), POLLING_RECOVERY_GRACE_MS);
+		this.pollingRecoveryTimer.unref();
+	}
+
+	private onPollingRecovered(): void {
+		if (!this.pollingOutage) return;
+
+		const { since, lastAt, attempts } = this.pollingOutage;
+		this.pollingOutage = null;
+		this.pollingRecoveryTimer = null;
+
+		// A single failure needs no closing line. Silence only proves that no further error
+		// arrived — the poll itself is not probed here, so the line does not claim more.
+		if (attempts <= 1) return;
+
+		this.logger.warn(`Telegram polling errors stopped after ${Math.round((lastAt - since) / 1000)}s and ${attempts} attempts`);
 	}
 
 	private async doSendMessage(group: string | number, message: string): Promise<void> {
