@@ -204,6 +204,7 @@ export class PositionsService {
 			// and the API will be aware of the updated state.
 			// Same for closed and principal: Ponder updates them only via the position contract's MintingUpdate event;
 			// if that event is missing from the index, a closed position would stay open with a stale principal.
+			// closed is monotonic on-chain, so the indexed and the live flag are OR-ed and a stale RPC read can never reopen a position.
 			balanceOfDataPromises.push(
 				VIEM_CONFIG.readContract({
 					address: p.collateral,
@@ -290,7 +291,7 @@ export class PositionsService {
 				isOriginal: p.isOriginal,
 				isClone: p.isClone,
 				denied: p.denied,
-				closed: typeof c === 'boolean' ? c : p.closed,
+				closed: p.closed || c === true,
 				original: getAddress(p.original),
 
 				minimumCollateral: p.minimumCollateral,
