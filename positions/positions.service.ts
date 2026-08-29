@@ -202,9 +202,9 @@ export class PositionsService {
 			// Forces the collateral balance to be overwritten with the latest blockchain state, instead of the ponder state.
 			// This ensures that collateral transfers can be made without using the smart contract or application directly,
 			// and the API will be aware of the updated state.
-			// Same for closed and principal: Ponder updates them only via the position contract's MintingUpdate event;
-			// if that event is missing from the index, a closed position would stay open with a stale principal.
-			// closed is monotonic on-chain, so the indexed and the live flag are OR-ed and a stale RPC read can never reopen a position.
+			// principal and closed are read live for the same reason: the indexer only updates them through the position
+			// contract's MintingUpdate event, so a position whose last event never reached the index would look open.
+			// principal replaces the indexed value (with fallback); closed is OR-ed with it, as it never flips back on-chain.
 			balanceOfDataPromises.push(
 				VIEM_CONFIG.readContract({
 					address: p.collateral,
