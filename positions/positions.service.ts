@@ -204,7 +204,8 @@ export class PositionsService {
 			// and the API will be aware of the updated state.
 			// principal and closed are read live for the same reason: the indexer only updates them through the position
 			// contract's MintingUpdate event, so a position whose last event never reached the index would look open.
-			// principal replaces the indexed value (with fallback); closed is OR-ed with it, as it never flips back on-chain.
+			// principal replaces the indexed value (with fallback); closed is OR-ed with the indexed and the previously
+			// cached flag, as it never flips back on-chain and a failed read must not reopen a position.
 			balanceOfDataPromises.push(
 				VIEM_CONFIG.readContract({
 					address: p.collateral,
@@ -269,6 +270,7 @@ export class PositionsService {
 
 		for (let idx = 0; idx < items.length; idx++) {
 			const p = items[idx] as PositionQuery;
+			const cached = this.fetchedPositions[p.position.toLowerCase() as Address];
 			const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
 			const v = (virtualPriceData[idx] as PromiseFulfilledResult<bigint>).value;
 			const i = (interestData[idx] as PromiseFulfilledResult<bigint>).value;
@@ -291,7 +293,7 @@ export class PositionsService {
 				isOriginal: p.isOriginal,
 				isClone: p.isClone,
 				denied: p.denied,
-				closed: p.closed || c === true,
+				closed: cached?.closed === true || p.closed || c === true,
 				original: getAddress(p.original),
 
 				minimumCollateral: p.minimumCollateral,
