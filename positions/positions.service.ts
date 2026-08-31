@@ -188,6 +188,8 @@ export class PositionsService {
 		const balanceOfDataPromises: Promise<bigint>[] = [];
 		const virtualPriceDataPromises: Promise<bigint>[] = [];
 		const interestPromises: Promise<bigint>[] = [];
+		const isClosedPromises: Promise<boolean>[] = [];
+		const principalPromises: Promise<bigint>[] = [];
 
 		// V2 leadrate must succeed — failure aborts the update so stale-but-correct data is served
 		const v2Leadrate = await VIEM_CONFIG.readContract({
@@ -200,6 +202,10 @@ export class PositionsService {
 			// Forces the collateral balance to be overwritten with the latest blockchain state, instead of the ponder state.
 			// This ensures that collateral transfers can be made without using the smart contract or application directly,
 			// and the API will be aware of the updated state.
+			// principal and closed are read live for the same reason: the indexer only updates them through the position
+			// contract's MintingUpdate event, so a position whose last event never reached the index would look open.
+			// principal replaces the indexed value (with fallback); closed is OR-ed with the indexed and the previously
+			// cached flag, as it never flips back on-chain and a failed read must not reopen a position.
 			balanceOfDataPromises.push(
 				VIEM_CONFIG.readContract({
 					address: p.collateral,
@@ -225,6 +231,22 @@ export class PositionsService {
 				})
 			);
 
+			isClosedPromises.push(
+				VIEM_CONFIG.readContract({
+					address: p.position,
+					abi: PositionV2ABI,
+					functionName: 'isClosed',
+				})
+			);
+
+			principalPromises.push(
+				VIEM_CONFIG.readContract({
+					address: p.position,
+					abi: PositionV2ABI,
+					functionName: 'principal',
+				})
+			);
+
 			// TODO: is this solved in V2?
 			// fetch minted - See issue #11
 			// https://github.com/Frankencoin-ZCHF/frankencoin-api/issues/
@@ -243,12 +265,17 @@ export class PositionsService {
 		const balanceOfData = await Promise.allSettled(balanceOfDataPromises);
 		const virtualPriceData = await Promise.allSettled(virtualPriceDataPromises);
 		const interestData = await Promise.allSettled(interestPromises);
+		const isClosedData = await Promise.allSettled(isClosedPromises);
+		const principalData = await Promise.allSettled(principalPromises);
 
 		for (let idx = 0; idx < items.length; idx++) {
 			const p = items[idx] as PositionQuery;
+			const cached = this.fetchedPositions[p.position.toLowerCase() as Address];
 			const b = (balanceOfData[idx] as PromiseFulfilledResult<bigint>).value;
 			const v = (virtualPriceData[idx] as PromiseFulfilledResult<bigint>).value;
 			const i = (interestData[idx] as PromiseFulfilledResult<bigint>).value;
+			const c = (isClosedData[idx] as PromiseFulfilledResult<boolean>).value;
+			const pr = (principalData[idx] as PromiseFulfilledResult<bigint>).value;
 
 			const annualInterestPPM = isV3Hub(p.mintingHubAddress) ? p.fixedAnnualRatePPM : v2Leadrate + p.riskPremiumPPM;
 
@@ -266,7 +293,7 @@ export class PositionsService {
 				isOriginal: p.isOriginal,
 				isClone: p.isClone,
 				denied: p.denied,
-				closed: p.closed,
+				closed: cached?.closed === true || p.closed || c === true,
 				original: getAddress(p.original),
 
 				minimumCollateral: p.minimumCollateral,
@@ -290,7 +317,7 @@ export class PositionsService {
 				limitForClones: p.limitForClones,
 				availableForClones: p.availableForClones,
 				availableForMinting: p.availableForMinting,
-				principal: p.principal,
+				principal: typeof pr === 'bigint' ? pr.toString() : p.principal,
 				fixedAnnualRatePPM: p.fixedAnnualRatePPM,
 				virtualPrice: typeof v === 'bigint' ? v.toString() : p.virtualPrice,
 				interest: typeof i === 'bigint' ? i.toString() : '0',
