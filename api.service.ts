@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
+import { isIndexerNetworkError } from 'api.apollo.config';
 import { CONFIG, VIEM_CONFIG } from 'api.config';
 import { ChallengesService } from 'challenges/challenges.service';
 import { EcosystemDepsService } from 'ecosystem/ecosystem.deps.service';
@@ -57,7 +58,9 @@ export class ApiService {
 					await fn();
 					this.logger.debug(`${name} completed in ${Date.now() - start}ms`);
 				} catch (err) {
-					this.logger.error(`Failed to update ${name} after ${Date.now() - start}ms:`, err);
+					const msg = `Failed to update ${name} after ${Date.now() - start}ms: ${err?.message ?? err}`;
+					if (isIndexerNetworkError(err)) this.logger.warn(msg);
+					else this.logger.error(msg, err);
 					throw err;
 				}
 			};
@@ -86,7 +89,7 @@ export class ApiService {
 	}
 
 	async updateSocialMedia() {
-		this.socialMediaService.update().catch((err) => this.logger.error('Failed to update social media:', err));
+		this.socialMediaService.update().catch((err) => this.logger.error(`Failed to update social media: ${err?.message ?? err}`, err));
 	}
 
 	@Interval(POLLING_DELAY[CONFIG.chain.id])
@@ -102,7 +105,7 @@ export class ApiService {
 					this.indexingTimeoutCount = 0;
 					this.fetchedBlockheight = tmp;
 				} catch (error) {
-					this.logger.error('Error in updateWorkflow:', error);
+					this.logger.error(`Error in updateWorkflow: ${error?.message ?? error}`, error);
 				} finally {
 					this.indexing = false;
 				}
@@ -113,7 +116,7 @@ export class ApiService {
 				this.indexing = false;
 			}
 		} catch (error) {
-			this.logger.error('Error getting block number:', error);
+			this.logger.error(`Error getting block number: ${error?.message ?? error}`, error);
 		}
 	}
 }
