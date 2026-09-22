@@ -16,7 +16,7 @@ const normalizeUrl = (url: string): string => url.replace(/\/+$/, '');
 const HAS_FALLBACK = !!CONFIG.indexerFallback && normalizeUrl(CONFIG.indexerFallback) !== normalizeUrl(CONFIG.indexer);
 
 // Outage state: the first final network failure is logged as error, the
-// following ones as warn, until the next successful response.
+// following ones as warn, until the indexer answers again.
 let outageSince: number | null = null;
 let outageFailedOperations = 0;
 
@@ -73,8 +73,6 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 		});
 	}
 
-	// Without a distinct fallback there is nothing more to try: the failure is
-	// final and reported by outageLink.
 	if (networkError && HAS_FALLBACK && operation.getContext().targetUrl !== CONFIG.indexerFallback) {
 		// Primary failed and a fallback exists — log at warn so transparent
 		// retries don't inflate error-rate panels.
@@ -82,6 +80,9 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 		activateFallback();
 		return forward(operation);
 	}
+
+	// No distinct fallback, or the fallback itself failed: nothing more to try.
+	// The error propagates and outageLink reports it as final.
 });
 
 // Outermost link: sees each operation's final outcome once, after retries and
