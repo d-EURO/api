@@ -85,21 +85,27 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 });
 
 // Outermost link: sees each operation's final outcome once, after retries and
-// a possible fallback attempt. Errors reaching it are network errors; a result
-// (even one carrying GraphQL errors) means the indexer is reachable.
+// a possible fallback attempt. Errors reaching it are network errors; a completed
+// result (even one carrying GraphQL errors) means the indexer is reachable.
+// Reachability is only reported on complete: a failed attempt can emit a result
+// before its error (non-2xx response carrying data and errors).
 const outageLink = new ApolloLink(
 	(operation, forward) =>
 		new Observable((observer) => {
+			let sawResult = false;
 			const sub = forward(operation).subscribe({
 				next: (result) => {
-					reportIndexerReachable();
+					sawResult = true;
 					observer.next(result);
 				},
 				error: (err) => {
 					reportIndexerFailure(`[Network error in operation: ${operation.operationName || 'unknown'}] ${err?.message ?? err}`);
 					observer.error(err);
 				},
-				complete: () => observer.complete(),
+				complete: () => {
+					if (sawResult) reportIndexerReachable();
+					observer.complete();
+				},
 			});
 			return () => sub.unsubscribe();
 		})
