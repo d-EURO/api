@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { isIndexerNetworkError } from 'api.apollo.config';
 import { StablecoinEnum } from 'bridge/bridge.enum';
 import { BridgeService } from 'bridge/bridge.service';
 import { StablecoinBridgeQuery } from 'bridge/bridge.types';
@@ -94,7 +95,9 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error(`Error while sending saving updates: ${e?.message ?? e}`, e?.stack);
+			const msg = `Error while sending saving updates: ${e?.message ?? e}`;
+			if (isIndexerNetworkError(e)) this.logger.warn(msg);
+			else this.logger.error(msg, e?.stack);
 		}
 	}
 
@@ -113,7 +116,9 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error(`Error while sending frontend code updates: ${e?.message ?? e}`, e?.stack);
+			const msg = `Error while sending frontend code updates: ${e?.message ?? e}`;
+			if (isIndexerNetworkError(e)) this.logger.warn(msg);
+			else this.logger.error(msg, e?.stack);
 		}
 	}
 
@@ -137,7 +142,9 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error(`Error while sending trade updates: ${e?.message ?? e}`, e?.stack);
+			const msg = `Error while sending trade updates: ${e?.message ?? e}`;
+			if (isIndexerNetworkError(e)) this.logger.warn(msg);
+			else this.logger.error(msg, e?.stack);
 		}
 	}
 
@@ -160,7 +167,9 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error(`Error while sending bridge updates: ${e?.message ?? e}`, e?.stack);
+			const msg = `Error while sending bridge updates: ${e?.message ?? e}`;
+			if (isIndexerNetworkError(e)) this.logger.warn(msg);
+			else this.logger.error(msg, e?.stack);
 		}
 	}
 
@@ -181,7 +190,9 @@ export class SocialMediaService {
 				}
 			}
 		} catch (e) {
-			this.logger.error(`Error while sending mint updates: ${e?.message ?? e}`, e?.stack);
+			const msg = `Error while sending mint updates: ${e?.message ?? e}`;
+			if (isIndexerNetworkError(e)) this.logger.warn(msg);
+			else this.logger.error(msg, e?.stack);
 		}
 	}
 }
