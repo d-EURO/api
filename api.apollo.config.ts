@@ -1,4 +1,4 @@
-import { ApolloClient, ApolloLink, createHttpLink, InMemoryCache } from '@apollo/client/core';
+import { ApolloClient, ApolloError, ApolloLink, createHttpLink, InMemoryCache, Observable } from '@apollo/client/core';
 import { onError } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
 import { Logger } from '@nestjs/common';
@@ -10,6 +10,38 @@ const logger = new Logger('ApiApolloConfig');
 const FALLBACK_WINDOW_MS = 10 * 60 * 1000;
 let fallbackUntil: number | null = null;
 
+// A fallback only exists if it points to a different indexer. The deployment
+// environments set it equal to the primary when no second indexer exists.
+const normalizeUrl = (url: string): string => url.replace(/\/+$/, '');
+const HAS_FALLBACK = !!CONFIG.indexerFallback && normalizeUrl(CONFIG.indexerFallback) !== normalizeUrl(CONFIG.indexer);
+
+// Outage state: the first final network failure is logged as error, the
+// following ones as warn, until the indexer answers again.
+let outageSince: number | null = null;
+let outageFailedOperations = 0;
+
+function reportIndexerFailure(msg: string): void {
+	outageFailedOperations += 1;
+	if (outageSince === null) {
+		outageSince = Date.now();
+		logger.error(msg);
+	} else {
+		logger.warn(msg);
+	}
+}
+
+function reportIndexerReachable(): void {
+	if (outageSince === null) return;
+	const seconds = Math.round((Date.now() - outageSince) / 1000);
+	logger.log(`[Ponder] Indexer reachable again after ${seconds}s (${outageFailedOperations} failed operations)`);
+	outageSince = null;
+	outageFailedOperations = 0;
+}
+
+export function isIndexerNetworkError(err: unknown): boolean {
+	return err instanceof ApolloError && !!err.networkError;
+}
+
 function isFallbackActive(): boolean {
 	return fallbackUntil !== null && Date.now() < fallbackUntil;
 }
@@ -19,7 +51,7 @@ function getIndexerUrl(): string {
 }
 
 function activateFallback(): void {
-	if (!isFallbackActive() && CONFIG.indexerFallback) {
+	if (!isFallbackActive() && HAS_FALLBACK) {
 		fallbackUntil = Date.now() + FALLBACK_WINDOW_MS;
 		logger.warn(`[Ponder] Switching to fallback for ${FALLBACK_WINDOW_MS / 60000}min: ${CONFIG.indexerFallback}`);
 	}
@@ -41,22 +73,44 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 		});
 	}
 
-	if (networkError) {
-		const msg = `[Network error in operation: ${opName}] ${networkError.message}`;
-		const sentToFallback = !!CONFIG.indexerFallback && operation.getContext().targetUrl === CONFIG.indexerFallback;
-
-		if (CONFIG.indexerFallback && !sentToFallback) {
-			// Primary failed and a fallback exists — log at warn so transparent
-			// retries don't inflate error-rate panels.
-			logger.warn(msg);
-			activateFallback();
-			return forward(operation);
-		}
-
-		// No fallback configured, or the fallback itself failed — nothing more to try.
-		logger.error(msg);
+	if (networkError && HAS_FALLBACK && operation.getContext().targetUrl !== CONFIG.indexerFallback) {
+		// Primary failed and a fallback exists — log at warn so transparent
+		// retries don't inflate error-rate panels.
+		logger.warn(`[Network error in operation: ${opName}] ${networkError.message}`);
+		activateFallback();
+		return forward(operation);
 	}
+
+	// No distinct fallback, or the fallback itself failed: nothing more to try.
+	// The error propagates and outageLink reports it as final.
 });
+
+// Outermost link: sees each operation's final outcome once, after retries and
+// a possible fallback attempt. Errors reaching it are network errors; a completed
+// result (even one carrying GraphQL errors) means the indexer is reachable.
+// Reachability is only reported on complete: a failed attempt can emit a result
+// before its error (non-2xx response carrying data and errors).
+const outageLink = new ApolloLink(
+	(operation, forward) =>
+		new Observable((observer) => {
+			let sawResult = false;
+			const sub = forward(operation).subscribe({
+				next: (result) => {
+					sawResult = true;
+					observer.next(result);
+				},
+				error: (err) => {
+					reportIndexerFailure(`[Network error in operation: ${operation.operationName || 'unknown'}] ${err?.message ?? err}`);
+					observer.error(err);
+				},
+				complete: () => {
+					if (sawResult) reportIndexerReachable();
+					observer.complete();
+				},
+			});
+			return () => sub.unsubscribe();
+		})
+);
 
 // Retries transport-level failures (e.g. a stale keep-alive socket closing
 // mid-response) before they reach errorLink, so a one-off blip self-heals
@@ -83,7 +137,7 @@ const httpLink = createHttpLink({
 	},
 });
 
-const link = ApolloLink.from([errorLink, routingLink, retryLink, httpLink]);
+const link = ApolloLink.from([outageLink, errorLink, routingLink, retryLink, httpLink]);
 
 export const PONDER_CLIENT = new ApolloClient({
 	link,
