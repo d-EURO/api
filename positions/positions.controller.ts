@@ -9,6 +9,7 @@ import {
 	ApiPositionsOwners,
 } from './positions.types';
 import { Address } from 'viem';
+import { AddressPipe } from 'utils/address.pipe';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Positions Controller')
@@ -77,12 +78,9 @@ export class PositionsController {
 		description: 'Returns the best cloneable parent position for the given collateral. Optionally filter by minting hub.',
 	})
 	getBestCloneable(
-		@Query('collateral') collateral: string,
-		@Query('mintingHubAddress') mintingHubAddress?: string,
+		@Query('collateral', new AddressPipe()) collateral: Address,
+		@Query('mintingHubAddress', new AddressPipe({ optional: true })) mintingHubAddress?: Address
 	): ApiBestCloneable {
-		return this.positionsService.getBestCloneableParent(
-			(collateral ?? '').toLowerCase() as Address,
-			mintingHubAddress ? (mintingHubAddress.toLowerCase() as Address) : undefined,
-		);
+		return this.positionsService.getBestCloneableParent(collateral, mintingHubAddress);
 	}
 }
