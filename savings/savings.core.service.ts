@@ -141,18 +141,14 @@ export class SavingsCoreService {
 
 	async getUserTables(userAddress: Address, limit: number = 15): Promise<ApiSavingsUserTable> {
 		const user: Address = userAddress == zeroAddress ? zeroAddress : (userAddress.toLowerCase() as Address);
-		const userWhere = user == zeroAddress ? '' : `where: { account: "${user}" }`;
-		const ownerWhere = user == zeroAddress ? '' : `where: { owner: "${user}" }`;
+		// the indexer rejects `where: null`, so the filter is omitted for all users
+		const accountVariables = user == zeroAddress ? { limit } : { limit, where: { account: user } };
+		const ownerVariables = user == zeroAddress ? { limit } : { limit, where: { owner: user } };
 		const savedFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query GetSavingsSaved {
-					savingsSaveds(
-						orderBy: "blockheight"
-						orderDirection: "desc"
-						${userWhere}
-						limit: ${limit}
-					) {
+				query GetSavingsSaved($limit: Int, $where: savingsSavedFilter) {
+					savingsSaveds(orderBy: "blockheight", orderDirection: "desc", where: $where, limit: $limit) {
 						items {
 							id
 							created
@@ -167,18 +163,14 @@ export class SavingsCoreService {
 					}
 				}
 			`,
+			variables: accountVariables,
 		});
 
 		const withdrawnFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query GetSavingsWithdrawn {
-					savingsWithdrawns(
-						orderBy: "blockheight"
-						orderDirection: "desc"
-						${userWhere}
-						limit: ${limit}
-					) {
+				query GetSavingsWithdrawn($limit: Int, $where: savingsWithdrawnFilter) {
+					savingsWithdrawns(orderBy: "blockheight", orderDirection: "desc", where: $where, limit: $limit) {
 						items {
 							id
 							created
@@ -193,18 +185,14 @@ export class SavingsCoreService {
 					}
 				}
 			`,
+			variables: accountVariables,
 		});
 
 		const interestFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query GetSavingsInterest {
-					savingsInterests(
-						orderBy: "blockheight"
-						orderDirection: "desc"
-						${userWhere}
-						limit: ${limit}
-					) {
+				query GetSavingsInterest($limit: Int, $where: savingsInterestFilter) {
+					savingsInterests(orderBy: "blockheight", orderDirection: "desc", where: $where, limit: $limit) {
 						items {
 							id
 							created
@@ -219,18 +207,14 @@ export class SavingsCoreService {
 					}
 				}
 			`,
+			variables: accountVariables,
 		});
 
 		const vaultDepositsFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query GetSavingsVaultDeposit {
-					savingsVaultDeposits(
-						orderBy: "blockheight"
-						orderDirection: "desc"
-						${ownerWhere}
-						limit: ${limit}
-					) {
+				query GetSavingsVaultDeposit($limit: Int, $where: savingsVaultDepositFilter) {
+					savingsVaultDeposits(orderBy: "blockheight", orderDirection: "desc", where: $where, limit: $limit) {
 						items {
 							id
 							vault
@@ -243,18 +227,14 @@ export class SavingsCoreService {
 					}
 				}
 			`,
+			variables: ownerVariables,
 		});
 
 		const vaultWithdrawsFetched = await PONDER_CLIENT.query({
 			fetchPolicy: 'no-cache',
 			query: gql`
-				query GetSavingsVaultWithdraw {
-					savingsVaultWithdraws(
-						orderBy: "blockheight"
-						orderDirection: "desc"
-						${ownerWhere}
-						limit: ${limit}
-					) {
+				query GetSavingsVaultWithdraw($limit: Int, $where: savingsVaultWithdrawFilter) {
+					savingsVaultWithdraws(orderBy: "blockheight", orderDirection: "desc", where: $where, limit: $limit) {
 						items {
 							id
 							vault
@@ -267,6 +247,7 @@ export class SavingsCoreService {
 					}
 				}
 			`,
+			variables: ownerVariables,
 		});
 
 		return {
