@@ -30,7 +30,7 @@ describe('SavingsCoreController GET /savings/core/user/:address', () => {
 		getUserTables.mockResolvedValue({ save: [], interest: [], withdraw: [], vaultSave: [], vaultWithdraw: [] });
 	});
 
-	it.each(['x"', '0x1234" OR "1"="1', '0x1234', 'foo'])('returns 400 for %p', async (address) => {
+	it.each(['x"', '0x1234"', '0x1234', 'foo'])('returns 400 for %p', async (address) => {
 		await request(app.getHttpServer())
 			.get(`/savings/core/user/${encodeURIComponent(address)}`)
 			.expect(400);

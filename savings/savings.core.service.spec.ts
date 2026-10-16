@@ -20,6 +20,24 @@ describe('SavingsCoreService.getUserTables', () => {
 
 	const variablesOf = () => query.mock.calls.map(([options]) => options.variables);
 
+	it('declares and uses $where and $limit in every query', async () => {
+		await service.getUserTables(USER);
+
+		const filterTypes = [
+			'savingsSavedFilter',
+			'savingsWithdrawnFilter',
+			'savingsInterestFilter',
+			'savingsVaultDepositFilter',
+			'savingsVaultWithdrawFilter',
+		];
+		expect(query).toHaveBeenCalledTimes(filterTypes.length);
+		query.mock.calls.forEach(([options], i) => {
+			const body: string = options.query.loc.source.body;
+			expect(body).toContain(`($limit: Int, $where: ${filterTypes[i]})`);
+			expect(body).toContain('where: $where, limit: $limit');
+		});
+	});
+
 	it('filters by account and owner through GraphQL variables', async () => {
 		await service.getUserTables(USER);
 

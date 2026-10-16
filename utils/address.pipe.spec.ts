@@ -14,7 +14,7 @@ describe('parseAddress', () => {
 		expect(parseAddress(LOWER, 'address')).toBe(LOWER);
 	});
 
-	it.each(['x"', '0x1234" OR "1"="1', '0x1234', `${LOWER}0`, 'all', 'abc'])('rejects %p', (value) => {
+	it.each(['x"', '0x1234"', '0x1234', `${LOWER}0`, 'all', 'abc'])('rejects %p', (value) => {
 		expect(() => parseAddress(value, 'address')).toThrow(BadRequestException);
 	});
 
