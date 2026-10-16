@@ -2,7 +2,8 @@ import { Controller, Get, Param } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SavingsCoreService } from './savings.core.service';
 import { ApiSavingsInfo, ApiSavingsUserTable, ApiSavingsUserLeaderboard } from './savings.core.types';
-import { Address, zeroAddress } from 'viem';
+import { Address } from 'viem';
+import { AddressPipe } from 'utils/address.pipe';
 
 @ApiTags('Savings Controller')
 @Controller('savings/core')
@@ -29,9 +30,7 @@ export class SavingsCoreController {
 	@ApiResponse({
 		description: 'returns the latest user table history or recent entries from all users',
 	})
-	async getUserTable(@Param('address') address: string): Promise<ApiSavingsUserTable> {
-		const keywords: string[] = ['0', 'all', 'zero', 'zeroAddress', zeroAddress];
-		if (keywords.includes(address)) address = zeroAddress;
-		return await this.savings.getUserTables(address as Address);
+	async getUserTable(@Param('address', new AddressPipe({ allowKeywords: true })) address: Address): Promise<ApiSavingsUserTable> {
+		return await this.savings.getUserTables(address);
 	}
 }
